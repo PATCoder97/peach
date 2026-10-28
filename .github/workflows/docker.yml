@@ -1,12 +1,13 @@
 name: Docker
 
-# 自动运行只验收；手动运行可将已验收镜像推送到自己的 Docker Hub。
+# 分叉仓库推送版本标签时自动验收并发布个人镜像；手动入口可发布指定分支。
 # 官方版本号与 edge 仍由 release.yml 发布（ADR-0121）。
 on:
   pull_request:
     paths: [Dockerfile, .dockerignore, compose.yaml, 'src/**', 'migrations/**', 'web/**', 'resources/**', pyproject.toml, uv.lock, setup.py, MANIFEST.in, scripts/smoke_docker.py, .github/workflows/docker.yml]
   push:
     branches: [master]
+    tags: ['v[0-9]*.[0-9]*.[0-9]*']
     paths: [Dockerfile, .dockerignore, compose.yaml, 'src/**', 'migrations/**', 'web/**', 'resources/**', pyproject.toml, uv.lock, setup.py, MANIFEST.in, scripts/smoke_docker.py, .github/workflows/docker.yml]
   workflow_dispatch:
     inputs:
@@ -35,6 +36,7 @@ concurrency:
 jobs:
   image:
     name: Linux amd64 镜像验收
+    if: github.event_name != 'push' || github.ref_type != 'tag' || github.repository != 'peach-mitao/peach'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -43,13 +45,21 @@ jobs:
           ref: ${{ inputs.source_ref || github.ref }}
           persist-credentials: false
       - name: 核对个人镜像目标
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
         id: target
         env:
-          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
-          IMAGE_TAG: ${{ inputs.image_tag }}
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG: ${{ github.event_name == 'push' && github.ref_type == 'tag' && github.ref_name || inputs.image_tag }}
+          VERSION_TAG: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
         shell: bash
         run: |
+          if [[ "$VERSION_TAG" == true ]]; then
+            if [[ ! "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo '自动发布需要 vX.Y.Z 格式的版本标签。' >&2
+              exit 1
+            fi
+            IMAGE_TAG="${IMAGE_TAG#v}"
+          fi
           if [[ ! "$DOCKERHUB_USERNAME" =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
             echo '请在 Actions Variables 设置有效的 DOCKERHUB_USERNAME。' >&2
             exit 1
@@ -74,13 +84,13 @@ jobs:
       - name: 验收临时容器
         run: python3 scripts/smoke_docker.py peach:ci
       - name: 登录个人 Docker Hub
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
         uses: docker/login-action@v4
         with:
-          username: ${{ vars.DOCKERHUB_USERNAME }}
+          username: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: 推送已验收镜像
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
         env:
           IMAGE: ${{ steps.target.outputs.image }}
         shell: bash
