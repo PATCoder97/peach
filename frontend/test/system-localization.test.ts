@@ -1,6 +1,15 @@
 import { expect, it } from 'vitest';
 import { translateSystem } from '../src/i18n/system';
 
+it('容器扫描的阶段名称与部分完成回执按语言显示', () => {
+  expect(translateSystem('读取媒体属性与检查垃圾','en')).toBe('Read media properties and check for junk');
+  expect(translateSystem('采集外部资料与封面','vi')).toBe('Lấy thông tin và ảnh bìa từ nguồn ngoài');
+  expect(translateSystem('1 项需要处理，可重试未完成的部分。','en'))
+    .toBe('Items needing attention: 1. Retry unfinished parts.');
+  expect(translateSystem('3 项需要处理，可重试未完成的部分。','vi'))
+    .toBe('3 mục cần xử lý. Có thể thử lại các phần chưa hoàn tất.');
+});
+
 it('系统盘容量优先匹配完整模板，卸载说明保留源码安装的手动步骤', () => {
   expect(translateSystem('26.8 GB 可用，共 149.9 GB（系统盘）','en'))
     .toBe('26.8 GB available of 149.9 GB (system drive)');

@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "c8d18b91-3436-4bda-9c31-bc3b34ab3a2c", e._sentryDebugIdIdentifier = "sentry-dbid-c8d18b91-3436-4bda-9c31-bc3b34ab3a2c");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "b167c753-0362-4ad6-80b1-4984a4f5a110", e._sentryDebugIdIdentifier = "sentry-dbid-b167c753-0362-4ad6-80b1-4984a4f5a110");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -10723,6 +10723,7 @@ var D = /* @__PURE__ */ o(((e) => {
 	全部时间: ["All time", "Mọi thời điểm"]
 }, ge = {
 	"{free} 可用，共 {total}（系统盘）": ["{free} available of {total} (system drive)", "Khả dụng {free}, tổng {total} (ổ hệ thống)"],
+	"{count} 项需要处理，可重试未完成的部分。": ["Items needing attention: {count}. Retry unfinished parts.", "{count} mục cần xử lý. Có thể thử lại các phần chưa hoàn tất."],
 	"{value0} 个来源": ["{value0} sources", "{value0} nguồn"],
 	"每个来源都抓到第 {value0} 页": ["Retrieved through page {value0} for every source", "Đã lấy đến trang {value0} của mỗi nguồn"],
 	"已抓到第 {value0}–{value1} 页": ["Retrieved pages {value0}–{value1}", "Đã lấy trang {value0}–{value1}"],
@@ -12019,6 +12020,8 @@ var D = /* @__PURE__ */ o(((e) => {
 	存在已记录的任务失败: ["Recorded task failures exist", "Có tác vụ thất bại được ghi nhận"],
 	在任务中心查看失败任务: ["View failed tasks in Tasks", "Xem tác vụ thất bại trong Tác vụ"]
 }, Oe = {
+	读取媒体属性与检查垃圾: ["Read media properties and check for junk", "Đọc thuộc tính nội dung và kiểm tra tệp rác"],
+	采集外部资料与封面: ["Retrieve external metadata and covers", "Lấy thông tin và ảnh bìa từ nguồn ngoài"],
 	系统默认播放器: ["System default player", "Trình phát mặc định của hệ thống"],
 	加载速度: ["Loading speed", "Tốc độ tải"],
 	"查看全部 {count} 个视频": ["View all {count} videos", "Xem tất cả {count} video"],
@@ -26843,4 +26846,4 @@ ay && oy && (0, M.createRoot)(ay).render(/* @__PURE__ */ (0, B.jsx)(ny, { childr
 	data: { ...ay.dataset }
 }) }));
 
-//# debugId=c8d18b91-3436-4bda-9c31-bc3b34ab3a2c
+//# debugId=b167c753-0362-4ad6-80b1-4984a4f5a110

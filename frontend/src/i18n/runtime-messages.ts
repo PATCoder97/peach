@@ -1,5 +1,6 @@
 /** 动态系统文案的明确模板；名称、路径和来源摘录作为占位值保留。 */
 export const runtimeMessages: Readonly<Record<string, readonly [string, string]>> = {
+  '{count} 项需要处理，可重试未完成的部分。': ['Items needing attention: {count}. Retry unfinished parts.', '{count} mục cần xử lý. Có thể thử lại các phần chưa hoàn tất.'],
   '{value0} 个来源': ['{value0} sources', '{value0} nguồn'],
   '每个来源都抓到第 {value0} 页': ['Retrieved through page {value0} for every source', 'Đã lấy đến trang {value0} của mỗi nguồn'],
   '已抓到第 {value0}–{value1} 页': ['Retrieved pages {value0}–{value1}', 'Đã lấy trang {value0}–{value1}'],

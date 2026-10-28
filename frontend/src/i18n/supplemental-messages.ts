@@ -1,5 +1,7 @@
 /** 间接传入公共控件的系统词表：批量操作、播放器与配置的次级状态。 */
 export const supplementalMessages: Readonly<Record<string, readonly [string, string]>> = {
+  '读取媒体属性与检查垃圾': ['Read media properties and check for junk', 'Đọc thuộc tính nội dung và kiểm tra tệp rác'],
+  '采集外部资料与封面': ['Retrieve external metadata and covers', 'Lấy thông tin và ảnh bìa từ nguồn ngoài'],
   '系统默认播放器': ['System default player', 'Trình phát mặc định của hệ thống'],
   '加载速度': ['Loading speed', 'Tốc độ tải'],
   '查看全部 {count} 个视频': ['View all {count} videos', 'Xem tất cả {count} video'],
