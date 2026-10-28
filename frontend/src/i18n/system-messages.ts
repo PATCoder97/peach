@@ -2,6 +2,7 @@ import { runtimeMessages } from './runtime-messages';
 
 /** 服务端生成的系统消息模板；占位内容保留原始路径、名称与计数。 */
 export const systemMessages: Readonly<Record<string, readonly [string, string]>> = {
+  '{free} 可用，共 {total}（系统盘）': ['{free} available of {total} (system drive)', 'Khả dụng {free}, tổng {total} (ổ hệ thống)'],
   ...runtimeMessages,
   '{total} 个符合 · 显示 {shown}': ['{total} matches · showing {shown}', '{total} mục phù hợp · hiển thị {shown}'],
   '已加载 {name}': ['Loaded {name}', 'Đã tải {name}'],

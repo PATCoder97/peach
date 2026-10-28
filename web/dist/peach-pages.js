@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "6d21d947-0f5a-4aea-ae9f-3d7dc34744fb", e._sentryDebugIdIdentifier = "sentry-dbid-6d21d947-0f5a-4aea-ae9f-3d7dc34744fb");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "ce24c295-d3cf-4bc5-92a1-a001b6fc4c69", e._sentryDebugIdIdentifier = "sentry-dbid-ce24c295-d3cf-4bc5-92a1-a001b6fc4c69");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -10722,6 +10722,7 @@ var D = /* @__PURE__ */ o(((e) => {
 	"最近 30 天": ["Last 30 days", "30 ngày gần đây"],
 	全部时间: ["All time", "Mọi thời điểm"]
 }, ge = {
+	"{free} 可用，共 {total}（系统盘）": ["{free} available of {total} (system drive)", "Khả dụng {free}, tổng {total} (ổ hệ thống)"],
 	"{value0} 个来源": ["{value0} sources", "{value0} nguồn"],
 	"每个来源都抓到第 {value0} 页": ["Retrieved through page {value0} for every source", "Đã lấy đến trang {value0} của mỗi nguồn"],
 	"已抓到第 {value0}–{value1} 页": ["Retrieved pages {value0}–{value1}", "Đã lấy trang {value0}–{value1}"],
@@ -12018,6 +12019,9 @@ var D = /* @__PURE__ */ o(((e) => {
 	存在已记录的任务失败: ["Recorded task failures exist", "Có tác vụ thất bại được ghi nhận"],
 	在任务中心查看失败任务: ["View failed tasks in Tasks", "Xem tác vụ thất bại trong Tác vụ"]
 }, Oe = {
+	"查看全部 {count} 个视频": ["View all {count} videos", "Xem tất cả {count} video"],
+	"源码安装请先关闭开机自启并退出托盘，再手动移除项目与数据目录": ["For a source installation, disable startup and quit the tray first, then manually remove the project and data folders.", "Với bản cài từ mã nguồn, hãy tắt tự khởi động và thoát khay hệ thống trước, rồi xóa thủ công thư mục dự án và dữ liệu."],
+	"源码安装请先退出托盘，再手动移除项目；数据目录见下方": ["For a source installation, quit the tray first, then manually remove the project. The data folder is shown below.", "Với bản cài từ mã nguồn, hãy thoát khay hệ thống trước rồi xóa thủ công dự án. Thư mục dữ liệu được hiển thị bên dưới."],
 	补全封面: ["Complete covers", "Bổ sung ảnh bìa"],
 	全部关注作品: ["All followed titles", "Tất cả tác phẩm theo dõi"],
 	关注图片: ["Followed images", "Ảnh theo dõi"],
@@ -26837,4 +26841,4 @@ ay && oy && (0, M.createRoot)(ay).render(/* @__PURE__ */ (0, B.jsx)(ny, { childr
 	data: { ...ay.dataset }
 }) }));
 
-//# debugId=6d21d947-0f5a-4aea-ae9f-3d7dc34744fb
+//# debugId=ce24c295-d3cf-4bc5-92a1-a001b6fc4c69

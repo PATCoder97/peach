@@ -83,11 +83,13 @@ for (const language of ['en', 'vi']) {
     mkdirSync('../build/agent-verification/localization', { recursive: true });
     const report: Record<string, string[]> = {};
     const untranslatedReport: Record<string, string[]> = {};
+    // 同一语言与视口复用浏览器会话，跨路由仍整页重载，避免 Windows 大量短连接耗尽。
+    const view = await visit(browser, routes[0]!, viewport, async page => {
+      await page.addInitScript(locale => localStorage.setItem('peach.locale.v1', locale), language);
+    });
+    try {
     for (const route of routes) {
-      const view = await visit(browser, route, viewport, async page => {
-        await page.addInitScript(locale => localStorage.setItem('peach.locale.v1', locale), language);
-      });
-      try {
+        if (route !== routes[0]) await view.page.goto(requiredEnv('PEACH_E2E_ORIGIN') + route, {waitUntil:'load'});
         await view.page.locator('#main').waitFor({ state: 'visible' });
         await view.page.locator('#grid [data-media-card], #grid [data-geist-empty-state], #stats [role="tab"], #stats [data-run-id], #stats [data-empty-state], #stats form, #stats [data-collection-summary], #stats #libraryProcessing button, #count [data-junk-filters], [data-settings-panel] [data-settings-nav], #index [data-k], #index [data-empty-state]').first().waitFor({ state: 'visible' });
         await settle(view.page);
@@ -124,8 +126,8 @@ for (const language of ['en', 'vi']) {
           await view.page.screenshot({ path: `../build/agent-verification/localization/${language}-${viewport.name}-${route.slice(1).replaceAll('/', '-')}.png` });
         }
         assert.deepEqual(view.problems, [], `${route}: ${view.problems.join('\n')}`);
-      } finally { await view.close() }
     }
+    } finally { await view.close() }
     mkdirSync('../build/agent-verification/localization', { recursive: true });
     writeFileSync(`../build/agent-verification/localization/${language}-${viewport.name}.json`, JSON.stringify(report, null, 2));
     assert.deepEqual(untranslatedReport, {}, `${language}/${viewport.name}: 系统文案仍含中文`);

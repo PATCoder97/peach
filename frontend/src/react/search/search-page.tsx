@@ -407,7 +407,7 @@ function Row({ entry, active, helpers, onPick, onPeek, onRemove }: {
   };
   if (entry.type === 'more') {
     return (
-      <button type="button" data-search-option="more" {...shared} onMouseDown={keep}>{t("查看全部")}{entry.total.toLocaleString()}{t("个视频")}<Sprite name="chevron-right" />
+      <button type="button" data-search-option="more" {...shared} onMouseDown={keep}>{t('查看全部 {count} 个视频',{count:entry.total.toLocaleString()})}<Sprite name="chevron-right" />
       </button>
     );
   }

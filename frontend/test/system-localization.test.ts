@@ -1,6 +1,15 @@
 import { expect, it } from 'vitest';
 import { translateSystem } from '../src/i18n/system';
 
+it('系统盘容量优先匹配完整模板，卸载说明保留源码安装的手动步骤', () => {
+  expect(translateSystem('26.8 GB 可用，共 149.9 GB（系统盘）','en'))
+    .toBe('26.8 GB available of 149.9 GB (system drive)');
+  expect(translateSystem('26.8 GB 可用，共 149.9 GB（系统盘）','vi'))
+    .toBe('Khả dụng 26.8 GB, tổng 149.9 GB (ổ hệ thống)');
+  expect(translateSystem('源码安装请先关闭开机自启并退出托盘，再手动移除项目与数据目录','vi'))
+    .toBe('Với bản cài từ mã nguồn, hãy tắt tự khởi động và thoát khay hệ thống trước, rồi xóa thủ công thư mục dự án và dữ liệu.');
+});
+
 it('系统模板翻译保留名称、路径和原始计数，不修改未知原文', () => {
   expect(translateSystem('已入库 1,234 个文件', 'en')).toBe('Imported 1,234 files');
   expect(translateSystem('正在监视 R:\\影片\\技术详情', 'vi')).toBe('Đang theo dõi R:\\影片\\技术详情');
