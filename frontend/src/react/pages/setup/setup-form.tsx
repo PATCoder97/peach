@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../../i18n";
 import { translate as t } from '../../../i18n/index';
 import { useTranslation } from '../../i18n';
 /* 首次设置表单。题目、默认值、显隐与随平台变化的文案来自 `GET /api/setup/questions`；
@@ -58,6 +59,7 @@ function scanLabel(paths: string[]): string {
 const text = (value: SetupErrors[string]) => (Array.isArray(value) ? value.filter(Boolean).join(' ') : value ?? '');
 
 export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions; onDone: (done: SetupDone) => void; onRestore?: () => void }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -254,9 +256,9 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
           <div role="group" aria-labelledby="setup-media-title" className="flex flex-col gap-3">
             {libraries.map(library => <div key={library.library_id} data-library-block="" data-setup-library-block="">
               <div data-library-head="">
-                <LibraryIconPicker label={`${library.library || '未命名媒体库'} 图标`} value={library.library_icon || ''} kind={library.location}
+                <LibraryIconPicker label={uiText("{value0} 图标", { value0: String(library.library || uiText("未命名媒体库")) })} value={library.library_icon || ''} kind={library.location}
                   onChange={library_icon => editLibrary(library, { library_icon })} />
-                <Input className="w-full" aria-label={`${library.library || '未命名媒体库'} 名称`} placeholder={t("媒体库名称")} maxLength={80}
+                <Input className="w-full" aria-label={uiText("{value0} 名称", { value0: String(library.library || uiText("未命名媒体库")) })} placeholder={t("媒体库名称")} maxLength={80}
                   value={library.library || ''} onChange={value => editLibrary(library, { library: value })} />
                 <LibraryColorPicker id={library.library_id || ''} name={library.library || t("未命名媒体库")} value={library.library_color || ''}
                   onChange={library_color => editLibrary(library, { library_color })} />
@@ -267,7 +269,7 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
               {library.library_policy === 'custom' ? <StageChooser name={library.library || t("未命名媒体库")}
                 value={(library.library_stages?.split(',').filter(Boolean) ?? AUTO_STAGES) as Stage[]}
                 onChange={value => editLibrary(library, { library_stages: value.join(',') })} /> : null}
-              <div data-library-folders="" role="group" aria-label={`${library.library || '未命名媒体库'} 的文件夹`}>
+              <div data-library-folders="" role="group" aria-label={uiText("{value0} 的文件夹", { value0: String(library.library || uiText("未命名媒体库")) })}>
             {folders.rows.map((row, index) => row.library_id === library.library_id ? (
               <FolderRow key={index} label={`${t(media.label)} ${index + 1}`} path={row.path}
                 onPath={(path) => folders.edit(index, { path })} error={announce(folders.errors[index])}
@@ -281,7 +283,7 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
                     error={requireReadPolicy && !row.cost ? t("请选择媒体读取策略") : undefined}
                     onChange={(cost) => folders.edit(index, { cost })} />
                   {libraries.length > 1 ? <FolderField label={t("移到媒体库")} className="w-full @lg:w-60">
-                    <Select className="w-full" aria-label={`目录所属媒体库 ${index + 1}`} selectedKey={row.library_id}
+                    <Select className="w-full" aria-label={uiText("目录所属媒体库 {value0}", { value0: String(index + 1) })} selectedKey={row.library_id}
                       renderValue={<span className="flex min-w-0 items-center gap-2"><SourceMark mark={row.library_icon || libraryAutoChoice(row.location)[0]} /><span className="truncate">{row.library || t("未命名媒体库")}</span></span>}
                       onSelectionChange={key => {
                         const other = folders.rows.find(value => value.library_id === key);
@@ -295,7 +297,7 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
                 </FolderFieldLine>
               </FolderRow>
             ) : null)}
-              <div className="flex"><Button variant="secondary" data-copy-interact aria-label={`给 ${library.library || '未命名媒体库'} 添加文件夹`}
+              <div className="flex"><Button variant="secondary" data-copy-interact aria-label={uiText("给 {value0} 添加文件夹", { value0: String(library.library || uiText("未命名媒体库")) })}
                 onClick={() => { folders.add(); folders.edit(folders.rows.length,
                   { ...libraryFields(library), location: library.location, cost: library.cost }); }}>{t("添加文件夹")}</Button></div>
               </div>
@@ -355,7 +357,7 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
         {accessOn
           ? <PasswordPair label={t("访问密码")} password={password} confirmation={confirmation}
               onPassword={setPassword} onConfirmation={setConfirmation}
-              passwordError={announce(text(errors.access_password))} passwordHint="请输入 8–256 个字符。"
+              passwordError={announce(text(errors.access_password))} passwordHint={uiText("请输入 8–256 个字符。")}
               confirmationInvalid={Boolean(errors.access_password)} />
           : null}
       </CardGroup>
@@ -380,7 +382,7 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
       </CardGroup>
 
       <CardGroup>
-        <Disclosure key={advancedOpenings} summary="高级设置" defaultOpen={advancedOpenings > 0}>
+        <Disclosure key={advancedOpenings} summary={uiText("高级设置")} defaultOpen={advancedOpenings > 0}>
           <div className="flex flex-col gap-4">{others.filter(visible).map(field)}</div>
         </Disclosure>
         <Help><span className="break-all">{t("访问地址：")}{address}</span></Help>

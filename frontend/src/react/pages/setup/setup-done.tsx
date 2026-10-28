@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../../i18n";
 import { translate as t } from '../../../i18n/index';
 import { useTranslation } from '../../i18n';
 /* 设置完成：扫描是否已排队、进入 Peach 的入口，运行信息默认折叠。口令不出现在页面上。
@@ -14,6 +15,7 @@ import type { SetupDone } from './setup-api';
 import { SetupShell } from './setup-scene';
 
 export function SetupDoneView({ done }: { done: SetupDone }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const entry = useRef<HTMLAnchorElement>(null);
   const title = t('Peach · 设置完成');
@@ -46,7 +48,7 @@ export function SetupDoneView({ done }: { done: SetupDone }) {
           ? t("首次扫描已排队，在后台整理媒体库，期间可以照常使用 Peach。")
           : t("稍后在配置页开始扫描媒体库。")}
       </p>
-      <Disclosure summary="运行信息">
+      <Disclosure summary={uiText("运行信息")}>
         <FactList>
           {done.facts.map((fact) => (
             <Fact key={fact.term} term={fact.term}>

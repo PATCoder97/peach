@@ -6,12 +6,13 @@
  * 迟到的响应不能再往新页面上写东西。 */
 
 /** 服务端明确回了非 2xx。`status` 留给调用方区分 401／409／404 这类需要不同处置的情况。 */
-import { requestErrorMessage } from './core/request-error';
+import { requestErrorMessage, requestErrorSource } from './core/request-error';
 import { registerResponseEntities } from './core/entity-links';
 import { libraryScopedPath } from './core/library-scope';
 
 export class ApiError extends Error {
   readonly status: number;
+  readonly sourceMessage: string;
   /** 响应体原样。表单校验那种 400 会在 `errors` 里按字段给原因，页面要把它们写回原位。 */
   readonly body: unknown;
 
@@ -19,6 +20,7 @@ export class ApiError extends Error {
     super(requestErrorMessage(message,status));
     this.name = 'ApiError';
     this.status = status;
+    this.sourceMessage = requestErrorSource(message, status);
     this.body = body;
   }
 }

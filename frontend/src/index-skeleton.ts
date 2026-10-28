@@ -1,3 +1,4 @@
+import { translate as t } from './i18n';
 /* 索引五页（艺人、卖家、厂牌、事务所、标签）的进页骨架与地址解析。
  *
  * 页头此刻就能给出最终样子：标题、读数的占位、版式开关、收藏入口、过滤框、页面级 Tabs 与本地艺人的身份分类，
@@ -57,20 +58,20 @@ const tabs = (items: Choices, active: string, label: string) => boardTabsHtml(
    跳转和视图切换。药丸有哪几枚、读数多少、有哪些首字都要等数据，视图切换此刻就是最终那一档；块高与下边距同
    旧 `.board-filter-frame`，页面落地时它原地换成真的那一块，下面的内容不下跳。 */
 const tagFilterSkeletonHtml = (view: string) => `<div class="peach-react contents"><div data-filter-glass data-glass-pane class="sticky top-topbar z-10 mb-5.5 flex flex-col">
-    <div class="flex h-12 min-w-0 items-center gap-1.75 overflow-x-auto overscroll-x-contain px-3 py-2" data-filter-row="top" data-skeleton-tier="filter-pill" aria-label="标签类型"></div>
+    <div class="flex h-12 min-w-0 items-center gap-1.75 overflow-x-auto overscroll-x-contain px-3 py-2" data-filter-row="top" data-skeleton-tier="filter-pill" aria-label="${t("标签类型")}"></div>
     <div class="flex min-h-11.5 min-w-0 items-center gap-3 px-3 py-2" data-filter-row="bottom"><span class="countskeleton"></span>
       <span class="ml-auto">${iconSwitchHtml('tag-view', '标签视图', TAG_VIEWS, view, { className:'tag-skeleton-view' })}</span></div></div></div>`;
 
 export function indexPlaceholderHtml({ kind, q, scope, view, category }: IndexParams, layout: 'big' | 'compact'): string {
   const title = INDEX_TITLES[kind] || '标签', people = kind !== 'tags', company = kind === 'studios' || kind === 'agencies' || kind === 'series';
   const switcher = people
-    ? iconSwitchHtml('people-layout', title + '索引版式', kind === 'series' ? SERIES_LAYOUTS : company ? COMPANY_LAYOUTS : PEOPLE_LAYOUTS, layout) : '';
+    ? iconSwitchHtml('people-layout', t('{value0}索引版式', { value0: t(title) }), kind === 'series' ? SERIES_LAYOUTS : company ? COMPANY_LAYOUTS : PEOPLE_LAYOUTS, layout) : '';
   return `<div class="ihead peach-react" data-index-head>
-      <h2 class="disp indexheading">${title}</h2>
+      <h2 class="disp indexheading">${t(title)}</h2>
       ${people ? '<span class="mono" id="indexCount"><span class="countskeleton"></span></span>' : ''}${switcher}
       ${islandShortcutsEntry('default')}
-      ${kind === 'tags' ? islandButton({variant: 'ghost', glyph: 'pencil', attrs: 'data-tag-mode data-skeleton-action disabled tabindex="-1" aria-label="管理标签"'}) : ''}
-      <div data-index-search class="ml-auto min-w-0 max-w-80 flex-1">${islandSearchInput('', q, '过滤' + title)}</div>
+      ${kind === 'tags' ? islandButton({variant: 'ghost', glyph: 'pencil', attrs: `data-tag-mode data-skeleton-action disabled tabindex="-1" aria-label="${t("管理标签")}"`}) : ''}
+      <div data-index-search class="ml-auto min-w-0 max-w-80 flex-1">${islandSearchInput('', q, t('过滤{value0}', { value0: t(title) }))}</div>
     </div>
     ${kind === 'tags' ? tabs(INDEX_SCOPES, scope, '词表') : kind === 'performers' || kind === 'creators'
       ? tabs(PEOPLE_INDEX_TABS, kind === 'performers' && scope === 'online' ? 'online' : kind, '人物名册')

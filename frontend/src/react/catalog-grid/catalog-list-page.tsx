@@ -1,4 +1,5 @@
 "use client";
+import { useTranslation as useUiTranslation } from "../i18n";
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 
@@ -45,6 +46,7 @@ const positions = new Map<string, ListState>();
 
 /** 服务端对完整筛选结果排序、分页；选择集及批量栏归现有馆藏控制器。 */
 export function CatalogListPage(props: CatalogGridProps) {
+  const uiText = useUiTranslation();
   const t = useTranslation();
   const preferences = useCatalogTablePreferences();
   const tints = useLibraryTints();
@@ -102,7 +104,7 @@ export function CatalogListPage(props: CatalogGridProps) {
     const helper = createColumnHelper<typeof features, MediaItem>();
     return helper.columns([
       helper.display({ id: 'select', header: ({ table }) => <TableSelectionHeader table={table} label={t("全选本页作品")} disabled={result.isPlaceholderData} />,
-      cell: ({ row }) => <Checkbox slot={null} aria-label={`选择 ${props.helpers.displayName(row.original, row.original.name || '')}`}
+      cell: ({ row }) => <Checkbox slot={null} aria-label={uiText("选择 {value0}", { value0: String(props.helpers.displayName(row.original, row.original.name || '')) })}
         isDisabled={result.isPlaceholderData}
         isSelected={row.getIsSelected()} onChange={on => row.toggleSelected(on)} /> }),
       helper.accessor(item => item.name || '', { id: 'name', header: t('作品'), enableSorting: true,
@@ -143,7 +145,7 @@ export function CatalogListPage(props: CatalogGridProps) {
       helper.accessor(item => item.release_date, { id: 'release', header: t('发行时间'), enableSorting: true,
         cell: ({ row }) => row.original.release_date || '—' }),
     ]);
-  }, [props.helpers, props.actions, props.layout, props.selectMode, result.isPlaceholderData, t]);
+  }, [props.helpers, props.actions, props.layout, props.selectMode, result.isPlaceholderData, t, uiText]);
   const table = useTable({
     features, columns, data: items, getRowId: item => String(item.id),
     manualSorting: true, manualPagination: true, rowCount: total,
@@ -192,7 +194,7 @@ export function CatalogListPage(props: CatalogGridProps) {
           </TableColumn>)}
           <TableColumn id="remaining-space" aria-label={t("行空白区域")} data-table-space="" width={preferences.spaceWidth} minWidth={0} />
         </TableHeader>
-        <TableBody renderEmptyState={() => result.isError ? '作品列表未取得' : '没有符合的作品'}>
+        <TableBody renderEmptyState={() => uiText(result.isError ? '作品列表未取得' : '没有符合的作品')}>
           {/* 等数据时在真实表格里画骨架行，格子内容与壳的首屏骨架同一份，接管时不换结构。 */}
           {result.isPending ? Array.from({ length: 6 }, (_, index) => <TableRow key={`skeleton-${index}`} id={`skeleton-${index}`}
             data-list-skeleton-row="" aria-hidden="true">
@@ -215,6 +217,7 @@ export function CatalogListPage(props: CatalogGridProps) {
 }
 
 function ListIdentity({ item, props, disabled }: { item: MediaItem; props: CatalogGridProps; disabled: boolean }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const artwork = cardArtwork(item, 'small', false, props.layout.javImage);
   /* 与卡片同一判据：按画幅筛时组里只剩这一卷或这一个版本，就按单个文件写。 */
@@ -249,8 +252,8 @@ function ListIdentity({ item, props, disabled }: { item: MediaItem; props: Catal
     <button type="button" data-list-open="" disabled={disabled} tabIndex={-1} aria-hidden="true" onClick={open}>
       <span data-list-picture="">{artwork.html
         ? <ArtSlot artwork={artwork} relayout={root => relayoutCovers(root, 'small')} /> : <span>{t("无预览")}</span>}
-        {parts && !editions ? <span data-media-group="">{`${Number(parts.count).toLocaleString()} 卷`}</span> : null}
-        {editions ? <span data-media-group="" title={editions.editions.join(' · ')}>{`${Number(editions.count).toLocaleString()} 个版本`}</span> : null}
+        {parts && !editions ? <span data-media-group="">{uiText("{value0} 卷", { value0: String(Number(parts.count).toLocaleString()) })}</span> : null}
+        {editions ? <span data-media-group="" title={editions.editions.join(' · ')}>{uiText("{value0} 个版本", { value0: String(Number(editions.count).toLocaleString()) })}</span> : null}
         {watched > 0
           ? <span data-media-progress="" role="progressbar" aria-label={t("观看进度")} aria-valuemin={0} aria-valuemax={100}
             aria-valuenow={Math.round(watched * 100)}>
@@ -260,17 +263,17 @@ function ListIdentity({ item, props, disabled }: { item: MediaItem; props: Catal
         {item.watch_later || flaggedBy.length
           ? <span data-media-status="">
             {item.watch_later ? <span data-status="later" title={t("稍后看")} aria-label={t("稍后看")}>{glyph('bookmark')}</span> : null}
-            {flaggedBy.length ? <span data-status="flagged" title={`已标记：${flaggedBy.join('、')}`}
-              aria-label={`已标记：${flaggedBy.join('、')}`}>{glyph('heart')}</span> : null}
+            {flaggedBy.length ? <span data-status="flagged" title={uiText("已标记：{value0}", { value0: String(flaggedBy.join('、')) })}
+              aria-label={uiText("已标记：{value0}", { value0: String(flaggedBy.join('、')) })}>{glyph('heart')}</span> : null}
           </span>
           : null}</span>
     </button>
     {avatar}
     <span data-list-text="">
-      <button type="button" data-list-name="" disabled={disabled} title={name} aria-label={`打开 ${name}`} onClick={open}
+      <button type="button" data-list-name="" disabled={disabled} title={name} aria-label={uiText("打开 {value0}", { value0: String(name) })} onClick={open}
         dangerouslySetInnerHTML={{ __html: titleHtml }} />
       <span data-list-byline="">
-        {tint?.name ? <span data-list-library="" title={`媒体库：${tint.name}`}>
+        {tint?.name ? <span data-list-library="" title={uiText("媒体库：{value0}", { value0: String(tint.name) })}>
           <SourceMark mark={tint.icon} />{tint.name}
         </span> : null}
         {who}

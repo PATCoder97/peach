@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 本地与在线详情共用标签外观、选择器和标签名称编辑。 */
 import { useCallback, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -20,6 +21,7 @@ interface DetailTagsProps {
 }
 
 export function DetailTags({ tags, candidates, scope = 'local', id, adding, label, onOpen, onAdd, onRemove, busyAttrs }: DetailTagsProps) {
+  const uiText = useUiTranslation();
   const [editing, setEditing] = useState<ManagedTag | null>(null);
   const [asked, setAsked] = useState(false);
   const inventory = useQuery({ queryKey:['tag-management', scope],
@@ -39,16 +41,16 @@ export function DetailTags({ tags, candidates, scope = 'local', id, adding, labe
       {tags.map(tag => <span key={tag.k} data-detail-tag="" data-tag-cat={tag.cat}>
         <button type="button" data-tag={tag.k} data-follow-tag={scope === 'online' ? tag.k : undefined}
           title={label(tag.k)} onClick={() => onOpen(tag.k)}>{label(tag.k)}</button>
-        <button type="button" data-edit-tag={tag.k} title="修改标签名称" aria-label={`修改标签 ${label(tag.k)}`}
+        <button type="button" data-edit-tag={tag.k} title={uiText("修改标签名称")} aria-label={uiText("修改标签 {value0}", { value0: String(label(tag.k)) })}
           {...busyProps(!!action.busy)} onClick={() => rename(tag)}><Glyph name="pencil" /></button>
-        <button type="button" data-remove-tag={tag.k} title="从此内容隐藏该标签" aria-label={`删除标签 ${label(tag.k)}`}
+        <button type="button" data-remove-tag={tag.k} title={uiText("从此内容隐藏该标签")} aria-label={uiText("删除标签 {value0}", { value0: String(label(tag.k)) })}
           {...busyAttrs(tag.k)} onClick={() => onRemove(tag)}><Glyph name="x" /></button>
       </span>)}
       <TagPicker tags={tags} candidates={options} label={label} onAdd={onAdd} adding={adding} scope={scope}
         onOpen={() => setAsked(true)} loading={inventory.isFetching} />
     </div>
     {action.error ? <Note tone="error">{action.error}</Note> : null}
-    {inventory.isError ? <Note tone="error" action={<Button variant="secondary" onClick={() => void inventory.refetch()}>立即重试</Button>}>无法读取标签候选</Note> : null}
+    {inventory.isError ? <Note tone="error" action={<Button variant="secondary" onClick={() => void inventory.refetch()}>{uiText("立即重试")}</Button>}>{uiText("无法读取标签候选")}</Note> : null}
     {editing ? <TagEditor operation="rename" selected={[editing]} scope={scope}
       close={() => setEditing(null)} done={() => setEditing(null)} /> : null}
   </>;
@@ -58,6 +60,7 @@ export function DetailTags({ tags, candidates, scope = 'local', id, adding, labe
    「新建」。开合走全站菜单那一对口（`presentMenu`／`dismissMenu`），`hidden` 由它们管。
    选字过程中框里是半截拼音，筛选按 `term` 走、组完字才跟上，不拿「zhon」去筛。 */
 function TagPicker({ tags, candidates, label, onAdd, adding, scope, onOpen, loading }: Pick<DetailTagsProps, 'tags' | 'candidates' | 'label' | 'onAdd' | 'adding' | 'scope'> & { onOpen():void; loading:boolean }) {
+  const uiText = useUiTranslation();
   const plus = useRef<HTMLButtonElement>(null);
   const picker = useRef<HTMLDivElement>(null);
   const body = useOverlayScrollbar<HTMLDivElement>();
@@ -144,23 +147,23 @@ function TagPicker({ tags, candidates, label, onAdd, adding, scope, onOpen, load
   };
   return (
     <>
-      <button ref={plus} type="button" id="tagPlus" data-tag-plus="" title="添加标签" aria-label="添加标签" aria-expanded={open}
+      <button ref={plus} type="button" id="tagPlus" data-tag-plus="" title={uiText("添加标签")} aria-label={uiText("添加标签")} aria-expanded={open}
         {...busyProps(!!adding)}><Glyph name="plus" /></button>
-      <div ref={picker} id="tagPicker" data-tag-picker="" role="dialog" aria-label="添加标签" hidden>
+      <div ref={picker} id="tagPicker" data-tag-picker="" role="dialog" aria-label={uiText("添加标签")} hidden>
         <label data-tag-search="">
           {loading ? <span className="contents" dangerouslySetInnerHTML={{ __html:spinnerHtml('正在读取标签') }} /> : <Glyph name="search" />}
-          <input ref={search} id="tagPickSearch" maxLength={80} placeholder="搜索或输入新标签" autoComplete="off" value={query}
+          <input ref={search} id="tagPickSearch" maxLength={80} placeholder={uiText("搜索或输入新标签")} autoComplete="off" value={query}
             onChange={(event) => { setQuery(event.target.value); setActive(-1); if (!composing.current) setTerm(event.target.value) }}
             onCompositionStart={() => { composing.current = true }}
             onCompositionEnd={(event) => { composing.current = false; setTerm(event.currentTarget.value) }} onKeyDown={keydown} />
         </label>
         <div data-tag-scroll-frame=""><div ref={body} id="tagPickBody" data-tag-body="">
           {open && sections.recent.length ? (
-            <section data-tag-section=""><h4>最近使用</h4><div data-tag-grid="">{sections.recent.map(button)}</div></section>
+            <section data-tag-section=""><h4>{uiText("最近使用")}</h4><div data-tag-grid="">{sections.recent.map(button)}</div></section>
           ) : null}
           {open ? (
             <section data-tag-section="">
-              <h4>{term.trim() ? '搜索结果' : '全部标签'}</h4>
+              <h4>{term.trim() ? uiText("搜索结果") : uiText("全部标签")}</h4>
               <div data-tag-grid="">
                 {sections.results.map(button)}
                 {sections.create ? (() => {
@@ -169,7 +172,7 @@ function TagPicker({ tags, candidates, label, onAdd, adding, scope, onOpen, load
                   return (
                     <button key="create" type="button" data-pick={sections.create} data-active={at === active ? '' : undefined}
                       onClick={() => { close(); onAdd(sections.create) }}>
-                      <Glyph name="plus" /><span data-pick-name="">新建“{sections.create}”</span>
+                      <Glyph name="plus" /><span data-pick-name="">{uiText("新建“")}{sections.create}”</span>
                     </button>
                   );
                 })() : null}

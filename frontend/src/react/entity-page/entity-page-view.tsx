@@ -1,3 +1,5 @@
+import { useTranslation as useUiTranslation } from "../i18n";
+import { translate } from '../../i18n';
 /* 实体资料页（路由树画进 `#index`，`managed-routes.tsx` 的 `ENTITY_ROUTES`）：资料卡、筛选浮层、新作那一行与正文，一棵根、四块宿主。
  *
  * 资料卡画在壳交出的宿主里（`[data-entity-hero]` 那一格），浮层、新作与正文经 portal 画进壳排好的另外三块：浮层
@@ -72,13 +74,14 @@ const newSeed = () => String(((Date.now() ^ (Math.random() * 1e9 | 0)) >>> 0) % 
 
 /** 照片一屏的读数：本地图片与样张各数各的；只有样张时不写「0 张」。 */
 function photoReadout(page: PhotoPage, codeSets: number) {
-  return `照片 · ${[
-    page.total || !codeSets ? `${(page.total || 0).toLocaleString()} 张` : '',
-    codeSets ? `样张 ${(page.sample_total || 0).toLocaleString()} 张 · ${codeSets.toLocaleString()} 部作品` : '',
+  return `${translate('照片')} · ${[
+    page.total || !codeSets ? translate('{count} 张', { count: (page.total || 0).toLocaleString() }) : '',
+    codeSets ? translate('样张 {photos} 张 · {titles} 部作品', { photos: (page.sample_total || 0).toLocaleString(), titles: codeSets.toLocaleString() }) : '',
   ].filter(Boolean).join(' · ')}`;
 }
 
 function EntityLoaded(props: EntityPageProps & { entity: EntityPageData }) {
+  const uiText = useUiTranslation();
   const { kind, name, entity, filters, media, helpers, actions, hosts } = props;
   const company = kind === 'agency' || kind === 'studio';
   /* 事务所名下的这批人不摆在资料卡底那排小圆头像里：那是「同台艺人」，一条附注；名册是这一页的
@@ -355,19 +358,19 @@ function EntityLoaded(props: EntityPageProps & { entity: EntityPageData }) {
     { ...filters, state: '', tag: '', creator: '', studio: '', owner: '' }, EMPTY_MEDIA);
   let readout = '';
   let busy = false;
-  if (view === 'people') readout = `${kind === 'studio' ? '厂牌' : '艺人'} · ${roster.length.toLocaleString()}`;
+  if (view === 'people') readout = `${uiText(kind === 'studio' ? '厂牌' : '艺人')} · ${roster.length.toLocaleString()}`;
   else if (view === 'online') {
     busy = online.busy;
-    readout = `在线 · ${(online.total ?? entity.follow?.n ?? 0).toLocaleString()} 项更新`;
+    readout = uiText('在线 · {count} 项更新', { count: (online.total ?? entity.follow?.n ?? 0).toLocaleString() });
   }
   else if (view === 'videos') {
     busy = !items.data;
     /* 选了哪几枚标签由上面那条交集条一枚一枚列着，读数只报个数：标签名再列一遍，几枚长标签
        就能把这一行撑出页面。 */
     const picked = tagList(filters.tag).length;
-    readout = `视频 · ${(items.data?.work_total ?? items.data?.total ?? 0).toLocaleString()}${picked ? ` · 已选 ${picked.toLocaleString()} 个标签` : ''}`;
+    readout = `${uiText('视频')} · ${(items.data?.work_total ?? items.data?.total ?? 0).toLocaleString()}${picked ? uiText(' · 已选 {count} 个标签', { count: picked.toLocaleString() }) : ''}`;
   } else if (wallPage && !wallPage.error) {
-    readout = inSet ? `${wallPage.title} · ${(wallPage.total || 0).toLocaleString()} 张`
+    readout = inSet ? `${wallPage.title} · ${uiText('{count} 张', { count: (wallPage.total || 0).toLocaleString() })}`
       : photoReadout(wallPage, codeSetsOf(wallPage).length);
   } else busy = wall.isPending;
 
@@ -421,16 +424,13 @@ function EntityLoaded(props: EntityPageProps & { entity: EntityPageData }) {
 
 /** 作品区一部也没有。筛完一部不剩时给一条回到全部视频的路：观看状态与交集条上的筛选一起撤掉。 */
 function WorksEmpty({ filtered, onShowAll, onOnline }: { filtered: boolean; onShowAll(): void; onOnline?: () => void }) {
+  const uiText = useUiTranslation();
   return filtered ? (
-    <EmptyState icon={spriteGlyph('search')} title="没有符合条件的视频"
-      actions={<Button size="small" onClick={onShowAll}>清除筛选</Button>}>
-      清除筛选后查看名下全部视频。
-    </EmptyState>
+    <EmptyState icon={spriteGlyph('search')} title={uiText("没有符合条件的视频")}
+      actions={<Button size="small" onClick={onShowAll}>{uiText("清除筛选")}</Button>}>{uiText("清除筛选后查看名下全部视频。")}</EmptyState>
   ) : (
-    <EmptyState icon={spriteGlyph('film')} title="还没有视频"
-      actions={onOnline ? <Button size="small" onClick={onOnline}>查看在线作品</Button>
-        : <ButtonLink size="small" href="/">浏览馆藏</ButtonLink>}>
-      署上这个名字的视频入库后会显示在这里。
-    </EmptyState>
+    <EmptyState icon={spriteGlyph('film')} title={uiText("还没有视频")}
+      actions={onOnline ? <Button size="small" onClick={onOnline}>{uiText("查看在线作品")}</Button>
+        : <ButtonLink size="small" href="/">{uiText("浏览馆藏")}</ButtonLink>}>{uiText("署上这个名字的视频入库后会显示在这里。")}</EmptyState>
   );
 }

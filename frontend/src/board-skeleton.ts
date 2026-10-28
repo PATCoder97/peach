@@ -1,3 +1,4 @@
+import { translate as t } from './i18n';
 import { resolveFollowSort, SORT_OPTIONS, type SortDir, type SortKey } from './follow-sort';
 import { islandButton, islandSelect } from './island-skeleton';
 import { configurationSkeleton } from './configuration-skeleton';
@@ -21,12 +22,12 @@ const text = (width: string) => `<span class="skeleton skeleton-text" style="wid
 const block = (width: number, height: number, round = false) =>
   `<span class="skeleton" style="width:${width}px;height:${height}px;flex:none${round ? ';border-radius:50%' : ''}"></span>`;
 const STAT = 'min-w-0 bg-background-secondary-default rounded-2xl shadow-card flex flex-col gap-3 px-6 py-5 max-sm:gap-2 max-sm:p-4';
-const followReadings = () => `<div class="inline-grid w-full grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-6">${['关注创作者', '启用来源', '检查失败', '未看更新', 'JAV 订阅', '未看新作'].map(term => `<div class="${STAT}"><span class="text-body-medium text-text-secondary">${term}</span><b class="text-title-1-medium tabular-nums text-text-primary">${text('3em')}</b></div>`).join('')}</div>`;
+const followReadings = () => `<div class="inline-grid w-full grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-6">${['关注创作者', '启用来源', '检查失败', '未看更新', 'JAV 订阅', '未看新作'].map(term => `<div class="${STAT}"><span class="text-body-medium text-text-secondary">${t(term)}</span><b class="text-title-1-medium tabular-nums text-text-primary">${text('3em')}</b></div>`).join('')}</div>`;
 /** 页签来自关注管理的统一清单，选中项取地址栏。 */
 const followTabKey = (tab = '') => (FOLLOW_TABS.some(([key]) => key === tab) ? tab : 'list');
-const followTabs = (tab: string) => `<div data-section-nav data-section-items class="flex max-w-full flex-nowrap overflow-x-auto">${FOLLOW_TABS.map(([key, name]) => `<span class="whitespace-nowrap" aria-selected="${key === tab}">${name}</span>`).join('')}</div>`;
+const followTabs = (tab: string) => `<div data-section-nav data-section-items class="flex max-w-full flex-nowrap overflow-x-auto">${FOLLOW_TABS.map(([key, name]) => `<span class="whitespace-nowrap" aria-selected="${key === tab}">${t(name)}</span>`).join('')}</div>`;
 /** Board UI `Checkbox` 的未勾静止态；给了字就是「全选本页」那种带标签的一枚。 */
-const followCheck = (label = '') => `<span class="group inline-flex items-center select-none gap-2"><span class="flex shrink-0 items-center justify-center rounded-sm size-4 border bg-background-primary-default shadow-xs border-border-checkbox-default"></span>${label ? `<span class="text-body-medium text-text-primary">${label}</span>` : ''}</span>`;
+const followCheck = (label = '') => `<span class="group inline-flex items-center select-none gap-2"><span class="flex shrink-0 items-center justify-center rounded-sm size-4 border bg-background-primary-default shadow-xs border-border-checkbox-default"></span>${label ? `<span class="text-body-medium text-text-primary">${t(label)}</span>` : ''}</span>`;
 
 /* 工具行：检查全部是主按钮，视图切换是一组两颗 ghost 纯图标键、选中那颗由 `aria-pressed` 标出，
    排序框写着地址栏那一档的名字，方向键朝着同一头。工具行窄于 740px 时 React 把带字的键收成
@@ -34,7 +35,7 @@ const followCheck = (label = '') => `<span class="group inline-flex items-center
 interface FollowToolbar { table: boolean; sort: SortKey; dir: SortDir }
 const followToolbar = ({ table, sort, dir }: FollowToolbar) => {
   const name = SORT_OPTIONS.find(([key]) => key === sort)![1];
-  return `<div data-responsive-toolbar class="ui-follow-skeleton-toolbar"><span data-follow-toolbar-heading data-toolbar-heading><h3 class="text-title-2-medium text-text-primary">关注列表</h3><span class="text-body-2-regular text-text-secondary">${text('132px')}</span></span><div data-follow-toolbar-actions data-toolbar-actions>${islandButton({ glyph: 'refresh-cw', label: '检查全部', compact: true, attrs: WAITING })}<span data-follow-toolbar-controls class="contents"><span data-button-group role="group">${islandButton({ variant: 'ghost', glyph: 'layout-grid', attrs: `aria-pressed="${!table}"` })}${islandButton({ variant: 'ghost', glyph: 'table', attrs: `aria-pressed="${table}"` })}</span><span class="flex flex-none items-center gap-2">${islandSelect(name, { prefix: '排序' })}${islandButton({ variant: 'secondary', glyph: dir === 'asc' ? 'arrow-up' : 'arrow-down' })}</span>${table ? '' : islandButton({ variant: 'secondary', glyph: 'chevron-up', label: '全部收起', compact: true, attrs: WAITING })}</span></div></div>`;
+  return `<div data-responsive-toolbar class="ui-follow-skeleton-toolbar"><span data-follow-toolbar-heading data-toolbar-heading><h3 class="text-title-2-medium text-text-primary">${t('关注列表')}</h3><span class="text-body-2-regular text-text-secondary">${text('132px')}</span></span><div data-follow-toolbar-actions data-toolbar-actions>${islandButton({ glyph: 'refresh-cw', label: '检查全部', compact: true, attrs: WAITING })}<span data-follow-toolbar-controls class="contents"><span data-button-group role="group">${islandButton({ variant: 'ghost', glyph: 'layout-grid', attrs: `aria-pressed="${!table}"` })}${islandButton({ variant: 'ghost', glyph: 'table', attrs: `aria-pressed="${table}"` })}</span><span class="flex flex-none items-center gap-2">${islandSelect(name, { prefix: '排序' })}${islandButton({ variant: 'secondary', glyph: dir === 'asc' ? 'arrow-up' : 'arrow-down' })}</span>${table ? '' : islandButton({ variant: 'secondary', glyph: 'chevron-up', label: '全部收起', compact: true, attrs: WAITING })}</span></div></div>`;
 };
 /** 行尾那对动作键：检查这一条的更新、移除这一条，与 React `SourceRow` 同为小号次级纯图标键。 */
 const followRowActions = () => `<span class="flex shrink-0 items-center gap-1">${islandButton({ variant: 'secondary', size: 'small', glyph: 'refresh-cw', attrs: WAITING })}${islandButton({ variant: 'secondary', size: 'small', glyph: 'trash', attrs: WAITING })}</span>`;
@@ -59,13 +60,13 @@ const followTable = (rows: number, { sort, dir }: { sort: SortKey; dir: SortDir 
   const head = TABLE_COLUMNS.map(([id, name]) => {
     if (!name) return '<th></th>';
     const direction = COLUMN_OF[sort] === id ? ` data-direction="${dir === 'asc' ? 'ascending' : 'descending'}"` : '';
-    return `<th><span class="flex items-center gap-0.5">${name}<span data-sort-indicator${direction}>${SORT_MARK}</span></span></th>`;
+    return `<th><span class="flex items-center gap-0.5">${t(name)}<span data-sort-indicator${direction}>${SORT_MARK}</span></span></th>`;
   }).join('');
   const row = `<tr>${[followCheck(), `<span class="flex min-w-0 items-center gap-2">${block(32, 32, true)}${text('5em')}</span>`, text('10em'), `<span class="flex items-center gap-1.5">${block(14, 14)}${text('4em')}</span>`, block(48, 24), text('113px'), followRowActions()].map(cell => `<td>${cell}</td>`).join('')}</tr>`;
   return `<div data-board-data-table data-follow-table class="follow-skeleton-table"><div class="w-full overflow-x-auto"><table class="bui-table bui-table-sm"><thead><tr>${head}</tr></thead><tbody>${repeat(row, rows)}</tbody></table></div></div>`;
 };
 /** 分页行：条数与页码要等数据，每页几条是这台浏览器的偏好，照最终的字样写出来。 */
-const followPager = (table: boolean, size: number) => `<div class="flex flex-wrap items-center justify-between gap-3"><span class="mr-auto text-body-2-regular text-text-secondary">${text('111px')}</span><div data-toolbar-actions>${islandSelect(`每页 ${size} ${table ? '条' : '位'}`, { size: 'sm' })}${block(204, 32)}</div></div>`;
+const followPager = (table: boolean, size: number) => `<div class="flex flex-wrap items-center justify-between gap-3"><span class="mr-auto text-body-2-regular text-text-secondary">${text('111px')}</span><div data-toolbar-actions>${islandSelect(t('每页 {count} {unit}', { count: size, unit: t(table ? '条' : '位') }), { size: 'sm' })}${block(204, 32)}</div></div>`;
 /** 关注列表以外的页签：内容各不相同、要等数据才知道长什么样，只画那张填充卡和几行占位。 */
 const followPanel = () => `<div class="min-w-0 bg-background-secondary-default rounded-2xl shadow-card flex flex-col gap-4 px-6 py-5 max-sm:px-4 ui-follow-skeleton-surface"><h3 class="text-title-2-medium text-text-primary">${text('120px')}</h3>${['72%', '56%', '64%', '40%'].map((width) => `<span class="text-body-medium">${text(width)}</span>`).join('')}</div>`;
 type FollowSkeletonOptions = { followLayout?: string; followPageSize?: number; followSort?: string; followDir?: string; followTab?: string };
@@ -102,13 +103,13 @@ export function boardPageSkeleton(
   } else if (path.startsWith('/settings/') && path.split('/')[2]! in CONFIGURATION_SECTIONS) {
     body = configurationSkeleton(CONFIGURATION_SECTIONS[path.split('/')[2] as keyof typeof CONFIGURATION_SECTIONS]);
   } else if (path === '/tasks') {
-    body = `<div class="peach-react"><div class="mx-auto flex w-full max-w-board flex-col gap-8">${['正在进行', '本次未执行', '最近完成'].map(title => `<section class="activitysection flex min-w-0 flex-col gap-3"><h3 class="text-title-2-medium text-text-primary">${title}</h3><div class="min-w-0 rounded-2xl shadow-card border border-border-button-default bg-background-secondary-default"><div class="flex flex-col gap-1.5 px-5 pt-5 pb-4"><span class="text-title-1-medium">${text('8em')}</span><span class="text-caption-1-regular">${text('14em')}</span>${text('60%')}${text('40%')}</div><div class="border-t border-separator-border px-5 py-2.5">${text('6em')}</div></div></section>`).join('')}</div></div>`;
+    body = `<div class="peach-react"><div class="mx-auto flex w-full max-w-board flex-col gap-8">${['正在进行', '本次未执行', '最近完成'].map(title => `<section class="activitysection flex min-w-0 flex-col gap-3"><h3 class="text-title-2-medium text-text-primary">${t(title)}</h3><div class="min-w-0 rounded-2xl shadow-card border border-border-button-default bg-background-secondary-default"><div class="flex flex-col gap-1.5 px-5 pt-5 pb-4"><span class="text-title-1-medium">${text('8em')}</span><span class="text-caption-1-regular">${text('14em')}</span>${text('60%')}${text('40%')}</div><div class="border-t border-separator-border px-5 py-2.5">${text('6em')}</div></div></section>`).join('')}</div></div>`;
   } else if (path === '/duplicates') {
     body = duplicatesSkeleton();
   } else if (path === '/quality-goals') {
     body = qualityGoalsSkeleton();
   } else if (path === '/playlists') {
-    body = `<div class="peach-react"><section class="w-full pt-1 pb-10.5"><header class="mb-4 flex items-start justify-between gap-4.5 max-board-narrow:flex-col max-board-narrow:items-stretch"><div><h2 class="mb-1 text-display-4-medium! text-text-primary">播放列表</h2><p class="text-body-2-regular text-text-secondary">保存 Mix，按自己的顺序继续播放。</p></div><div class="flex flex-wrap items-end gap-2"><div class="min-w-50 max-w-80 flex-1 basis-50 max-board-narrow:min-w-0 max-board-narrow:max-w-none"><span class="text-body-medium">新播放列表</span><span class="skeleton ui-configuration-skeleton-input mt-1.5"></span></div>${islandButton({ label: '新建', attrs: WAITING })}</div></header><div class="mx-auto w-full max-w-board"><div class="ui-playlistcards card-grid-cover gap-4.5">${repeat(`<article class="playlistcard skeletoncard"><i></i><b></b><em></em></article>`, 6)}</div></div></section></div>`;
+    body = `<div class="peach-react"><section class="w-full pt-1 pb-10.5"><header class="mb-4 flex items-start justify-between gap-4.5 max-board-narrow:flex-col max-board-narrow:items-stretch"><div><h2 class="mb-1 text-display-4-medium! text-text-primary">${t("播放列表")}</h2><p class="text-body-2-regular text-text-secondary">${t("保存 Mix，按自己的顺序继续播放。")}</p></div><div class="flex flex-wrap items-end gap-2"><div class="min-w-50 max-w-80 flex-1 basis-50 max-board-narrow:min-w-0 max-board-narrow:max-w-none"><span class="text-body-medium">${t("新播放列表")}</span><span class="skeleton ui-configuration-skeleton-input mt-1.5"></span></div>${islandButton({ label: '新建', attrs: WAITING })}</div></header><div class="mx-auto w-full max-w-board"><div class="ui-playlistcards card-grid-cover gap-4.5">${repeat(`<article class="playlistcard skeletoncard"><i></i><b></b><em></em></article>`, 6)}</div></div></section></div>`;
   } else return '';
-  return `<div class="board-page-skeleton" data-skeleton="board${path}" role="status" aria-label="正在读取页面"><div aria-hidden="true" inert>${body}</div></div>`;
+  return `<div class="board-page-skeleton" data-skeleton="board${path}" role="status" aria-label="${t("正在读取页面")}"><div aria-hidden="true" inert>${body}</div></div>`;
 }

@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 关注管理页：加来源、检查更新、移除来源与管理 JAV 订阅源。
  *
  * 来源凭据由 Peach 配置管理，想要清单位于 JAV 分区。
@@ -46,6 +47,7 @@ const isTab = (value: unknown): value is TabKey => TABS.some(([key]) => key === 
 
 /** 一格读数：一个名字、一个大数、一句它的量词。旧 `.fmanageoverview>div` 的填充卡。 */
 function Reading({ term, figure, unit }: { term: string; figure: number; unit: string }) {
+  const uiText = useUiTranslation();
   return (
     <div className={cardClass({ padding: 'none', className: 'flex flex-col gap-3 px-6 py-5 max-sm:gap-2 max-sm:p-4' })}>
       <span className="text-body-medium text-text-secondary">{term}</span>
@@ -53,13 +55,14 @@ function Reading({ term, figure, unit }: { term: string; figure: number; unit: s
       <b data-follow-reading="" className={`flex min-w-0 flex-wrap items-baseline gap-x-1 tabular-nums text-text-primary ${
         figure >= 1000000 ? 'text-headline-medium' : figure >= 100000 ? 'text-title-3-medium' : 'text-title-1-medium'}`}>
         <span className="min-w-0 wrap-anywhere">{figure.toLocaleString()}</span>
-        <small className="whitespace-nowrap text-body-2-regular text-text-secondary">{` ${unit}`}</small>
+        <small className="whitespace-nowrap text-body-2-regular text-text-secondary">{` ${uiText(unit)}`}</small>
       </b>
     </div>
   );
 }
 
 export function FollowManagePage(props: FollowManageProps) {
+  const uiText = useUiTranslation();
   const {
     route, savePreference, toast, openFollow, readOnly, readOnlyMessage, writerUrl,
   } = props;
@@ -117,10 +120,10 @@ export function FollowManagePage(props: FollowManageProps) {
   return (
     <Page>
       {readOnly ? (
-        <Note tone="warning" title="本机只能浏览"
+        <Note tone="warning" title={uiText("本机只能浏览")}
           extra={writerUrl
             ? <p className="text-body-2-regular">
-                <ExternalLink href={writerUrl}>前往写入端管理关注</ExternalLink>
+                <ExternalLink href={writerUrl}>{uiText("前往写入端管理关注")}</ExternalLink>
               </p>
             : undefined}>
           {readOnlyMessage}
@@ -128,13 +131,13 @@ export function FollowManagePage(props: FollowManageProps) {
       ) : null}
 
       {/* 前四张是关注，后两张是 JAV 订阅源：订了几位、拉回来的新作还有几条没看。 */}
-      <div className={STAT_STRIP_SIX} aria-label="关注概览">
-        <Reading term="关注创作者" figure={groups.length} unit="位" />
-        <Reading term="启用来源" figure={enabled} unit={`/ ${sources.length}`} />
-        <Reading term="检查失败" figure={broken} unit="个来源" />
-        <Reading term="未看更新" figure={data.counts?.new || 0} unit="条" />
-        <Reading term="JAV 订阅" figure={subscribed} unit="位" />
-        <Reading term="未看新作" figure={feeds.data?.unread || 0} unit="条" />
+      <div className={STAT_STRIP_SIX} aria-label={uiText("关注概览")}>
+        <Reading term={uiText("关注创作者")} figure={groups.length} unit="位" />
+        <Reading term={uiText("启用来源")} figure={enabled} unit={`/ ${sources.length}`} />
+        <Reading term={uiText("检查失败")} figure={broken} unit="个来源" />
+        <Reading term={uiText("未看更新")} figure={data.counts?.new || 0} unit="条" />
+        <Reading term={uiText("JAV 订阅")} figure={subscribed} unit="位" />
+        <Reading term={uiText("未看新作")} figure={feeds.data?.unread || 0} unit="条" />
       </div>
 
       <Tabs selectedKey={tab} onSelectionChange={(key) => {
@@ -145,11 +148,11 @@ export function FollowManagePage(props: FollowManageProps) {
         setTab(next);
         go({ tab: next });
       }} className="flex flex-col gap-6">
-        <PillAriaTabList aria-label="关注管理区域" data-section-nav data-section-items
+        <PillAriaTabList aria-label={uiText("关注管理区域")} data-section-nav data-section-items
           className="flex max-w-full flex-nowrap overflow-x-auto">
           {TABS.map(([key, name]) => (
             <Tab key={key} id={key} data-pill-selected={tab === key ? '' : undefined} data-pill-variant="gray"
-              className="cursor-pointer whitespace-nowrap">{name}</Tab>
+              className="cursor-pointer whitespace-nowrap">{uiText(name)}</Tab>
           ))}
         </PillAriaTabList>
 
@@ -196,7 +199,7 @@ export function FollowManagePage(props: FollowManageProps) {
         </TabPanel>
 
       </Tabs>
-      <div><ButtonLink variant="secondary" href="/settings/subscriptions">来源与订阅设置{pending ? `（${pending}）` : ''}</ButtonLink></div>
+      <div><ButtonLink variant="secondary" href="/settings/subscriptions">{uiText("来源与订阅设置")}{pending ? `（${pending}）` : ''}</ButtonLink></div>
     </Page>
   );
 }

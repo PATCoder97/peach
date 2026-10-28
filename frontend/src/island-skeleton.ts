@@ -6,6 +6,7 @@
  * icon / label 四张表），悬停、按下、焦点环留给接管后的真按键。 */
 
 import { esc } from '@peach/legacy/core';
+import { translate as t } from './i18n';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
 type Size = 'medium' | 'small';
@@ -37,11 +38,13 @@ export const islandGlyph = (name: string, cls: string): string =>
 /** 收藏入口在页面等待阶段保留图标与尺寸，交互由已就绪的页面接管。玻璃筛选条里取紧凑档，
  *  实体页标题右侧的工具行取默认档，与 `react/styles.css` 里 `[data-filter-action]` 的两档同高。 */
 export function islandShortcutsEntry(size: 'compact' | 'default' = 'compact'): string {
-  return `<span data-shortcuts-entry class="inline-flex flex-none"><button type="button" data-shortcuts-trigger data-filter-action data-skeleton-action disabled tabindex="-1" aria-label="我的收藏" title="我的收藏" class="inline-grid ${size === 'default' ? 'size-9' : 'size-8'} flex-none place-items-center rounded-(--control-radius) border border-(--border-10) bg-(--surface) text-(--muted)">${islandGlyph('star', 'size-4')}</button></span>`;
+  return `<span data-shortcuts-entry class="inline-flex flex-none"><button type="button" data-shortcuts-trigger data-filter-action data-skeleton-action disabled tabindex="-1" aria-label="${esc(t('我的收藏'))}" title="${esc(t('我的收藏'))}" class="inline-grid ${size === 'default' ? 'size-9' : 'size-8'} flex-none place-items-center rounded-(--control-radius) border border-(--border-10) bg-(--surface) text-(--muted)">${islandGlyph('star', 'size-4')}</button></span>`;
 }
 
 /** 与 Board Input 的中号外框、前缀和正文使用相同几何。 */
 export function islandSearchInput(placeholder: string, value = '', label = placeholder): string {
+  placeholder = t(placeholder);
+  label = t(label);
   return `<div data-input-size="medium" class="group flex h-max w-full flex-col items-start gap-1"><div data-rac class="relative flex w-full items-center rounded-2lg bg-background-tertiary-default text-foreground-icon-tertiary ring-2 ring-inset ring-transparent p-2"><div class="flex w-full items-center gap-2 min-w-0"><div class="flex flex-1 items-center gap-0.5 min-w-0">${islandGlyph('search', 'size-5 shrink-0')}<input type="search" enterkeyhint="search" readonly tabindex="-1" aria-label="${esc(label)}" value="${esc(value)}" placeholder="${esc(placeholder)}" class="min-w-0 flex-1 bg-transparent border-0 outline-none p-0 m-0 font-sans text-body-regular text-text-primary pl-1 placeholder:text-text-tertiary"></div></div></div></div>`;
 }
 
@@ -60,6 +63,7 @@ export interface IslandButton {
 export function islandButton(
   { variant = 'primary', size = 'medium', glyph, label, attrs = '', compact = false }: IslandButton,
 ): string {
+  label = label ? t(label) : label;
   const shape = label ? SIZE[size] : ICON_ONLY[size];
   /* `compact` 的键带着字（窄行里由样式收起），按带字的那一版排。 */
   const icon = glyph ? islandGlyph(glyph, label ? ICON_INLINE : ICON[size]) : '';
@@ -80,6 +84,8 @@ export function islandSelect(
   label: string, { size = 'md', className = '', attrs = '', prefix = '' }:
   { size?: SelectSize; className?: string; attrs?: string; prefix?: string } = {},
 ): string {
+  label = t(label);
+  prefix = t(prefix);
   const shape = SELECT[size];
   /* `prefix` 与组件的同名参数同位：值前一截浅色的名字。 */
   const value = `<span class="flex min-w-0 items-center truncate ${shape.value}">${label}</span>`;
@@ -99,6 +105,7 @@ const SUMMARY_PENDING = 'relative inline-block h-8 w-24 rounded-2lg align-middle
 
 /** `CollectionSummary` 带 `flush`、等数据时的那一版：名目此刻就有，大数那一格是微光占位。 */
 export function islandSummary(label: string): string {
+  label = t(label);
   return `<div data-collection-summary="" class="${SUMMARY_CLASS}"><div class="${SUMMARY_TERMS}">`
     + `<span class="${SUMMARY_LABEL}">${label}</span>`
     + `<strong class="${SUMMARY_FIGURE}"><span data-skeleton="count" aria-hidden="true" class="${SUMMARY_PENDING}"></span></strong>`

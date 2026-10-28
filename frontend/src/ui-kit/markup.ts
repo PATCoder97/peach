@@ -6,6 +6,8 @@
  * 就是同一语义的第二份实现，`peach-web-ui` 的门槛不允许。 */
 import { esc, icon, requestErrorMessage } from '../core';
 import { islandShortcutsEntry } from '../island-skeleton';
+import { uiTextHtml, systemTextHtml } from '../i18n/html';
+import { translate as t } from '../i18n';
 
 const NOTE_VARIANTS=new Set(['secondary','warning','error','success']);
 
@@ -96,7 +98,7 @@ export function progressHtml(label:string,value:unknown,max:unknown=100,{variant
 export function spinnerHtml(label='加载中'):string{
   const bars=Array.from({length:10},(_,index)=>
     `<i aria-hidden="true" style="--spinner-angle:${index*36}deg;--spinner-delay:${index*100-900}ms"></i>`).join('');
-  return `<span class="ui-geist-spinner" role="status" aria-label="${esc(label)}">${bars}</span>`;
+  return `<span class="ui-geist-spinner" role="status" data-i18n-aria-label="${esc(label)}" aria-label="${esc(t(label))}">${bars}</span>`;
 }
 
 /**
@@ -112,9 +114,9 @@ export function searchInputHtml({label,id='',name='',value='',placeholder='',att
     'type="search" enterkeyhint="search"',
     id?`id="${esc(id)}"`:'',
     name?`name="${esc(name)}"`:'',
-    placeholder?`placeholder="${esc(placeholder)}"`:'',
+    placeholder?`data-i18n-placeholder="${esc(placeholder)}" placeholder="${esc(t(placeholder))}"`:'',
     `value="${esc(value)}"`,
-    `aria-label="${esc(label)}"`,
+    `data-i18n-aria-label="${esc(label)}" aria-label="${esc(t(label || ''))}"`,
     'spellcheck="false" autocomplete="off"',
     attrs,
   ].filter(Boolean).join(' ');
@@ -134,7 +136,7 @@ export const LOAD_MORE_STATUS = '载入中';
 export function loadingDotsHtml(label='正在处理', {className=''}={}):string{
   return `<span class="ui-geist-loading${className?` ${esc(className)}`:''}" role="status">
     <span class="ui-geist-loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-    <span>${esc(label)}</span></span>`;
+    ${uiTextHtml(label)}</span>`;
 }
 
 /**
@@ -155,9 +157,9 @@ export function boardTabsHtml(items:{value:unknown;label:unknown;count?:unknown;
     const selected=String(value)===String(active);
     const badge=count==null?'':`<span class="ui-board-tab-count">${esc(Number(count).toLocaleString())}</span>`;
     return `<button type="button" role="tab" ${attr}="${esc(value)}" aria-selected="${selected}"${
-      panel?` aria-controls="${esc(panel)}"`:''}>${symbol?icon(symbol):''}${esc(text)}${badge}</button>`;
+      panel?` aria-controls="${esc(panel)}"`:''}>${symbol?icon(symbol):''}${uiTextHtml(String(text ?? ''))}${badge}</button>`;
   }).join('');
-  return `<div class="ui-board-local-nav ui-board-tabs${className?` ${esc(className)}`:''}" role="tablist" aria-label="${esc(label)}">${tabs}</div>`;
+  return `<div class="ui-board-local-nav ui-board-tabs${className?` ${esc(className)}`:''}" role="tablist" data-i18n-aria-label="${esc(label)}" aria-label="${esc(t(label))}">${tabs}</div>`;
 }
 
 /** Geist Empty State: icon tile, title and explanatory copy stay one semantic unit. */
@@ -165,7 +167,7 @@ export function boardTabsHtml(items:{value:unknown;label:unknown;count?:unknown;
 export function emptyStateHtml(iconName:string,title:unknown,description:unknown,{className='',actions=''}={}):string{
   return `<div class="ui-emptystate${className?` ${esc(className)}`:''}" data-geist-empty-state role="status">
     <div class="ui-es-icon" aria-hidden="true">${icon(iconName)}</div>
-    <div class="ui-es-copy"><h3>${esc(title)}</h3><p>${esc(description)}</p></div>
+    <div class="ui-es-copy"><h3>${uiTextHtml(String(title ?? ''))}</h3><p>${systemTextHtml(String(description ?? ''))}</p></div>
     ${actions?`<div class="ui-es-actions">${actions}</div>`:''}
   </div>`;
 }

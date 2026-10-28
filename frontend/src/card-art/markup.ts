@@ -381,8 +381,8 @@ export function queueAvatarHtml(item: IdentityItem): string {
 }
 
 /** Mix 的署名：番号作品先认女优，其余先认创作者。 */
-export function mixLabel(item: IdentityItem, tagLabel: (tag: string) => string): string {
+export function mixLabel(item: IdentityItem, tagLabel: (tag: string) => string, fallback = '为你推荐'): string {
   const performer = (item.performers || [])[0];
   return (item.is_jav && performer ? performer : item.creator) || performer || item.studio || item.code
-    || tagLabel((item.tags || [])[0] || '') || '为你推荐';
+    || tagLabel((item.tags || [])[0] || '') || fallback;
 }

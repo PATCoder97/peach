@@ -1,5 +1,6 @@
 /* 热力图的数据形状与折算。统计页的播放时间与口味页的浏览时间是同一个形状，
  * 服务端分别由 `web_stats.q_stats` 的 `play_activity` 与口味分析的 `activity` 给出。 */
+import { translate } from '../../i18n';
 
 /** 按天与按「星期 × 钟点」的计数。`weekday` 0 是周一，`timezone` 形如 `UTC+08:00`。 */
 export interface ActivityCounts {
@@ -29,7 +30,7 @@ export function hourGrid(activity: ActivityCounts | undefined): { cells: HeatCel
   const flat = counts.flat();
   const max = Math.max(1, ...flat);
   const cells = counts.flatMap((row, day) => row.map((count, hour) => ({
-    key: `${day}-${hour}`, label: `${WEEKDAYS[day]} ${hour}:00`, count, share: shareOf(count, max),
+    key: `${day}-${hour}`, label: `${translate(WEEKDAYS[day]!)} ${hour}:00`, count, share: shareOf(count, max),
   })));
   return { cells, total: flat.reduce((sum, count) => sum + count, 0) };
 }

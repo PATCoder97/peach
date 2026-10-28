@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 检查更新：当前与最新版本、下载安装进度，准备好之后确认重启。
  *
  * 更新任务进行中每秒问一次状态，空闲时 30 秒一次；连续 120 次问不到就停下并说明原因。 */
@@ -21,6 +22,7 @@ const MAX_FAILURES = 120;
 const RELEASES_URL = 'https://github.com/peach-mitao/peach/releases';
 
 export function ReleaseUpdates({ initial, initialJob }: { initial: ReleaseState; initialJob?: UpdateJob | undefined }) {
+  const uiText = useUiTranslation();
   const [data, setData] = useState(initial);
   const [job, setJob] = useState<UpdateJob>(initialJob || { state: 'idle', progress: 0 });
   const [pollError, setPollError] = useState('');
@@ -89,48 +91,48 @@ export function ReleaseUpdates({ initial, initialJob }: { initial: ReleaseState;
     ? `${((job.downloaded || 0) / 1048576).toFixed(1)} / ${(job.total / 1048576).toFixed(1)} MB`
     : `${job.progress}%`;
   return (
-    <Section id="releaseUpdates" title="检查更新" aside={<StatusLabel tone={error || data.state === 'error' || job.state === 'error' ? 'error' : running ? 'progress' : data.state === 'available' ? 'warning' : data.state === 'unchecked' ? 'neutral' : 'success'}>
-      {error || data.state === 'error' || job.state === 'error' ? '检查未完成' : running ? '准备更新中' : job.state === 'ready' ? '可安装' : data.state === 'available' ? '有可用更新' : data.state === 'unchecked' ? '尚未检查' : '检查完成'}</StatusLabel>}>
+    <Section id="releaseUpdates" title={uiText("检查更新")} aside={<StatusLabel tone={error || data.state === 'error' || job.state === 'error' ? 'error' : running ? 'progress' : data.state === 'available' ? 'warning' : data.state === 'unchecked' ? 'neutral' : 'success'}>
+      {error || data.state === 'error' || job.state === 'error' ? uiText("检查未完成") : running ? uiText("准备更新中") : job.state === 'ready' ? uiText("可安装") : data.state === 'available' ? uiText("有可用更新") : data.state === 'unchecked' ? uiText("尚未检查") : uiText("检查完成")}</StatusLabel>}>
       <FactList>
-        <Fact term="当前版本">{data.current_version}</Fact>
-        <Fact term="安装方式">{data.installation}</Fact>
-        <Fact term="更新通道">{data.channel}</Fact>
-        <Fact term="最新版本">{data.latest_version || '未取得'}</Fact>
-        {data.package_kind ? <Fact term="下载内容">
-          {data.package_kind === 'update' ? '应用更新包' : '应用与工具'}
+        <Fact term={uiText("当前版本")}>{data.current_version}</Fact>
+        <Fact term={uiText("安装方式")}>{uiText(data.installation)}</Fact>
+        <Fact term={uiText("更新通道")}>{uiText(data.channel)}</Fact>
+        <Fact term={uiText("最新版本")}>{data.latest_version || uiText("未取得")}</Fact>
+        {data.package_kind ? <Fact term={uiText("下载内容")}>
+          {data.package_kind === 'update' ? uiText("应用更新包") : uiText("应用与工具")}
           {data.asset_size ? ` · ${(data.asset_size / 1048576).toFixed(1)} MB` : ''}
         </Fact> : null}
       </FactList>
       {data.package_kind === 'update'
-        ? <Help>应用更新包复用已安装工具；工具缺失、损坏或版本变化时会另行下载所需工具包。</Help>
-        : data.package_kind === 'full' ? <Help>本次更新包含媒体工具。</Help> : null}
+        ? <Help>{uiText("应用更新包复用已安装工具；工具缺失、损坏或版本变化时会另行下载所需工具包。")}</Help>
+        : data.package_kind === 'full' ? <Help>{uiText("本次更新包含媒体工具。")}</Help> : null}
       {data.state === 'unchecked' && !data.checked_at && !error && job.state === 'idle' ? null : <Stack divided>
-        {data.checked_at ? <Help>检查于 {new Date(data.checked_at * 1000).toLocaleString()}</Help> : null}
+        {data.checked_at ? <Help>{uiText("检查于 ")}{new Date(data.checked_at * 1000).toLocaleString()}</Help> : null}
         {data.state === 'available' && !error
-          ? <Note tone="info" title="有可用更新">{data.message}</Note>
+          ? <Note tone="info" title={uiText("有可用更新")}>{data.message}</Note>
           : error || data.state === 'error'
             ? <ErrorText>{error || data.message}</ErrorText>
             : data.state === 'unchecked' ? null : <Help role="status">{data.message}</Help>}
         {job.state === 'error' ? <ErrorText>{job.message}</ErrorText> : null}
         {job.state !== 'idle' && job.state !== 'error' ? (
           <div aria-live="polite" className="flex flex-col gap-2">
-            <Progress label="更新准备进度" value={job.progress} stops={STOPS} />
-            <Help>下载 → 校验 → 解压 → 准备安装 · {job.message}</Help>
+            <Progress label={uiText("更新准备进度")} value={job.progress} stops={STOPS} />
+            <Help>{uiText("下载 → 校验 → 解压 → 准备安装 · ")}{job.message}</Help>
             <Help>{reading}</Help>
           </div>
         ) : null}
       </Stack>}
       <Footer status={<div className="flex flex-wrap items-center gap-3">
-        <ExternalLink href="https://peach.video/#download">官网</ExternalLink>
+        <ExternalLink href="https://peach.video/#download">{uiText("官网")}</ExternalLink>
         <ExternalLink href="https://github.com/peach-mitao/peach">GitHub</ExternalLink>
-        <ExternalLink href={data.release_url || RELEASES_URL}>查看发布页</ExternalLink>
+        <ExternalLink href={data.release_url || RELEASES_URL}>{uiText("查看发布页")}</ExternalLink>
       </div>}>
         <Button variant={job.state === 'ready' || (data.state === 'available' && data.installation === '独立测试包') ? 'secondary' : 'primary'}
-          disabled={running} onClick={check} {...busyProps(action.busy === 'check')}>检查更新</Button>
+          disabled={running} onClick={check} {...busyProps(action.busy === 'check')}>{uiText("检查更新")}</Button>
         {data.state === 'available' && data.installation === '独立测试包' && job.state !== 'ready'
-          ? <Button variant="primary" onClick={download} {...busyProps(running || action.busy === 'download')}>下载并安装</Button>
+          ? <Button variant="primary" onClick={download} {...busyProps(running || action.busy === 'download')}>{uiText("下载并安装")}</Button>
           : null}
-        {job.state === 'ready' ? <Button variant="primary" onClick={confirmRestart}>重启安装</Button> : null}
+        {job.state === 'ready' ? <Button variant="primary" onClick={confirmRestart}>{uiText("重启安装")}</Button> : null}
       </Footer>
     </Section>
   );

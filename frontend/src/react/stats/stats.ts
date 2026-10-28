@@ -10,6 +10,8 @@ import { apiGet } from '../../api';
 import type { BarRow } from '../charts/bar-card';
 import type { ActivityCounts } from '../charts/heat';
 import { queryClient } from '../query';
+import { translate as t } from '../../i18n';
+import { formatNumber } from '../../i18n/format';
 
 export const STATS_URL = '/api/stats';
 /** 整页共用这一个键。 */
@@ -99,7 +101,7 @@ export const known = (value: Count | undefined): value is number =>
 
 /** 一个计数的读法：千分位；取不到时读「未取得」。 */
 export const fmtCount = (value: Count | undefined): string =>
-  (known(value) ? value.toLocaleString() : '未取得');
+  (known(value) ? formatNumber(value) : t('未取得'));
 
 /** 整数百分比，夹在 0 到 100 之间。分母是 0 或取不到时读 0，不是 NaN。 */
 export const percentOf = (value: Count | undefined, total: Count | undefined): number =>
@@ -114,12 +116,12 @@ export const percentText = (value: Count | undefined, total: Count | undefined):
 
 /** 累计播放时长：不到一小时读分钟，不到 48 小时读小时，再往上读天。 */
 export const playedFor = (seconds: Count | undefined): string => {
-  if (!known(seconds)) return '未取得';
+  if (!known(seconds)) return t('未取得');
   const value = Math.max(0, seconds);
   if (value >= 48 * 3600) {
-    return `${(value / 86_400).toLocaleString(undefined, { maximumFractionDigits: 1 })} 天`;
+    return t('{count} 天', { count: formatNumber(value / 86_400, { maximumFractionDigits: 1 }) });
   }
-  return value >= 3600 ? `${(value / 3600).toFixed(1)} 小时` : `${Math.round(value / 60)} 分钟`;
+  return value >= 3600 ? t('{count} 小时', { count: formatNumber(value / 3600, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }) : t('{count} 分钟', { count: formatNumber(Math.round(value / 60)) });
 };
 
 /** 真实看过的比例：播放秒数占时长，封顶 100%。时长未取得时读 0。 */
@@ -183,7 +185,7 @@ const MEDIUM_LABEL: Record<string, string> = {
 
 /** 按文件类型分的条目数，多的在前。 */
 export const mediumRows = (rows: MediumCount[]): BarRow[] =>
-  rows.map((row) => ({ name: MEDIUM_LABEL[row.k] ?? row.k, value: row.n }))
+  rows.map((row) => ({ name: t(MEDIUM_LABEL[row.k] ?? row.k), value: row.n }))
     .sort((a, b) => b.value - a.value);
 
 /** 时长分档的显示名。分界同 `media_probe.context_fields`：300、900、2400 秒。 */
@@ -193,7 +195,7 @@ const LENGTH_LABEL: Record<string, string> = {
 
 /** 时长与画质分档，顺序由服务端给。时长换成分钟区间，画质原样。 */
 export const bandRows = (rows: BandCount[], labels: Record<string, string> = {}): BarRow[] =>
-  rows.map((row) => ({ name: labels[row.k] ?? row.k, value: row.n }));
+  rows.map((row) => ({ name: t(labels[row.k] ?? row.k), value: row.n }));
 
 export const lengthRows = (rows: BandCount[]): BarRow[] => bandRows(rows, LENGTH_LABEL);
 

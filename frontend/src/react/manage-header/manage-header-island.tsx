@@ -115,7 +115,7 @@ function Crumb({ host: at, label }: { host: ManageHeaderHost; label: string }) {
     <nav data-manage-crumb="" aria-label={t("当前位置")}>
       <ol>
         <li><a href="/data-cleanup" onClick={follow}>{t("数据管理")}</a><Icon name="chevron-right" /></li>
-        <li aria-current="true"><span>{label}</span></li>
+        <li aria-current="true"><span>{t(label)}</span></li>
       </ol>
     </nav>
   );

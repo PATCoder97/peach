@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 来源凭据、订阅采集、资源搜索与作品资料站点共用一个 Peach 配置分区。凭据与关注采集是这一组的本体，
  * 排在前面；资源搜索与只换镜像地址的资料站点少改，排在后面。 */
 import { useQuery } from '@tanstack/react-query';
@@ -15,16 +16,17 @@ import { SectionSkeleton } from './section';
 import { FollowPreferenceRows } from './service-preferences';
 
 export function SourceSettings({ data, receipt, panel, issues }: ConfigurationGroupProps) {
+  const uiText = useUiTranslation();
   const credentials = useQuery({ queryKey: FOLLOW_CREDENTIALS_KEY,
     queryFn: ({ signal }) => fetchCredentials(signal), enabled: panel?.active !== false, refetchOnMount: 'always' });
   return <div {...groupRoot(panel)}>
     {issues}
-    <div><ButtonLink href="/sources" variant="secondary">采集来源与登录状态</ButtonLink></div>
+    <div><ButtonLink href="/sources" variant="secondary">{uiText("采集来源与登录状态")}</ButtonLink></div>
     {credentials.data
       ? <Credentials data={credentials.data} readOnly={Boolean(data.ledger_read_only)} toast={receipt} embedded />
       : credentials.error
-        ? <Note tone="error" title="来源凭据未取得">{errorMessage(credentials.error)}</Note>
-        : panel?.active !== false ? <SectionSkeleton label="正在读取来源凭据" html={credentialsSkeleton} /> : null}
+        ? <Note tone="error" title={uiText("来源凭据未取得")}>{errorMessage(credentials.error)}</Note>
+        : panel?.active !== false ? <SectionSkeleton label={uiText("正在读取来源凭据")} html={credentialsSkeleton} /> : null}
     <FollowPreferenceRows receipt={receipt} />
     <IndexerSettings receipt={receipt} />
     {data.entry_links ? <EntryLinksForm initial={data.entry_links} receipt={receipt} /> : null}

@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, useState } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DataTable, type DataColumn } from '../../src/react/components/data-table';
 import { buttonNamed, choose, click, mountRoot } from './render';
+import { LOCALE_KEY, setLocale } from '../../src/i18n';
+
+afterEach(async () => { await act(async () => setLocale('zh-CN')); localStorage.removeItem(LOCALE_KEY) });
 
 type Item = { id: number; name: string };
 const columns: DataColumn<Item>[] = [{ id: 'name', label: '名字', value: (item) => item.name, render: (item) => item.name }];
@@ -16,6 +19,29 @@ function Fixture({ data = items, run, label = '测试作品' }: { data?: Item[];
 }
 
 describe('共用数据表', () => {
+  it('换语言保留跨页选择和排序，原始作品名不翻译', async () => {
+    const run = vi.fn();
+    const data = Array.from({ length: 23 }, (_, id) => ({ id, name: `技术详情 ${id}` }));
+    const { host } = await mountRoot(<Fixture data={data} label="馆藏" run={run} />);
+    await click(checkbox(host, '选择 技术详情 0'));
+    await click(buttonNamed('下一页', host));
+    const selected = host.querySelector('[data-selection-dock]:not([aria-hidden="true"])');
+    const table = host.querySelector('table');
+    await act(async () => setLocale('en'));
+    expect(host.querySelector('table')).toBe(table);
+    expect(host.querySelector('[data-selection-dock]:not([aria-hidden="true"])')).toBe(selected);
+    expect(host.textContent).toContain('21–23 / 23 records');
+    expect(host.querySelector('[aria-current="page"]')?.getAttribute('aria-label')).toBe('Page 2');
+    await act(async () => setLocale('vi'));
+    expect(host.textContent).toContain('21–23 / 23 bản ghi');
+    expect(host.querySelector('[aria-current="page"]')?.getAttribute('aria-label')).toBe('Trang 2');
+    expect(host.textContent).toContain('技术详情 20');
+    expect(host.textContent).toContain('Đã chọn 1 bản ghi');
+    await click(buttonNamed('处理所选', host));
+    expect(run).toHaveBeenLastCalledWith([0]);
+    await click(buttonNamed('Trang trước', host));
+    expect(checkbox(host, 'Chọn 技术详情 0')?.checked).toBe(true);
+  });
   it('工具栏排序、方向和每页条数同步表头与全部行', async () => {
     const { host } = await mountRoot(<Fixture run={vi.fn()} />);
     const rows = () => [...host.querySelectorAll('tbody tr')];

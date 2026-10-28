@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 一条关注来源在屏幕上的那几格：站标、头像、状态徽章、来源名。
  *
  * 创作者卡片、表格视图和别名清单读的是同一份，所以这几格摆在这里而不是各画一次：
@@ -25,13 +26,14 @@ export function SourceIcon({ provider }: { provider: string }) {
  *
  * 首字母取自创作者名而不是某条来源的标签——那会切出「初」「一」这类和创作者无关的字。 */
 export function AuthorAvatar({ group, name }: { group: FollowSource[]; name: string }) {
+  const uiText = useUiTranslation();
   const { src, fallback } = authorAvatar(group);
   const [at, setAt] = useState(0);
   const chain = [src, fallback].filter(Boolean);
   const current = chain[at];
   if (!current) {
     return (
-      <span title="没有可用头像"
+      <span title={uiText("没有可用头像")}
         className="inline-grid size-8 shrink-0 place-items-center rounded-full bg-background-tertiary-default text-caption-1-semibold text-text-secondary">
         {authorInitial(name)}
       </span>
@@ -46,16 +48,18 @@ export function AuthorAvatar({ group, name }: { group: FollowSource[]; name: str
 
 /** 状态徽章。三档颜色对应三件事：要处理的、正常的、还没有结论的。 */
 export function StatusBadge({ source }: { source: FollowSource }) {
+  const uiText = useUiTranslation();
   const color = !source.enabled || source.history_exhausted ? 'gray' : isBroken(source) ? 'rose'
     : source.enabled && source.last_status === 'ok' ? 'lime'
     : source.enabled ? 'yellow' : 'gray';
-  return <Chip variant="caption" color={color}>{statusText(source)}</Chip>;
+  return <Chip variant="caption" color={color}>{uiText(statusText(source))}</Chip>;
 }
 
 /** 来源名连到站上的原页面，名字后跟外链字形。新标签页不继承这一页的会话，来源地址也不带走 Peach 自己的地址。 */
 export function SourceLink({ source }: { source: FollowSource }) {
+  const uiText = useUiTranslation();
   return (
-    <a href={source.url} target="_blank" rel="noopener noreferrer" title="打开原来源"
+    <a href={source.url} target="_blank" rel="noopener noreferrer" title={uiText("打开原来源")}
       className="max-w-full min-w-0 self-start text-body-medium wrap-anywhere text-text-primary underline-offset-2 hover:underline">
       {source.label}
       <RiExternalLinkLine aria-hidden className="size-(--icon-inline) shrink-0" />
@@ -66,6 +70,7 @@ export function SourceLink({ source }: { source: FollowSource }) {
 /** 一条报错：列表里只露一行（`errorHeadline`），放不下就截断；多于这一行或被截了时给「查看详情」原地展开全文。
  *  来源的上次检查、JAV 入库的刮削失败都用它，后端常回整页 HTML 或整段 traceback。 */
 export function ErrorLine({ text, prefix = '', tone = 'error' }: { text: string; prefix?: string; tone?: 'error' | 'muted' }) {
+  const uiText = useUiTranslation();
   const line = useRef<HTMLElement>(null);
   const [open, setOpen] = useState(false);
   const [cut, setCut] = useState(false);
@@ -89,7 +94,7 @@ export function ErrorLine({ text, prefix = '', tone = 'error' }: { text: string;
       {more ? (
         <Button variant="ghost" size="small" data-error-line-toggle="" data-error-details-toggle="" aria-expanded={open} className="-ml-2"
           onClick={() => setOpen(!open)}>
-          {open ? '收起详情' : '查看详情'}
+          {open ? uiText("收起详情") : uiText("查看详情")}
         </Button>
       ) : null}
     </span>

@@ -1,5 +1,56 @@
+import { requestMessages } from './request-messages';
+import { interfaceMessages } from './interface-messages';
+import { taskMessages } from './task-messages';
+import { managementMessages } from './management-messages';
+import { browseMessages } from './browse-messages';
+import { workflowMessages } from './workflow-messages';
+import { serviceMessages } from './service-messages';
+import { settingsMessages } from './settings-messages';
+import { exploreMessages } from './explore-messages';
+import { mediaMessages } from './media-messages';
+import { playerMessages } from './player-messages';
+import { filterMessages } from './filter-messages';
+import { systemMessages } from './system-messages';
+import { reviewMessages } from './review-messages';
+import { deploymentMessages } from './deployment-messages';
+import { credentialMessages } from './credential-messages';
+import { tasteMessages } from './taste-messages';
+import { controlMessages } from './control-messages';
+import { maintenanceMessages } from './maintenance-messages';
+import { followMessages } from './follow-messages';
+import { downloadMessages } from './download-messages';
+import { detailMessages } from './detail-messages';
+import { operationMessages } from './operation-messages';
+import { colorMessages } from './color-messages';
+import { diagnosticMessages } from './diagnostic-messages';
+
 /** 界面译文以原文为键；业务身份和来源原文不进入词表。 */
 export const messages: Readonly<Record<string, readonly [english: string, vietnamese: string]>> = {
+  ...requestMessages,
+  ...interfaceMessages,
+  ...taskMessages,
+  ...managementMessages,
+  ...browseMessages,
+  ...workflowMessages,
+  ...serviceMessages,
+  ...settingsMessages,
+  ...exploreMessages,
+  ...mediaMessages,
+  ...playerMessages,
+  ...filterMessages,
+  ...systemMessages,
+  ...reviewMessages,
+  ...deploymentMessages,
+  ...credentialMessages,
+  ...tasteMessages,
+  ...controlMessages,
+  ...maintenanceMessages,
+  ...followMessages,
+  ...downloadMessages,
+  ...detailMessages,
+  ...operationMessages,
+  ...colorMessages,
+  ...diagnosticMessages,
   '界面语言': ['Interface language', 'Ngôn ngữ giao diện'],
   '语言只影响当前浏览器，不修改馆藏内容。': ['This language applies to this browser and does not change library content.', 'Ngôn ngữ áp dụng cho trình duyệt này và không thay đổi nội dung thư viện.'],
   '无法保存语言设置，请检查浏览器存储权限。': ['Could not save the language. Check browser storage permissions.', 'Không thể lưu ngôn ngữ. Hãy kiểm tra quyền lưu trữ của trình duyệt.'],

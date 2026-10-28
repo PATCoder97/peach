@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 数据管理页上的「媒体修复」卡片：选一个媒体库，把里面播不了或播不顺的 MP4 批量修好。
  *
  * 卡片和「扫描与采集」同一副形状：左边讲这件事和此刻的进度，页脚放媒体库与起停键；
@@ -27,6 +28,7 @@ const libraryMark = (icon: string) => MEDIA_SOURCE_ICONS[icon] || icon;
 const replace = (next: MediaRepairState) => queryClient.setQueryData(MEDIA_REPAIR_KEY, next);
 
 export function MediaRepairCard({ toast = () => {} }: { toast?(message: string): void }) {
+  const uiText = useUiTranslation();
   const repair = useBackgroundJob<MediaRepairState, string>({
     queryKey: MEDIA_REPAIR_KEY, queryFn: ({ signal }) => fetchMediaRepair(signal),
     start: (library) => apiSend<MediaRepairState>(MEDIA_REPAIR_URL, { library, restart: true }),
@@ -68,9 +70,9 @@ export function MediaRepairCard({ toast = () => {} }: { toast?(message: string):
   const problem = action.error || outcome?.error || (repair.query.error ? '读不到媒体修复的状态' : '');
   return (
     <div className="flex flex-col gap-4">
-      <Fieldset layout="split" label="媒体修复" footer={
+      <Fieldset layout="split" label={uiText("媒体修复")} footer={
         <>
-          <Select aria-label="媒体库" prefix="媒体库" className="w-48" selectedKey={selected?.id ?? null}
+          <Select aria-label={uiText("媒体库")} prefix={uiText("媒体库")} className="w-48" selectedKey={selected?.id ?? null}
             isDisabled={running || !libraries.length}
             onSelectionChange={(key) => { if (key !== null) setChosen(String(key)); }}>
             {libraries.map((row) => (
@@ -80,22 +82,22 @@ export function MediaRepairCard({ toast = () => {} }: { toast?(message: string):
             ))}
           </Select>
           {running
-            ? <Button onClick={stop} {...busyProps(action.busy === 'stop')}>停止</Button>
-            : <Button onClick={start} disabled={!selected}>开始修复</Button>}
+            ? <Button onClick={stop} {...busyProps(action.busy === 'stop')}>{uiText("停止")}</Button>
+            : <Button onClick={start} disabled={!selected}>{uiText("开始修复")}</Button>}
         </>
       }>
         <div className="flex flex-col gap-2">
-          <FieldsetTitle>媒体修复</FieldsetTitle>
-          <p className="text-body-2-regular text-text-secondary">{REPAIR_CARD_TEXT}</p>
+          <FieldsetTitle>{uiText("媒体修复")}</FieldsetTitle>
+          <p className="text-body-2-regular text-text-secondary">{uiText(REPAIR_CARD_TEXT)}</p>
           {running && state.total
-            ? <Progress label="修复进度" value={state.checked} max={state.total} />
+            ? <Progress label={uiText("修复进度")} value={state.checked} max={state.total} />
             : null}
           {line ? <p role="status" className="text-caption-1-regular text-text-secondary">{line}</p> : null}
         </div>
       </Fieldset>
       <div aria-live="polite" className="flex flex-col gap-4 empty:hidden">
         {outcome?.status === 'complete' && outcome.missing_tool
-          ? <Note tone="warning" title="缺少 untrunc" action={<Button variant="ghost" size="small" onClick={repair.dismiss}>关闭提示</Button>}>{missingToolText(outcome)}</Note>
+          ? <Note tone="warning" title={uiText("缺少 untrunc")} action={<Button variant="ghost" size="small" onClick={repair.dismiss}>{uiText("关闭提示")}</Button>}>{missingToolText(outcome)}</Note>
           : null}
         {problem ? <Note tone="error">{problem}</Note> : null}
       </div>

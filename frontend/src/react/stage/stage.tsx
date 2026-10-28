@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 舞台（ADR-0031 第 11a 步）：详情浮窗 `<dialog id="stage">`、它的进出场、骨架与揭示、两座详情、
  * 播放器与小窗都在这一面里。
  *
@@ -95,9 +96,9 @@ function StageTree({ view: current }: { view: View | null }) {
   );
 }
 
-const DetailSkeleton = () => (
-  <div data-skeleton="detail" role="status" aria-label="正在读取作品详情" dangerouslySetInnerHTML={{ __html: detailSkeletonBody() }} />
-);
+const DetailSkeleton = () => { const uiText = useUiTranslation(); return ((
+  <div data-skeleton="detail" role="status" aria-label={uiText("正在读取作品详情")} dangerouslySetInnerHTML={{ __html: detailSkeletonBody() }} />
+)); };
 
 /* 点浮窗外面就退出。原生模态里「外面」还是这个 dialog 自己——遮罩归它，落在遮罩上的事件 target
    就是它本人，所以判据取坐标不取 target：按 target 判，浮窗身上任何一块不属于内容的地方都会被算成
@@ -111,6 +112,7 @@ function outside(event: MouseEvent | PointerEvent): boolean {
 }
 
 function StageDialog({ view: current }: { view: View }) {
+  const uiText = useUiTranslation();
   const ref = useRef<HTMLDialogElement>(null);
   /* 原生 `cancel`（Escape 之外的关闭请求，例如安卓返回手势）与关闭键走同一条路。Escape 本身在
      keydown 上就处理掉了：那里 `preventDefault` 之后浏览器不再派 `cancel`。 */
@@ -129,7 +131,7 @@ function StageDialog({ view: current }: { view: View }) {
     : content.kind === 'jav' ? <JavDetailPage key={content.props.code} {...content.props} />
     : <FollowDetailPage key={content.props.id} {...content.props} />;
   return (
-    <dialog ref={ref} id="stage" data-stage="" data-stage-kind={content.kind} aria-label="作品详情"
+    <dialog ref={ref} id="stage" data-stage="" data-stage-kind={content.kind} aria-label={uiText("作品详情")}
       onKeyDown={(event) => {
         /* 里层弹层（标签搜索框、右键菜单）先处理 Escape 并 `preventDefault`，这一下就不再关浮窗。 */
         if (event.key !== 'Escape' || event.defaultPrevented) return;

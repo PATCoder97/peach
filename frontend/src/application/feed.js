@@ -1,3 +1,6 @@
+import { uiTextHtml } from '../i18n/html';
+import { translate as t } from '../i18n';
+import { esc as escapeUi } from '../core';
 /* feed 域控制器：本域状态与动作，启动由 Application 的生命周期统一安装。 */
 import { coverImage, remoteCoverUrl } from './../card-art/markup';
 import { feedIdentity } from './../card-art/feed-identity';
@@ -16,7 +19,7 @@ export function feedNewCoverHtml(item){
   if(item.has_cover)return coverImage(item,'big');
   if(!item.cover_url||!item.code)return item.cover_fetching
     ?`<span class="nopic" data-feed-cover-state="fetching">${loadingDotsHtml('抓取中')}</span>`
-    :'<span class="nopic" data-feed-cover-state="missing">无封面</span>';
+    :`<span class="nopic" data-feed-cover-state="missing">${uiTextHtml("无封面")}</span>`;
   // 官方图经 Peach 代理取，断网或上游失败时换成「封面未取得」占位。
   return coverImage(item,'big').replace(/ src="[^"]*"/,
     ` src="${esc(remoteCoverUrl(item))}" data-panel-prior="1"`)
@@ -40,8 +43,8 @@ export function feedNewCardHtml(item){
     ${open}<div class="pic" style="--card-ratio:${COVER_FRONT_RATIO}">${cover}
       <div class="hovertools feednewtools">
         <button type="button" data-feed-action="${item.wanted?'unwant':'want'}" aria-pressed="${!!item.wanted}" title="${item.wanted?'取消想要':'想要'}" aria-label="想要 ${esc(name)}">${icon('star')}</button>
-        <button type="button" data-feed-action="ignore" title="不想看" aria-label="不想看 ${esc(name)}">${icon('x')}</button>
-        <button type="button" data-feed-action="read" title="标为已看过" aria-label="标为已看过 ${esc(name)}">${icon('check')}</button></div></div>
+        <button type="button" data-feed-action="ignore" title="${escapeUi(t("不想看"))}" data-i18n-title="不想看" aria-label="不想看 ${esc(name)}">${icon('x')}</button>
+        <button type="button" data-feed-action="read" title="${escapeUi(t("标为已看过"))}" data-i18n-title="标为已看过" aria-label="标为已看过 ${esc(name)}">${icon('check')}</button></div></div>
     <div class="meta">${feedIdentity(item)}<div class="mtext"><span class="t">${heading}</span>
       <div class="s mono">${label||(item.title?'':'资料还没取到')}</div></div></div></article>`;
 }

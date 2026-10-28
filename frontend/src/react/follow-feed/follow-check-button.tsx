@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { useState } from 'react';
 import { Button } from '@/components/base/buttons/button';
 import { errorMessage } from '../../api';
@@ -10,6 +11,7 @@ import { validCheckSources } from './follow-check';
 
 /** 只检查入口所属的来源，任务状态沿用关注管理的共享查询。 */
 export function FollowCheckButton({ sources, report }: { sources: readonly number[]; report(result: unknown): void }) {
+  const uiText = useUiTranslation();
   const ids = validCheckSources(sources);
   const [failure, setFailure] = useState('');
   const { running, start } = useBackgroundJob<CheckJob, number[]>({
@@ -30,7 +32,7 @@ export function FollowCheckButton({ sources, report }: { sources: readonly numbe
       if (!ids.length || busy) return;
       setFailure('');
       start.mutate(ids);
-    }}>检查更新</Button>
+    }}>{uiText("检查更新")}</Button>
     {failure ? <Note tone="error">{failure}</Note> : null}
   </div>;
 }

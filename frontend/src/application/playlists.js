@@ -1,3 +1,6 @@
+import { uiTextHtml } from '../i18n/html';
+import { translate as t } from '../i18n';
+import { esc as escapeUi } from '../core';
 /* playlists 域控制器：本域状态与动作，启动由 Application 的生命周期统一安装。 */
 import { pageOpens, playlistsRevision, state, writeShell } from './../shell/index';
 import { buildBars, catalogState, homePath } from './catalog.js';
@@ -23,14 +26,14 @@ export function openTasteSignal(kind,name){
 }
 
 export function playlistNameField(value=''){
-  return `<label class="modalfield"><span>名称</span><input class="geist-input" name="name"
-    maxlength="80" placeholder="输入名称" value="${esc(value)}"></label>`;
+  return `<label class="modalfield"><span>${uiTextHtml("名称")}</span><input class="geist-input" name="name"
+    maxlength="80" placeholder="${escapeUi(t("输入名称"))}" data-i18n-placeholder="输入名称" value="${esc(value)}"></label>`;
 }
 
 export async function saveMixAsPlaylist({title,count,save}){
   const modal=formModal({
     title:'保存为播放列表',
-    description:`这个 Mix 的 ${count} 个视频会存成一份可以继续播放的列表。`,
+    description:()=>t('这个 Mix 的 {count} 个视频会存成一份可以继续播放的列表。', { count }),
     body:playlistNameField(title),
     confirmLabel:'保存为播放列表',
     onConfirm:()=>{
@@ -50,12 +53,12 @@ export async function saveMixAsPlaylist({title,count,save}){
 export async function openAddToPlaylist(item){
   const lists=(await api('/api/playlists')).items||[];
   const rows=lists.map(list=>`<label class="pickrow">${checkboxHtml(`data-pick-playlist="${list.id}"`)}
-    <span class="pickrowtext"><b>${esc(list.name)}</b><small>${list.item_count} 个视频</small></span></label>`).join('');
+    <span class="pickrowtext"><b>${esc(list.name)}</b><small>${esc(t('{value0} 个视频', { value0: list.item_count }))}</small></span></label>`).join('');
   const modal=formModal({
     title:'加入播放列表',
     description:'勾选要加入的列表，或者填个名称新建一份。',
     body:playlistNameField()+(rows
-      ?`<div class="picklist" role="group" aria-label="已有播放列表">${rows}</div>`
+      ?`<div class="picklist" role="group" aria-label="${escapeUi(t("已有播放列表"))}" data-i18n-aria-label="已有播放列表">${rows}</div>`
       :noteHtml('还没有播放列表，填个名称就能新建一份。',{size:'small'})),
     confirmLabel:'保存',
     confirmDisabled:true,

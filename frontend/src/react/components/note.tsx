@@ -4,6 +4,7 @@
  * `status-*` 与 `notification-*` token 组合，差异登记在 `../boardui/ORIGIN.md`。 */
 import type { ReactNode } from 'react';
 import { cx } from '@/utils/cx';
+import { useSystemTranslation } from '../i18n';
 
 type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'error';
 
@@ -17,14 +18,15 @@ export function Note(
   { tone, title, action, extra, children, actionLayout = 'inline', className }:
   { tone: Tone; title?: string; action?: ReactNode; extra?: ReactNode; children: ReactNode; actionLayout?: 'inline' | 'below'; className?: string },
 ) {
+  const systemText = useSystemTranslation();
   const content = (
     <>
       <div data-note-layout="" className={cx('flex gap-3', actionLayout === 'inline'
         ? 'flex-wrap items-center justify-between' : 'flex-col items-start')}>
         <div className={cx('flex min-w-0 flex-auto flex-col justify-center gap-0.5', actionLayout === 'below' && 'w-full')}>
           {/* 正文常是服务端原话：长 URL、堆栈和多行原因照原样换行，不撑宽所在的卡。 */}
-          {title ? <p className="text-body-medium wrap-anywhere">{title}</p> : null}
-          <p className="whitespace-pre-line text-body-2-regular wrap-anywhere">{children}</p>
+          {title ? <p className="text-body-medium wrap-anywhere">{systemText(title)}</p> : null}
+          <p className="whitespace-pre-line text-body-2-regular wrap-anywhere">{typeof children === 'string' ? systemText(children) : children}</p>
         </div>
         {action ? <div data-note-action="" className="max-w-full shrink-0">{action}</div> : null}
       </div>

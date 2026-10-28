@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 配置页（`/settings/library`）：这台运行 Peach 的电脑上那些要「保存配置」的多字段表单。
  * 每个分区各占一格页签，一次只摆一组；本机配置权限与数据库写入权限由服务端分别判定。
  * 设置弹层里的「Peach 配置」入口指到这里。
@@ -29,6 +30,7 @@ import { rememberShape } from '../../configuration-skeleton';
 import { busyProps } from './use-action';
 
 export function ConfigurationPage({ receipt, reopenTutorial, section = '', diagnostics }: ConfigurationProps & { diagnostics?: ReactElement }) {
+  const uiText = useUiTranslation();
   const config = useQuery({
     queryKey: CONFIGURATION_KEY, queryFn: ({ signal }) => fetchConfiguration(signal),
   });
@@ -36,8 +38,8 @@ export function ConfigurationPage({ receipt, reopenTutorial, section = '', diagn
   if (!data) {
     return (
       <div className="ui-configpage">
-        <Note tone="error" title="配置读取失败">
-          {config.error ? errorMessage(config.error) : '未取得配置，请刷新页面重试。'}
+        <Note tone="error" title={uiText("配置读取失败")}>
+          {config.error ? errorMessage(config.error) : uiText("未取得配置，请刷新页面重试。")}
         </Note>
       </div>
     );
@@ -49,10 +51,11 @@ export function ConfigurationPage({ receipt, reopenTutorial, section = '', diagn
 function ConfigurationIssues({ data, sections, reload, refreshing }: {
   data: ConfigurationData; sections: string[]; reload(): void; refreshing: boolean;
 }) {
+  const uiText = useUiTranslation();
   return <>{sections.map(key => {
     const issue = data.section_errors?.[key];
     return issue ? <Note key={key} tone="error" title={issue.title}
-      action={<Button variant="secondary" size="small" onClick={reload} {...busyProps(refreshing)}>重新读取</Button>}>{issue.message}</Note> : null;
+      action={<Button variant="secondary" size="small" onClick={reload} {...busyProps(refreshing)}>{uiText("重新读取")}</Button>}>{issue.message}</Note> : null;
   })}</>;
 }
 
@@ -68,6 +71,7 @@ function ConfigurationGroups(
     data: ConfigurationData; diagnostics?: ReactElement; reload(): void; refreshing: boolean;
   },
 ) {
+  const uiText = useUiTranslation();
   const [prefix] = useState(() => `board-tabs-${++tabSequence}`);
   const [chosen, setChosen] = useState(section);
   const workspace = useRef<HTMLDivElement>(null);
@@ -149,20 +153,20 @@ function ConfigurationGroups(
   };
   return (
     <div ref={workspace} className="ui-configpage">
-      <PillTabList className="ui-board-local-nav" role="tablist" aria-label="配置分区" data-section-nav="" data-section-items="" data-pill-nav=""
+      <PillTabList className="ui-board-local-nav" role="tablist" aria-label={uiText("配置分区")} data-section-nav="" data-section-items="" data-pill-nav=""
         aria-orientation={narrow ? 'horizontal' : 'vertical'}>
         {groups.map(({ title }, i) => (
           <button key={title} ref={(node) => { buttons.current[i] = node }} type="button" role="tab"
             id={`${prefix}-tab-${i}`} aria-controls={`${prefix}-panel-${i}-0`} aria-selected={i === at}
             data-pill-selected={i === at ? '' : undefined} data-pill-variant="gray"
             tabIndex={i === at ? 0 : -1} onClick={() => choose(title)} onKeyDown={(event) => move(event, i)}>
-            {title}
+            {uiText(title)}
           </button>
         ))}
       </PillTabList>
       {groups.map(({ title, body }, i) => (
         <Fragment key={title}>
-          <h2 className="ui-configgroup">{title}</h2>
+          <h2 className="ui-configgroup">{uiText(title)}</h2>
           {body({ index: i, id: `${prefix}-panel-${i}-0`, labelledBy: `${prefix}-tab-${i}`, active: i === at })}
         </Fragment>
       ))}

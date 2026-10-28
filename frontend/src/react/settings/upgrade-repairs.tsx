@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /** 升级补修与程序安装分别显示；复核和重试都由用户明确发起。 */
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/base/buttons/button';
@@ -13,6 +14,7 @@ const LABELS: Record<string, string> = { pending: '等待修复', running: '正�
   review: '需要复核', complete: '已完成', unavailable: '当前部署未启用' };
 
 export function UpgradeRepairs() {
+  const uiText = useUiTranslation();
   const { snapshot } = useClientUpdates();
   const [saved, setSaved] = useState<ClientUpdates['repairs'] | null>(null);
   const action = useAction();
@@ -27,21 +29,21 @@ export function UpgradeRepairs() {
     setSaved(next);
     document.dispatchEvent(new Event('peach:client-updates'));
   });
-  return <Section id="upgradeRepairs" title="自动修复" aside={<StatusLabel
+  return <Section id="upgradeRepairs" title={uiText("自动修复")} aside={<StatusLabel
     tone={state === 'failed' ? 'error' : state === 'running' ? 'progress' : state === 'review' ? 'warning'
       : state === 'complete' ? 'success' : 'neutral'}><span key={state}
-        data-copy-key={`upgradeRepairs.${state}.status`}>{LABELS[state] || '未取得'}</span></StatusLabel>}>
-    <Stack><Help>升级后自动修正资料、更新缓存。</Help></Stack>
+        data-copy-key={`upgradeRepairs.${state}.status`}>{uiText(LABELS[state] || '未取得')}</span></StatusLabel>}>
+    <Stack><Help>{uiText("升级后自动修正资料、更新缓存。")}</Help></Stack>
     <FactList>
-      <Fact term="待完成"><span><AnimatedNumber value={pending} /> 项</span></Fact>
-      <Fact term="失败"><span><AnimatedNumber value={failed} /> 项</span></Fact>
-      <Fact term="待复核"><span><AnimatedNumber value={review} /> 项</span></Fact>
+      <Fact term={uiText("待完成")}><span><AnimatedNumber value={pending} />{uiText(" 项")}</span></Fact>
+      <Fact term={uiText("失败")}><span><AnimatedNumber value={failed} />{uiText(" 项")}</span></Fact>
+      <Fact term={uiText("待复核")}><span><AnimatedNumber value={review} />{uiText(" 项")}</span></Fact>
     </FactList>
     {data?.message || action.error ? <Stack><ErrorText>{action.error || data?.message}</ErrorText></Stack> : null}
-    {state === 'running' ? <Stack><Help>资料与预览正在后台补全。</Help><TaskCenterLink /></Stack> : null}
-    <Footer status={review ? <ExternalLink href="/api/configuration/upgrade-repairs/review">下载复核记录</ExternalLink> : undefined}>
+    {state === 'running' ? <Stack><Help>{uiText("资料与预览正在后台补全。")}</Help><TaskCenterLink /></Stack> : null}
+    <Footer status={review ? <ExternalLink href="/api/configuration/upgrade-repairs/review">{uiText("下载复核记录")}</ExternalLink> : undefined}>
       <Button size="small" variant="secondary" disabled={!data?.available || state === 'running' || !!action.busy || (!failed && state !== 'failed')}
-        onClick={retry}>重试失败项</Button>
+        onClick={retry}>{uiText("重试失败项")}</Button>
     </Footer>
   </Section>;
 }

@@ -13,7 +13,8 @@ import {
   currentLine, LIBRARY_PROCESSING_KEY, notesLine, prefetchLibraryProcessing, processingLine, remainingTime, type LibraryProcessingData,
 } from '../../src/react/library-processing/library-processing';
 import { LibraryProcessingCard } from '../../src/react/library-processing/library-processing-card';
-import { LibraryProcessingNotice } from '../../src/react/library-processing/library-processing-notice';
+import { LibraryProcessingNotice, ProcessingNoticePanel } from '../../src/react/library-processing/library-processing-notice';
+import { setLocale } from '../../src/i18n';
 import { setProcessingNoticeVisible } from '../../src/react/library-processing/processing-notice-visibility';
 import type { LibraryProcessingProps } from '../../src/react/bundle';
 
@@ -36,6 +37,26 @@ afterEach(() => {
 notifyManager.setScheduler((notify) => notify());
 
 const LOG = 'C:\\peach-data\\state\\library-processing-one.issues.jsonl';
+
+it('进度和阶段随语言切换，当前文件名及同一阶段节点保留', async () => {
+  setLocale('en');
+  const state: LibraryProcessingData = { status: 'running', job_id: 'locale-progress', current_asset_name: '资料.mp4',
+    current_action: 'scanning_files', scanned: 4, eta_seconds_min: 90, eta_seconds_max: 120, eta_kind: 'measured',
+    steps: [{ id: 'scan', label: '扫描文件', status: 'current' }] };
+  try {
+    const host = await mount(<ProcessingNoticePanel state={state} />);
+    const step = host.querySelector('[data-processing-step]')!;
+    expect(step.textContent).toContain('Scan files');
+    expect(host.textContent).toContain('资料.mp4');
+    expect(host.textContent).toContain('Found 4 files');
+    await act(async () => { setLocale('vi') });
+    expect(host.querySelector('[data-processing-step]')).toBe(step);
+    expect(step.textContent).toContain('Quét tệp');
+    expect(host.textContent).toContain('资料.mp4');
+    expect(host.textContent).toContain('Đã tìm thấy 4 tệp');
+    expect(host.textContent).not.toContain('扫描文件');
+  } finally { await act(async () => { setLocale('zh-CN') }) }
+});
 
 it('运行时待补全数量仍可见，同步菜单等待当前任务结束',async()=>{
   const {posts}=await open({status:'running',job_id:'one',new_asset_count:12});

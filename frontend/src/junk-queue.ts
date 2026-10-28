@@ -7,6 +7,7 @@
  * 类名和页面等数据时画出来的那一版逐项相同（`junk-queue/junk-count.tsx`，用例对照两者），
  * 所以接管那一拍这一行不跳。分类与视图此刻就有答案，只有读数和各类的计数徽标要等数据。 */
 import { esc } from '@peach/legacy/core';
+import { translate as t } from './i18n';
 
 import { islandSummary } from './island-skeleton';
 
@@ -56,12 +57,12 @@ const glyph = (name: string) => `<svg viewBox="0 0 24 24" aria-hidden="true"><us
  *  量着放，这一版里它收着，当前那一类自己垫一块同料的玻璃（`junk-queue.css`）。 */
 export function junkCountSkeletonHtml({ kind, view }: JunkRoute): string {
   const links = JUNK_KIND_OPTIONS.map(([key, label, icon]) =>
-    `<a href="${junkPath(key, view)}" data-junk-kind-link="${key}"${key === kind ? ' aria-current="page"' : ''}>${glyph(icon)}${esc(label)}</a>`).join('');
+    `<a href="${junkPath(key, view)}" data-junk-kind-link="${key}"${key === kind ? ' aria-current="page"' : ''}>${glyph(icon)}${esc(t(label))}</a>`).join('');
   const other = junkViewLink(view);
   return `<div class="peach-react" data-junk-count-skeleton=""><div data-junk-count="">`
     + `<div data-junk-summary="" aria-live="polite">${islandSummary(junkSummaryLabel(view))}</div>`
     + `<div data-junk-filters-frame="" data-filter-glass="" data-glass-pane=""><span data-view-glide="" aria-hidden="true" hidden></span>`
-    + `<nav data-junk-filters="" aria-label="垃圾文件分类">${links}<i data-junk-divider="" aria-hidden="true"></i>`
-    + `<a href="${other.href}" data-junk-view-link="${other.view}"${view === 'dismissed' ? ' aria-current="page"' : ''}>${glyph(other.glyph)}${other.label}</a>`
+    + `<nav data-junk-filters="" aria-label="${t('垃圾文件分类')}">${links}<i data-junk-divider="" aria-hidden="true"></i>`
+    + `<a href="${other.href}" data-junk-view-link="${other.view}"${view === 'dismissed' ? ' aria-current="page"' : ''}>${glyph(other.glyph)}${t(other.label)}</a>`
     + `</nav></div></div></div>`;
 }

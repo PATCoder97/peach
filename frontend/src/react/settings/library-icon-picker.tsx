@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 /* 媒体库图标：触发键显示当前字形，点开是一块七列网格的单选面板，按「应用」才提交。
@@ -37,6 +38,7 @@ const AUTO = 'auto';
 export function LibraryIconPicker({ value, label, kind = 'local', onChange }: {
   value: string; label: string; kind?: string; onChange(value: string): void;
 }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
@@ -52,7 +54,7 @@ export function LibraryIconPicker({ value, label, kind = 'local', onChange }: {
       </Button>
       <Popover triggerRef={trigger} isOpen={open} onOpenChange={setOpen} placement="bottom start" offset={4}
         className={MENU_POPOVER_SURFACE}>
-        <Dialog aria-label={`${label}可选图标`} className="flex w-72 flex-col gap-3 outline-none">
+        <Dialog aria-label={uiText("{value0}可选图标", { value0: String(label) })} className="flex w-72 flex-col gap-3 outline-none">
           <Heading slot="title" className="px-1 text-body-medium text-text-primary">{t("选择媒体库图标")}</Heading>
           {/* 格子里只放图标，名字走 aria-label：带着字的话 42 个候选要排十几行。 */}
           <RadioGroup aria-label={t("可选图标")} value={draft || AUTO} onChange={(next) => setDraft(next === AUTO ? '' : next)}

@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 单部影片等待外部资料时可跳过，已有结果保留，未完成项留待重试。
  *
  * 数据管理页卡片用 Note 承载，常驻任务面本身已是黄色警示面，提示与操作直接呈现。
@@ -14,6 +15,7 @@ import {
 } from './library-processing';
 
 function SlowItemActions({ state }: { state: LibraryProcessingData }) {
+  const uiText = useUiTranslation();
   const action = useAction();
   const send = (command: ProcessingControlCommand) => {
     if (action.busy) return;
@@ -29,9 +31,9 @@ function SlowItemActions({ state }: { state: LibraryProcessingData }) {
         onClick={() => {
           if (state.job_id && state.current_asset_id != null)
             send({ action: 'skip_current', job_id: state.job_id, asset_id: state.current_asset_id });
-        }}>{state.skip_requested ? '正在跳过' : '跳过这部'}</Button>
+        }}>{state.skip_requested ? uiText("正在跳过") : uiText("跳过这部")}</Button>
     </div>
-    {state.skip_requested ? <p role="status" className="text-caption-1-regular">当前请求结束后继续下一部。</p> : null}
+    {state.skip_requested ? <p role="status" className="text-caption-1-regular">{uiText("当前请求结束后继续下一部。")}</p> : null}
     {action.error ? <p role="alert" className="text-caption-1-regular text-text-error-primary">{action.error}</p> : null}
   </div>;
 }

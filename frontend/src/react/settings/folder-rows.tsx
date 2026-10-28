@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 /* 媒体目录的行：配置页「这台电脑」与首启页共用。
@@ -58,10 +59,11 @@ export function FolderFieldLine({ children }: { children: ReactNode }) {
 export function MediaReadPolicy({ index, cost, error, onChange }: {
   index: number; cost: SourceCost | ''; error?: string; onChange(cost: SourceCost): void;
 }) {
+  const uiText = useUiTranslation();
   useTranslation();
   return <div data-media-read-policy={index} className="flex w-full flex-col gap-1 @lg:w-32">
     <Label elementType="span" aria-hidden>{t("读取策略")}</Label>
-    <Select aria-label={`媒体读取策略 ${index + 1}`} placeholder={t("选择读取策略")} isRequired
+    <Select aria-label={uiText("媒体读取策略 {value0}", { value0: String(index + 1) })} placeholder={t("选择读取策略")} isRequired
       validationBehavior="aria" isInvalid={Boolean(error)} selectedKey={cost || null}
       onSelectionChange={(key) => { if (key === 'free' || key === 'metered') onChange(key); }}>
       <SelectItem id="free">{t("正常读取")}</SelectItem>
@@ -200,10 +202,11 @@ export function SourceSelect({ index, value, onChange, options = MEDIA_SOURCES }
   onChange: (location: string) => void;
   options?: readonly SourceOption[];
 }) {
+  const uiText = useUiTranslation();
   useTranslation();
   return (
     <FolderField label={t("来源")} className="w-full @lg:w-60">
-      <Select className="w-full" aria-label={`媒体来源 ${index + 1}`} selectedKey={value}
+      <Select className="w-full" aria-label={uiText("媒体来源 {value0}", { value0: String(index + 1) })} selectedKey={value}
         onSelectionChange={(key) => { if (key !== null) onChange(String(key)); }}>
         {options.map(([kind, name]) => (
           <SelectItem key={kind} id={kind} textValue={t(name)}><SourceMark mark={sourceMark(kind)} />{t(name)}</SelectItem>

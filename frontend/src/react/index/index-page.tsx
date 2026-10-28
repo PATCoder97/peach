@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 索引页：艺人、创作者、厂牌、事务所、系列名册和标签词表。
  *
  * 地址栏是唯一真相。壳从地址读出 kind／q／scope／view／category 作初值挂上来，页面换档
@@ -66,15 +67,16 @@ const LAYOUTS: Record<'people' | 'company' | 'series', readonly (readonly [Peopl
 function LayoutSwitch(
   { kind, layout, onChange }: { kind: IndexKind; layout: PeopleLayout; onChange(layout: PeopleLayout): void },
 ) {
+  const uiText = useUiTranslation();
   return (
-    <RadioGroup aria-label={`${INDEX_TITLES[kind]}索引版式`} orientation="horizontal" value={layout}
+    <RadioGroup aria-label={uiText("{value0}索引版式", { value0: uiText(INDEX_TITLES[kind]) })} orientation="horizontal" value={layout}
       onChange={(next) => onChange(next as PeopleLayout)} data-index-layout=""
       className={`flex-none ${SEGMENTED_TRACK}`}>
       {LAYOUTS[kind === 'series' ? 'series' : isCompany(kind) ? 'company' : 'people'].map(([value, label, symbol]) => {
         const Glyph = spriteGlyph(symbol);
         return (
-          <Radio key={value} value={value} aria-label={label} className={SEGMENT_ICON}>
-            <span title={label} className="contents"><Glyph className="size-4" /></span>
+          <Radio key={value} value={value} aria-label={uiText(label)} className={SEGMENT_ICON}>
+            <span title={uiText(label)} className="contents"><Glyph className="size-4" /></span>
           </Radio>
         );
       })}
@@ -85,6 +87,7 @@ function LayoutSwitch(
 type Item = IndexPerson | IndexTag | OnlineAuthor | OnlineTag;
 
 export function IndexPage(props: IndexProps) {
+  const uiText = useUiTranslation();
   const [managing, setManaging] = useState(false);
   const [route, setRoute] = useState<IndexRoute>(() => indexRoute(
     { kind: props.kind, q: props.q, scope: props.scope, view: props.view, category: props.category },
@@ -140,7 +143,7 @@ export function IndexPage(props: IndexProps) {
   const total = result.data?.pages[0]?.total;
   useTagPageBounds(kind === 'tags' && !result.isPlaceholderData ? total : undefined, pagination, changePage);
   const readout = kind === 'tags'
-    ? (result.isPending || result.isError ? '' : `${(total ?? items.length).toLocaleString()} 个标签`)
+    ? (result.isPending || result.isError ? '' : uiText('{count} 个标签', { count: (total ?? items.length).toLocaleString() }))
     : countText(items.length, !!result.hasNextPage);
   /* 分类计数只随名册、词表和过滤词变，与选中哪一类无关。换分类时新一页还没到，沿用同一份
      名册上一次拿到的计数：分类按钮行不先塌成「全部」加当前项、等数据回来再弹开。头一回
@@ -165,13 +168,13 @@ export function IndexPage(props: IndexProps) {
   const changeLayout = (next: PeopleLayout) => { setLayout(next); props.savePreference({ layout: next }) };
 
   const tabs = kind === 'tags'
-    ? <BoardTabs tabs={SCOPE_TABS} value={scope} label="词表" onChange={(next) => {
+    ? <BoardTabs tabs={SCOPE_TABS} value={scope} label={uiText("词表")} onChange={(next) => {
       setPicked(new Set());
       // 在线标签全是英文，字母表才是它的形态；切过去时顺手换上，不必再点一次。
       go({ scope: next, category: 'all', view: next === 'online' ? 'alphabet' : view });
     }} />
     : isCompany(kind) || kind === 'series'
-        ? <BoardTabs tabs={MAKER_TABS} value={kind as 'studios' | 'agencies' | 'series'} label="资料类型"
+        ? <BoardTabs tabs={MAKER_TABS} value={kind as 'studios' | 'agencies' | 'series'} label={uiText("资料类型")}
           onChange={(next) => go({ kind: next })} />
         : null;
 
@@ -199,8 +202,8 @@ export function IndexPage(props: IndexProps) {
     }
     if (result.isError) {
       return (
-        <EmptyState icon={spriteGlyph('alert')} title={`没能读取${title}`}
-          actions={<Button variant="secondary" onClick={() => void result.refetch()}>立即重试</Button>}>
+        <EmptyState icon={spriteGlyph('alert')} title={uiText("没能读取{value0}", { value0: uiText(title) })}
+          actions={<Button variant="secondary" onClick={() => void result.refetch()}>{uiText("立即重试")}</Button>}>
           {requestErrorMessage(result.error)}
         </EmptyState>
       );
@@ -217,7 +220,7 @@ export function IndexPage(props: IndexProps) {
     <div ref={root} data-index-page={kind} className="flex min-w-0 flex-col">
       <div data-index-head="" className="mb-5 flex min-w-0 flex-wrap items-center gap-3 max-board-narrow:gap-x-2">
         <h2 data-index-title="" className="flex flex-none items-center text-display-4-medium whitespace-nowrap text-text-primary max-board-narrow:text-title-1-medium">
-          {title}
+          {uiText(title)}
         </h2>
         {isPeople(kind) ? (
           <span data-index-count="" className="text-caption-1-regular leading-5 whitespace-nowrap text-text-secondary tabular-nums max-board-narrow:order-1 max-board-narrow:basis-full">
@@ -228,12 +231,12 @@ export function IndexPage(props: IndexProps) {
         {isPeople(kind) ? <LayoutSwitch kind={kind} layout={layout} onChange={changeLayout} /> : null}
         <LibraryShortcuts kind={kind === 'tags' ? 'tag' : kind === 'series' ? 'series' : kind === 'studios' ? 'studio' : kind === 'agencies' ? 'agency' : kind === 'creators' ? 'creator' : 'performer'} />
         {kind === 'tags' ? <Button variant={managing ? 'primary' : 'ghost'} iconOnly className="flex-none" data-tag-mode=""
-          leadingIcon={spriteGlyph('pencil')} aria-label={managing ? '返回标签浏览' : '管理标签'} title={managing ? '返回标签浏览' : '管理标签'} aria-pressed={managing}
+          leadingIcon={spriteGlyph('pencil')} aria-label={managing ? uiText("返回标签浏览") : uiText("管理标签")} title={managing ? uiText("返回标签浏览") : uiText("管理标签")} aria-pressed={managing}
           onClick={() => { props.exitSelectMode(); setPicked(new Set()); setManaging(!managing) }} /> : null}
-        <IndexSearch label={`过滤${title}`} value={q} onQuery={(next) => { if (next !== q) go({ q: next }, !!next) }} />
+        <IndexSearch label={uiText("过滤{value0}", { value0: uiText(title) })} value={q} onQuery={(next) => { if (next !== q) go({ q: next }, !!next) }} />
       </div>
       {kind === 'performers' || kind === 'creators' ? (
-        <BoardTabs tabs={PEOPLE_TABS} value={onlineAuthors ? 'online' : kind} label="人物名册"
+        <BoardTabs tabs={PEOPLE_TABS} value={onlineAuthors ? 'online' : kind} label={uiText("人物名册")}
           onChange={(next) => {
             if (next === 'online') props.exitSelectMode();
             go({ kind: next === 'online' ? 'performers' : next,
@@ -245,10 +248,10 @@ export function IndexPage(props: IndexProps) {
         onCategory={next => go({ category: next })} onView={next => go({ view: next })}
         onJump={at => root.current?.querySelector(`[data-alpha-group="${at}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' })} /> : <>
       {kind === 'performers' && scope === 'local' ? (
-        <div aria-label="身份分类" className={IDENTITY_ROW_CLASS}>
+        <div aria-label={uiText("身份分类")} className={IDENTITY_ROW_CLASS}>
           {IDENTITY_CATEGORIES.filter((entry) => entry[0] === category || hasEntries(entry)).map(([key, label]) => (
             <Button key={key} variant={category === key ? 'primary' : 'secondary'} size="small"
-              aria-pressed={category === key} onClick={() => go({ category: key })}>{label}</Button>
+              aria-pressed={category === key} onClick={() => go({ category: key })}>{uiText(label)}</Button>
           ))}
         </div>
       ) : null}
@@ -262,7 +265,7 @@ export function IndexPage(props: IndexProps) {
       ) : null}
       <div data-index-body="">{body()}</div>
       {kind === 'tags' && !result.isPending && !result.isError ? <div className="mt-5">
-        <DataTableFooter label="标签" total={total ?? items.length} pagination={pagination} onChange={changePage} unit="个标签" pageUnit="个" pageSizes={TAG_PAGE_SIZES} />
+        <DataTableFooter label={uiText("标签")} total={total ?? items.length} pagination={pagination} onChange={changePage} unit="个标签" pageUnit="个" pageSizes={TAG_PAGE_SIZES} />
       </div> : null}
       {more ? (
         <div className="mt-5 flex justify-center">
@@ -272,9 +275,7 @@ export function IndexPage(props: IndexProps) {
           <Button variant="secondary" data-index-more="" className="min-w-31"
             disabled={result.isFetchingNextPage} aria-busy={result.isFetchingNextPage || undefined}
             onClick={() => void result.fetchNextPage()}>
-            {result.isFetchingNextPage ? <span className="contents" dangerouslySetInnerHTML={{ __html: spinnerHtml('正在载入下一批') }} /> : null}
-            载入更多
-          </Button>
+            {result.isFetchingNextPage ? <span className="contents" dangerouslySetInnerHTML={{ __html: spinnerHtml('正在载入下一批') }} /> : null}{uiText("载入更多")}</Button>
         </div>
       ) : null}
       {kind === 'tags' && !onlineTags && props.selectMode ? (
@@ -296,26 +297,25 @@ const LABELS: Record<IndexKind, string> = {
 function IndexEmpty(
   { kind, filtered, online, onClear }: { kind: IndexKind; filtered: boolean; online: boolean; onClear(): void },
 ) {
+  const uiText = useUiTranslation();
   if (filtered) {
     return (
-      <EmptyState icon={spriteGlyph('search')} title="没有符合条件的内容"
-        actions={<Button size="small" onClick={onClear}>清除筛选</Button>}>
-        清除筛选或搜索条件后查看全部内容。
-      </EmptyState>
+      <EmptyState icon={spriteGlyph('search')} title={uiText("没有符合条件的内容")}
+        actions={<Button size="small" onClick={onClear}>{uiText("清除筛选")}</Button>}>{uiText("清除筛选或搜索条件后查看全部内容。")}</EmptyState>
     );
   }
   // 在线那一档数的是来源上的东西，名字也跟着来源的说法：艺人页在线摆的是关注来源里的创作者。
   const label = online && kind === 'performers' ? '创作者' : LABELS[kind];
   const follow = (
-    <ButtonLink size="small" variant={online ? 'primary' : 'secondary'} href="/subscriptions?tab=add">添加关注</ButtonLink>
+    <ButtonLink size="small" variant={online ? 'primary' : 'secondary'} href="/subscriptions?tab=add">{uiText("添加关注")}</ButtonLink>
   );
   return (
-    <EmptyState icon={spriteGlyph(kind === 'tags' ? 'tags' : 'user-round')} title={`还没有${label}`}
+    <EmptyState icon={spriteGlyph(kind === 'tags' ? 'tags' : 'user-round')} title={uiText("还没有{value0}", { value0: uiText(label) })}
       actions={online ? follow : <>
-        <ButtonLink size="small" href="/settings/library">添加媒体</ButtonLink>
+        <ButtonLink size="small" href="/settings/library">{uiText("添加媒体")}</ButtonLink>
         {follow}
       </>}>
-      {online ? `添加关注来源并获取内容后，这里会显示来源上的${label}。` : '添加内容并补充资料后，这里会显示对应信息。'}
+      {online ? uiText("添加关注来源并获取内容后，这里会显示来源上的{value0}。", { value0: uiText(label) }) : uiText("添加内容并补充资料后，这里会显示对应信息。")}
     </EmptyState>
   );
 }

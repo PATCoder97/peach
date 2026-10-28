@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { messages } from '../src/i18n/catalog';
 import { applyDocumentLocale, getLocale, LOCALE_KEY, normalizeLocale, readLocale, setLocale, subscribeLocale, translate } from '../src/i18n';
 import { installShellLocale } from '../src/i18n/shell';
+import { systemTextHtml, uiTextHtml } from '../src/i18n/html';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -12,6 +13,17 @@ afterEach(() => {
 });
 
 describe('界面语言', () => {
+  it('未知原文不读取对象原型，业务文本保持原样', () => {
+    for (const source of ['constructor', '__proto__', 'toString', '原始作品名']) {
+      expect(translate(source, {}, 'vi')).toBe(source);
+      expect(translate(source, {}, 'en')).toBe(source);
+    }
+  });
+  it('译文复用词条时保留原文两侧的布局空白', () => {
+    expect(translate(' 设置 ', {}, 'vi')).toBe(' Cài đặt ');
+    expect(translate('\n设置\n', {}, 'en')).toBe('\nSettings\n');
+    expect(translate(' 原始作品名 ', {}, 'en')).toBe(' 原始作品名 ');
+  });
   it('保留已有默认语言，只接受支持的持久偏好', () => {
     expect(readLocale({ getItem: () => null })).toBe('zh-CN');
     expect(readLocale({ getItem: () => 'vi' })).toBe('vi');
@@ -89,6 +101,25 @@ describe('界面语言', () => {
       document.querySelector('button')!.title = 'Another action';
       setLocale('en');
       expect(document.querySelector('button')!.title).toBe('Another action');
+    } finally { stop() }
+  });
+
+  it('遗留构件明确登记系统模板，切换语言不解析来源 HTML 或改写输入', () => {
+    const original = '正在监视 R:\\技术详情\\<img src=x>.mp4';
+    document.body.innerHTML = uiTextHtml('设置') + systemTextHtml(original)
+      + '<input value="技术详情"><p data-original>技术详情</p>';
+    const stop = installShellLocale();
+    const input = document.querySelector('input');
+    try {
+      setLocale('en');
+      expect(document.querySelector('[data-i18n-text]')?.textContent).toBe('Settings');
+      expect(document.querySelector('[data-i18n-system]')?.textContent).toBe('Monitoring R:\\技术详情\\<img src=x>.mp4');
+      expect(document.querySelector('img')).toBeNull();
+      setLocale('vi');
+      expect(document.querySelector('[data-i18n-system]')?.textContent).toBe('Đang theo dõi R:\\技术详情\\<img src=x>.mp4');
+      expect(document.querySelector('input')).toBe(input);
+      expect(input?.value).toBe('技术详情');
+      expect(document.querySelector('[data-original]')?.textContent).toBe('技术详情');
     } finally { stop() }
   });
 });

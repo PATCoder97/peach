@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { useState } from 'react';
 import { Button } from '@/components/base/buttons/button';
 import { CloudDownloadDialog, type DownloadPrefill } from '../activity/cloud-download-dialog';
@@ -7,13 +8,14 @@ import { BoardTabs } from '../components/board-tabs';
 export function JavHeader({ tab, navigate, find }: {
   tab: string; navigate(path: string): void; find(): void;
 }) {
+  const uiText = useUiTranslation();
   return <div className="flex w-full flex-col gap-4">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 data-page-title="" className="text-display-4-medium text-text-primary max-board-narrow:text-title-1-medium">JAV</h2>
-      <Button variant="primary" onClick={find}>查找资源</Button>
+      <Button variant="primary" onClick={find}>{uiText("查找资源")}</Button>
     </div>
     <BoardTabs tabs={JAV_TABS.map(([value, label]) => ({ value, label }))} value={tab}
-      label="JAV 分区" className="" onChange={key => navigate(javPath(key))} />
+      label={uiText("JAV 分区")} className="" onChange={key => navigate(javPath(key))} />
   </div>;
 }
 

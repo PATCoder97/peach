@@ -1,5 +1,5 @@
 import { translate as t } from '../../i18n/index';
-import { useTranslation } from '../i18n';
+import { useSystemTranslation, useTranslation } from '../i18n';
 /* 配置页各分区共用的组合件。
  *
  * 外框取 BoardUI 设置弹层的 `SettingsSectionLabel` + `SettingsCard`，开关行直接用 `SettingsRow`。
@@ -10,7 +10,7 @@ import type { ComponentType, FormEvent, MouseEvent, ReactNode } from 'react';
 import { RiArrowRightLine, RiArrowRightSLine, RiExternalLinkLine } from '@remixicon/react';
 import { setCollapseOpen } from '@peach/legacy/ui';
 
-import { SettingsCard, SettingsSectionLabel } from '@/components/application/settings/settings-rows';
+import { SettingsCard, SettingsSectionLabel } from '../components/settings-rows';
 import { LinkButton } from '@/components/base/buttons/link-button';
 import { cx } from '@/utils/cx';
 
@@ -62,10 +62,10 @@ export function Stack({ divided = false, children }: { divided?: boolean; childr
 }
 
 /** 分区首次取数：画 `configuration-skeleton.ts` 里这个分区的那一份骨架，与整页骨架里这一块是同一段
- *  结构，整页骨架交给 React 时位置不动。挂载时取一次，读回之前不随渲染重算。状态名只给辅助技术。 */
+ *  结构，整页骨架交给 React 时位置不动。语言切换时同步重画等待态。状态名只给辅助技术。 */
 export function SectionSkeleton({ label, html }: { label: string; html: () => string }) {
-  const [markup] = useState(html);
-  return <div className="contents" data-skeleton="" aria-busy="true" aria-label={label} dangerouslySetInnerHTML={{ __html: markup }} />;
+  const uiText = useTranslation();
+  return <div className="contents" data-skeleton="" aria-busy="true" aria-label={uiText(label)} dangerouslySetInnerHTML={{ __html: html() }} />;
 }
 
 /** 底栏：左边一句说这颗按钮此刻意味着什么，右边是按钮。
@@ -82,11 +82,13 @@ export function Footer({ status, children }: { status?: ReactNode; children?: Re
 }
 
 export function Help({ role, children }: { role?: 'status'; children: ReactNode }) {
-  return <p role={role} className="text-body-2-regular text-text-secondary">{children}</p>;
+  const systemText = useSystemTranslation();
+  return <p role={role} className="text-body-2-regular text-text-secondary">{typeof children === 'string' ? systemText(children) : children}</p>;
 }
 
 export function ErrorText({ children }: { children: ReactNode }) {
-  return <p role="alert" className="text-body-2-regular text-text-error-primary">{children}</p>;
+  const systemText = useSystemTranslation();
+  return <p role="alert" className="text-body-2-regular text-text-error-primary">{typeof children === 'string' ? systemText(children) : children}</p>;
 }
 
 /** 字段上方的名字，外观同 BoardUI `Label`；控件自己的无障碍名称由 `aria-label` 给。 */

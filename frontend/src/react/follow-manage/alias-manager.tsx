@@ -1,7 +1,8 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 创作者别名：同一个人在几个站上用几个名字，合并之后按一位创作者归组。
  *
  * 待合并是带依据的候选，合并永远由人点：服务端不自行升级，页面也不替他勾。 */
-import { useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { RiCloseLine, RiUserLine } from '@remixicon/react';
 import { useMutation } from '@tanstack/react-query';
 import {
@@ -79,6 +80,8 @@ function AuthorIdentity({ sources, name, canonicalKey }: {
 }
 
 export function AliasManager({ groups, suggestions, sources = [], readOnly, toast }: AliasManagerProps) {
+  const uiText = useUiTranslation();
+  const canonicalInputId = useId();
   const suggestionView = useTablePreferences('alias-suggestions', suggestionPreferences);
   const savedView = useTablePreferences('alias-saved', savedPreferences);
   const [renaming, setRenaming] = useState<AliasGroup | null>(null);
@@ -175,11 +178,11 @@ export function AliasManager({ groups, suggestions, sources = [], readOnly, toas
       column.display({
         id: 'select',
         header: (context) => (
-          <TableSelectionHeader table={context.table} label="全选待合并别名" />
+          <TableSelectionHeader table={context.table} label={uiText("全选待合并别名")} />
         ),
         cell: (context) => (
           <Checkbox slot={null} isSelected={context.row.getIsSelected()}
-            aria-label={`选择别名 ${context.row.original.alias}，归入 ${context.row.original.canonical}`}
+            aria-label={uiText("选择别名 {value0}，归入 {value1}", { value0: String(context.row.original.alias), value1: String(context.row.original.canonical) })}
             onChange={(on) => context.row.toggleSelected(on)} />
         ),
       }),
@@ -197,18 +200,18 @@ export function AliasManager({ groups, suggestions, sources = [], readOnly, toas
         cell: (context) => (
           <Button variant="secondary" size="small" disabled={handlers.current.readOnly}
             {...busyProps(handlers.current.merging)}
-            onClick={() => handlers.current.merge([context.row.original], false)}>合并</Button>
+            onClick={() => handlers.current.merge([context.row.original], false)}>{uiText("合并")}</Button>
         ),
       }),
     ]);
-  }, []);
+  }, [uiText]);
   const savedColumns = useMemo(() => {
     const column = createColumnHelper<typeof savedFeatures, AliasGroup>();
     return column.columns([
       column.display({ id: 'select', header: ({ table }) => (
-        <TableSelectionHeader table={table} label="全选已保存别名" />
+        <TableSelectionHeader table={table} label={uiText("全选已保存别名")} />
       ), cell: ({ row }) => (
-        <Checkbox slot={null} aria-label={`选择已保存别名 ${row.original.canonical_name}`}
+        <Checkbox slot={null} aria-label={uiText("选择已保存别名 {value0}", { value0: String(row.original.canonical_name) })}
           isSelected={row.getIsSelected()} onChange={(on) => row.toggleSelected(on)} />
       ) }),
       column.accessor('canonical_name', {
@@ -228,7 +231,7 @@ export function AliasManager({ groups, suggestions, sources = [], readOnly, toas
                 className="inline-flex items-center gap-1 rounded-md bg-background-secondary-default px-1.5 py-1 text-caption-1-medium text-text-secondary">
                 {item.name}
                 <Button variant="ghost" size="xs" iconOnly leadingIcon={RiCloseLine}
-                  aria-label={`移除别名 ${item.name}`} disabled={handlers.current.readOnly}
+                  aria-label={uiText("移除别名 {value0}", { value0: String(item.name) })} disabled={handlers.current.readOnly}
                   {...busyProps(handlers.current.removing)}
                   onClick={() => handlers.current.remove(item.name)} />
               </span>
@@ -237,10 +240,10 @@ export function AliasManager({ groups, suggestions, sources = [], readOnly, toas
         ),
       }),
       column.display({ id: 'actions', header: '操作', cell: ({ row }) => <Button variant="secondary" size="small"
-        disabled={handlers.current.readOnly} aria-label={`修改 ${row.original.canonical_name} 的统一名称`}
-        onClick={() => handlers.current.rename(row.original)}>修改统一名称</Button> }),
+        disabled={handlers.current.readOnly} aria-label={uiText("修改 {value0} 的统一名称", { value0: String(row.original.canonical_name) })}
+        onClick={() => handlers.current.rename(row.original)}>{uiText("修改统一名称")}</Button> }),
     ]);
-  }, []);
+  }, [uiText]);
   const suggestionTable = useTable({
     features: suggestionFeatures,
     data: suggestions,
@@ -270,20 +273,18 @@ export function AliasManager({ groups, suggestions, sources = [], readOnly, toas
 
   return (
     <div className={cardClass({ padding: 'none', className: 'flex flex-col gap-4 px-6 py-5 max-sm:px-4' })}>
-      <h3 className="text-title-2-medium text-text-primary">创作者别名</h3>
+      <h3 className="text-title-2-medium text-text-primary">{uiText("创作者别名")}</h3>
 
       <div className="flex flex-col gap-2">
-        <FieldLabel>手动添加别名</FieldLabel>
+        <FieldLabel>{uiText("手动添加别名")}</FieldLabel>
         <div className="flex flex-wrap items-end gap-2">
-          <Input aria-label="统一名称" placeholder="在 Peach 中统一显示的名称" value={canonical}
+          <Input id={canonicalInputId} aria-label={uiText("统一名称")} placeholder={uiText("在 Peach 中统一显示的名称")} value={canonical}
             onChange={setCanonical} isDisabled={readOnly} className="w-56" />
-          <Input aria-label="平台别名" placeholder="平台别名" value={alias}
+          <Input aria-label={uiText("平台别名")} placeholder={uiText("平台别名")} value={alias}
             onChange={setAlias} isDisabled={readOnly} className="w-56" />
           <Button variant="primary" disabled={readOnly || !canonical.trim() || !alias.trim()}
             {...busyProps(save.isPending)}
-            onClick={() => save.mutate({ canonical: canonical.trim(), alias: alias.trim() })}>
-            保存别名
-          </Button>
+            onClick={() => save.mutate({ canonical: canonical.trim(), alias: alias.trim() })}>{uiText("保存别名")}</Button>
         </div>
       </div>
 
@@ -293,27 +294,27 @@ export function AliasManager({ groups, suggestions, sources = [], readOnly, toas
         <div className="flex flex-col gap-2">
           <div data-responsive-toolbar="">
             <div data-toolbar-heading="">
-            <FieldLabel>待合并</FieldLabel>
+            <FieldLabel>{uiText("待合并")}</FieldLabel>
             <span className="text-body-2-regular text-text-secondary">
-              {`${suggestions.length} 组`}
+              {uiText("{value0} 组", { value0: String(suggestions.length) })}
             </span>
             </div>
             <div data-toolbar-actions="">
             <Button variant="primary" size="small" disabled={readOnly} {...busy}
-              onClick={() => mergeSome(suggestions, true)}>{`全部合并（${suggestions.length}）`}</Button>
-            <DataTableSort label="待合并创作者别名" sorting={sorting}
+              onClick={() => mergeSome(suggestions, true)}>{uiText("全部合并（{value0}）", { value0: String(suggestions.length) })}</Button>
+            <DataTableSort label={uiText("待合并创作者别名")} sorting={sorting}
               options={[{ id: 'canonical', label: '统一名称' }, { id: 'alias', label: '平台别名' }, { id: 'evidence', label: '依据' }]}
               onChange={(next) => { setSorting(next); setPagination((now) => ({ ...now, pageIndex: 0 })); }} />
-            <TableColumnControls preferences={suggestionView} label="待合并创作者别名" />
+            <TableColumnControls preferences={suggestionView} label={uiText("待合并创作者别名")} />
             </div>
           </div>
-          <SelectionDock label="待合并别名批量操作" visible={chosen.length > 0} count={`已选 ${chosen.length} 组`}>
+          <SelectionDock label={uiText("待合并别名批量操作")} visible={chosen.length > 0} count={`已选 ${chosen.length} 组`}>
             <Button variant="secondary" size="small" disabled={readOnly} {...busy}
-              onClick={() => mergeSome(chosen, false)}>{`合并所选（${chosen.length}）`}</Button>
-            <Button variant="ghost" size="small" onClick={() => setRowSelection({})}>取消选择</Button>
+              onClick={() => mergeSome(chosen, false)}>{uiText("合并所选（{value0}）", { value0: String(chosen.length) })}</Button>
+            <Button variant="ghost" size="small" onClick={() => setRowSelection({})}>{uiText("取消选择")}</Button>
           </SelectionDock>
           <DataTableFrame follow preferences={suggestionView} onRowClick={id => suggestionTable.getRow(id)?.toggleSelected()}>
-            <Table aria-label="待合并创作者别名" size="sm"
+            <Table aria-label={uiText("待合并创作者别名")} size="sm"
               sortDescriptor={sorting[0] ? { column: sorting[0].id, direction: sorting[0].desc ? 'descending' : 'ascending' } : undefined}
               onSortChange={(sort) => suggestionTable.getColumn(String(sort.column))?.toggleSorting(sort.direction === 'descending')}>
             <TableHeader>
@@ -325,7 +326,7 @@ export function AliasManager({ groups, suggestions, sources = [], readOnly, toas
                   </span><TableColumnResizer preferences={suggestionView} id={header.id} /></>}
                 </TableColumn>
               ))}
-              <TableColumn id="remaining-space" aria-label="行空白区域" data-table-space="" width={suggestionView.spaceWidth} minWidth={0} />
+              <TableColumn id="remaining-space" aria-label={uiText("行空白区域")} data-table-space="" width={suggestionView.spaceWidth} minWidth={0} />
             </TableHeader>
             <TableBody>
               {suggestionTable.getRowModel().rows.map((row) => (
@@ -339,37 +340,37 @@ export function AliasManager({ groups, suggestions, sources = [], readOnly, toas
             </TableBody>
             </Table>
           </DataTableFrame>
-          <DataTableFooter label="待合并创作者别名" unit="组" total={suggestions.length} pagination={suggestionPage} onChange={setPagination} />
+          <DataTableFooter label={uiText("待合并创作者别名")} unit="组" total={suggestions.length} pagination={suggestionPage} onChange={setPagination} />
         </div>
       ) : null}
 
       <div className="flex flex-col gap-2">
         <div data-responsive-toolbar="">
           <div data-toolbar-heading="">
-          <FieldLabel>已保存别名</FieldLabel>
-          <span className="text-body-2-regular text-text-secondary">{`${groups.length} 组`}</span>
+          <FieldLabel>{uiText("已保存别名")}</FieldLabel>
+          <span className="text-body-2-regular text-text-secondary">{uiText("{value0} 组", { value0: String(groups.length) })}</span>
           </div>
           <div data-toolbar-actions="">
-          <DataTableSort label="已保存创作者别名" sorting={savedSorting}
+          <DataTableSort label={uiText("已保存创作者别名")} sorting={savedSorting}
             options={[{ id: 'canonical', label: '统一名称' }, { id: 'aliases', label: '平台别名' }]}
             onChange={(next) => { setSavedSorting(next); setSavedPagination((now) => ({ ...now, pageIndex: 0 })); }} />
-          <TableColumnControls preferences={savedView} label="已保存创作者别名" />
+          <TableColumnControls preferences={savedView} label={uiText("已保存创作者别名")} />
           </div>
         </div>
-        <SelectionDock label="已保存别名批量操作" visible={savedNames.length > 0} count={`已选 ${savedNames.length} 个别名`}>
+        <SelectionDock label={uiText("已保存别名批量操作")} visible={savedNames.length > 0} count={`已选 ${savedNames.length} 个别名`}>
           <Button variant="secondary" size="small" disabled={readOnly} {...busyProps(drop.isPending)}
             onClick={() => void confirmModal({ title: '移除所选创作者别名',
               body: `将移除以下 ${savedNames.length} 个别名，对应来源恢复为独立创作者组。`,
               items: savedNames,
               confirmLabel: '移除所选别名', onConfirm: () => drop.mutateAsync(savedNames) })}>
-            {`移除所选别名（${savedNames.length}）`}
+            {uiText("移除所选别名（{value0}）", { value0: String(savedNames.length) })}
           </Button>
-          <Button variant="ghost" size="small" onClick={() => setSavedSelection({})}>取消选择</Button>
+          <Button variant="ghost" size="small" onClick={() => setSavedSelection({})}>{uiText("取消选择")}</Button>
         </SelectionDock>
         {groups.length ? (
           <>
           <DataTableFrame follow preferences={savedView} onRowClick={id => savedTable.getRow(id)?.toggleSelected()}>
-            <Table aria-label="已保存创作者别名" size="sm"
+            <Table aria-label={uiText("已保存创作者别名")} size="sm"
               sortDescriptor={savedSorting[0] ? { column: savedSorting[0].id, direction: savedSorting[0].desc ? 'descending' : 'ascending' } : undefined}
               onSortChange={(sort) => savedTable.getColumn(String(sort.column))?.toggleSorting(sort.direction === 'descending')}>
             <TableHeader>
@@ -381,7 +382,7 @@ export function AliasManager({ groups, suggestions, sources = [], readOnly, toas
                   </span><TableColumnResizer preferences={savedView} id={header.id} /></>}
                 </TableColumn>
               ))}
-              <TableColumn id="remaining-space" aria-label="行空白区域" data-table-space="" width={savedView.spaceWidth} minWidth={0} />
+              <TableColumn id="remaining-space" aria-label={uiText("行空白区域")} data-table-space="" width={savedView.spaceWidth} minWidth={0} />
             </TableHeader>
             <TableBody>
               {savedTable.getRowModel().rows.map((row) => (
@@ -395,13 +396,11 @@ export function AliasManager({ groups, suggestions, sources = [], readOnly, toas
             </TableBody>
             </Table>
           </DataTableFrame>
-          <DataTableFooter label="已保存创作者别名" unit="组" total={groups.length} pagination={savedPage} onChange={setSavedPagination} />
+          <DataTableFooter label={uiText("已保存创作者别名")} unit="组" total={groups.length} pagination={savedPage} onChange={setSavedPagination} />
           </>
         ) : (
-          <EmptyState size="compact" icon={RiUserLine} title="还没有保存创作者别名"
-            actions={!readOnly ? <EmptyFocusButton target='input[aria-label="统一名称"]'>添加别名</EmptyFocusButton> : undefined}>
-            填写统一名称，以及该创作者在其他平台使用的名字。
-          </EmptyState>
+          <EmptyState size="compact" icon={RiUserLine} title={uiText("还没有保存创作者别名")}
+            actions={!readOnly ? <EmptyFocusButton target={`[id="${canonicalInputId}"]`}>{uiText("添加别名")}</EmptyFocusButton> : undefined}>{uiText("填写统一名称，以及该创作者在其他平台使用的名字。")}</EmptyState>
         )}
       </div>
       <AliasRenameDialog group={renaming} close={() => setRenaming(null)} receipt={toast} />

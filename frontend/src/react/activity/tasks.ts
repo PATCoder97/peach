@@ -6,6 +6,9 @@ import { apiGet } from '../../api';
 import { fmtSize } from '@peach/legacy/core';
 import { requestErrorMessage } from '../../core/request-error';
 import { queryClient } from '../query';
+import { translate as t } from '../../i18n';
+import { formatDateTime, formatNumber } from '../../i18n/format';
+import { translateSystem } from '../../i18n/system';
 
 export const TASKS_URL = '/api/tasks';
 /** 整页共用这一个键：三段是同一次响应的三个字段。 */
@@ -124,8 +127,8 @@ const STATUS_LABELS: Record<string, string> = {
   failed: '失败', cancelled: '已取消', interrupted: '意外中断',
 };
 
-/** 状态的中文名。表里的状态集是封闭的，认不出来只可能是表先改了，那就原样显示。 */
-export const statusLabel = (status: string): string => STATUS_LABELS[status] || status;
+/** 状态显示名称随界面语言变化，未知状态保留协议原值。 */
+export const statusLabel = (status: string): string => t(STATUS_LABELS[status] || status);
 
 /* 主摘要使用已定义的中文字段；原始状态字典由技术详情保留。 */
 const SUMMARY_LABELS: Record<string, string> = {
@@ -204,7 +207,7 @@ export function problemDestination(run: TaskRunPayload, latest = true): { href: 
     'taste-refresh': ['/taste', '查看口味数据来源'],
   };
   const target = targets[run.task_key];
-  return target ? { href: target[0], label: target[1] } : null;
+  return target ? { href: target[0], label: t(target[1]) } : null;
 }
 
 /** `LATEST_ONLY` 里每种任务最新那一轮的 id。后继不算：它们挂在父任务下，不是这种任务的一轮。 */
@@ -274,7 +277,7 @@ export function followupDetail(row: TaskRunPayload): string {
   const total = row.progress_total || 0;
   const { name: _name, ...result } = row.result_summary || {};
   const tail = readableErrorHeadline(row.error) || summaryText(result)
-    || (isActive(row) && total > 0 ? `${progressText(row.progress_current, total)} 项` : '');
+    || (isActive(row) && total > 0 ? t('{count} 项', { count: progressText(row.progress_current, total) }) : '');
   return [item, tail].filter(Boolean).join(' · ');
 }
 
@@ -282,19 +285,19 @@ export function followupDetail(row: TaskRunPayload): string {
 export function elapsedText(seconds: number | null | undefined): string {
   if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) return '';
   const whole = Math.floor(seconds);
-  if (whole < 60) return `${whole} 秒`;
+  if (whole < 60) return t('{count} 秒', { count: formatNumber(whole) });
   const minutes = Math.floor(whole / 60);
-  if (minutes < 60) return `${minutes} 分 ${whole % 60} 秒`;
+  if (minutes < 60) return t('{minutes} 分 {seconds} 秒', { minutes: formatNumber(minutes), seconds: formatNumber(whole % 60) });
   const hours = Math.floor(minutes / 60);
-  if (hours < 48) return `${hours} 小时 ${minutes % 60} 分`;
-  return `${Math.floor(hours / 24).toLocaleString()} 天 ${hours % 24} 小时`;
+  if (hours < 48) return t('{hours} 小时 {minutes} 分', { hours: formatNumber(hours), minutes: formatNumber(minutes % 60) });
+  return t('{days} 天 {hours} 小时', { days: formatNumber(Math.floor(hours / 24)), hours: formatNumber(hours % 24) });
 }
 
 /** 进度读数「已做 / 总数」：服务端偶尔报出超过总数的已做数，按总数封顶。 */
 export function progressText(current: number | null | undefined, total: number | null | undefined): string {
   const all = Math.max(0, Number(total) || 0);
   const done = Math.min(all, Math.max(0, Number(current) || 0));
-  return `${done.toLocaleString()} / ${all.toLocaleString()}`;
+  return `${formatNumber(done)} / ${formatNumber(all)}`;
 }
 
 /** 一段报错在列表里只露的那一行。Python traceback 的第一行永远是「Traceback (most recent call
@@ -309,7 +312,7 @@ export function errorHeadline(text: string | null | undefined): string {
 export function readableErrorHeadline(text: string | null | undefined): string {
   const head = errorHeadline(text);
   const technical = head.match(/^(?:[\w.]*Error|Exception):\s*(.*)$/);
-  if (!technical) return head;
+  if (!technical) return t(head);
   return requestErrorMessage(technical[1]);
 }
 
@@ -331,17 +334,17 @@ const OPERATION_LABELS: Record<string, string> = {
   restore: '还原', delete: '永久删除', 'empty-trash': '清空回收站',
   'dismiss-junk': '确认不是垃圾', 'reconsider-junk': '重新判定垃圾', region: '判定产地',
 };
-const outcomeText = (text: string): string => OUTCOME_LABELS[text] || text
+const outcomeText = (text: string): string => OUTCOME_LABELS[text] ? t(OUTCOME_LABELS[text]!) : translateSystem(text)
   .replace(/(avwikidb|javdb|minnano-av) (绑定|写入)/gi, (_, site: string, action: string) =>
-    action === '绑定' ? `已关联 ${SOURCE_NAMES[site.toLowerCase()]} 资料页`
-      : `已保存来自 ${SOURCE_NAMES[site.toLowerCase()]} 的资料`);
+    t(action === '绑定' ? '已关联 {source} 资料页' : '已保存来自 {source} 的资料',
+      { source: SOURCE_NAMES[site.toLowerCase()] || site }));
 
 /** 时间戳说成本地的「月-日 时:分」。数据库里存的是 UTC，界面上一律按本机时区读。 */
 export function momentText(stamp: string | null | undefined): string {
   if (!stamp) return '';
   const moment = new Date(stamp);
   if (Number.isNaN(moment.getTime())) return '';
-  return moment.toLocaleString(undefined,
+  return formatDateTime(moment,
     { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
@@ -356,8 +359,9 @@ const SUMMARY_HIDDEN = new Set([
 export function summaryItems(summary: Record<string, unknown>): string[] {
   const items = fieldItems(summary);
   // 「发现问题」要说得出是什么问题。原因已写进结论（「人脸模型不可用：…」「人像闸未生效…」）时不再说一遍。
-  if (summary?.face_match_unavailable === true && !items.some((line) => /不可用|未生效/.test(line))) {
-    items.push('人脸模型不可用，未做人脸核对');
+  const explained = ['outcome', 'result', 'error'].some(key => /不可用|未生效/.test(String(summary?.[key] || '')));
+  if (summary?.face_match_unavailable === true && !explained) {
+    items.push(t('人脸模型不可用，未做人脸核对'));
   }
   return items;
 }
@@ -369,12 +373,12 @@ function fieldItems(summary: Record<string, unknown>): string[] {
       && (typeof value === 'number' || typeof value === 'string')
       && String(value) !== '' && (value !== 0 || key === 'checked' || key === 'total'))
     .map(([key, value]) => {
-      if (key === 'followups') return `已安排 ${Number(value).toLocaleString()} 项补充任务`;
+      if (key === 'followups') return t('已安排 {count} 项补充任务', { count: formatNumber(Number(value)) });
       if (key === 'error') return readableErrorHeadline(String(value));
       if (key === 'outcome' || key === 'result') return outcomeText(String(value));
-      if (key === 'cache_bytes' || key === 'bytes_reclaimed') return `${SUMMARY_LABELS[key]} ${fmtSize(Number(value))}`;
-      if (key === 'operation') return `操作：${OPERATION_LABELS[String(value)] || '批量操作'}`;
-      return `${SUMMARY_LABELS[key]} ${typeof value === 'number' ? value.toLocaleString() : value}`;
+      if (key === 'cache_bytes' || key === 'bytes_reclaimed') return `${t(SUMMARY_LABELS[key]!)} ${fmtSize(Number(value))}`;
+      if (key === 'operation') return t('操作：{action}', { action: t(OPERATION_LABELS[String(value)] || '批量操作') });
+      return `${t(SUMMARY_LABELS[key]!)} ${typeof value === 'number' ? formatNumber(value) : value}`;
     });
 }
 

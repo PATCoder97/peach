@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 实体资料页的正文（`entity-body` island）：名册、作品网格与照片墙三个视图里的一个。
  *
  * 数据全由壳取好推进来，这里只挑出当前视图画。作品网格按 `revision` 换键：壳每发起一次新的
@@ -96,6 +97,7 @@ const wallSlide = (item: EntityWallPhoto): LightboxSlide => isSample(item)
  *  一部只标一次。`data-photo-index` 是一格在整面墙里的序号，跨段连续，点下去把整列交给灯箱，
  *  灯箱照旧跨段连续翻。翻页只数本地图片：样张一次铺完，不走分页。 */
 function PhotoSection({ photos, props }: { photos: EntityPhotos; props: EntityBodyProps }) {
+  const uiText = useUiTranslation();
   const { photoSize: size, photoLayout: layout, actions, canLoadMore } = props;
   const wall = useMemo(() => [...photos.codeSets.flatMap(sampleItems), ...photos.items], [photos]);
   /* 取不到图的格子。本地图片取不到说明文件没了，整格该走；样张取不到多半是来源这会儿不通，
@@ -130,7 +132,7 @@ function PhotoSection({ photos, props }: { photos: EntityPhotos; props: EntityBo
           <div {...wallAttrs}>{wall.slice(from, from + set.n).map((item, i) => cell(item, from + i))}</div>
         </Fragment>
       ))}
-      {groups.length && photos.total ? <GroupHead label="本地图片" meta={`${photos.total.toLocaleString()} 张`} /> : null}
+      {groups.length && photos.total ? <GroupHead label={uiText("本地图片")} meta={uiText("{value0} 张", { value0: String(photos.total.toLocaleString()) })} /> : null}
       <div {...wallAttrs} data-local-wall="">
         {photos.items.map((item, i) => (lost.has(localStart + i) ? null : cell(item, localStart + i)))}
       </div>

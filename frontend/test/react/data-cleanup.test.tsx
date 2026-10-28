@@ -23,6 +23,7 @@ import { IDLE_REPAIR } from '../../src/react/media-repair/media-repair';
 import type { MediaSourcesData } from '../../src/react/media-sources';
 import { queryClient } from '../../src/react/query';
 import { actionOrder, buttonNamed, choose, click, mount, settle, type } from './render';
+import { setLocale } from '../../src/i18n';
 
 afterEach(() => {
   queryClient.clear();
@@ -580,6 +581,25 @@ describe('孤儿记录', () => {
 });
 
 describe('整理', () => {
+  it('模板换语言时重新获取示例，保留原始输入和参数键且不发写请求', async () => {
+    setLocale('en');
+    const server = serve({ '/api/organize': organizeIdle });
+    queryClient.setQueryData(['organize'], organizeIdle);
+    try {
+      const host = await wrap(<OrganizeCard toast={vi.fn()} failure={vi.fn()} />);
+      const input = [...host.querySelectorAll<HTMLInputElement>('input')].find(node => node.value === '{code}')!;
+      await type(input, '标题 {code}');
+      await act(async () => { setLocale('vi') });
+      await settle();
+      expect([...host.querySelectorAll('input')]).toContain(input);
+      expect(input.value).toBe('标题 {code}');
+      expect(host.querySelector('[aria-label="Mã tác phẩm {code}"]')).not.toBeNull();
+      const previews = server.calls.filter(call => call.path.startsWith('/api/organize/example?'));
+      expect(previews.some(call => new URL(call.path, 'http://localhost').searchParams.get('locale') === 'vi')).toBe(true);
+      expect(server.calls.filter(call => call.method === 'POST')).toEqual([]);
+    } finally { await act(async () => { setLocale('zh-CN') }) }
+  });
+
   it('每个参数都能插入模板，默认追加到文件名并把光标留在参数后', async () => {
     serve({ '/api/organize': organizeIdle });
     queryClient.setQueryData(['organize'], organizeIdle);

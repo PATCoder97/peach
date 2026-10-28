@@ -1,4 +1,5 @@
 import { applyDocumentLocale, getLocale, subscribeLocale, translate } from './index';
+import { translateSystem } from './system';
 
 export function setShellText(node: HTMLElement, source: string): void {
   node.dataset.i18nText = source;
@@ -16,7 +17,7 @@ export function installShellLocale(root: ParentNode = document): () => void {
   let previous = getLocale();
   const update = () => {
     applyDocumentLocale();
-    for (const node of root.querySelectorAll<HTMLElement>('[data-i18n-title],[data-i18n-aria-label],[data-i18n-placeholder],[data-i18n-text]')) {
+    for (const node of root.querySelectorAll<HTMLElement>('[data-i18n-title],[data-i18n-aria-label],[data-i18n-placeholder],[data-i18n-text],[data-i18n-system]')) {
       // 路由已经改成另一种用途的属性由调用方负责，不能恢复成启动文案。
       for (const attribute of attributes) {
         const source = node.getAttribute(`data-i18n-${attribute}`);
@@ -26,6 +27,8 @@ export function installShellLocale(root: ParentNode = document): () => void {
       }
       const source = node.dataset.i18nText;
       if (source !== undefined && (node.textContent === source || node.textContent === translate(source, {}, previous))) node.textContent = translate(source);
+      const systemSource = node.dataset.i18nSystem;
+      if (systemSource !== undefined && (node.textContent === systemSource || node.textContent === translateSystem(systemSource, previous))) node.textContent = translateSystem(systemSource);
     }
     previous = getLocale();
   };

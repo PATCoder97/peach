@@ -17,6 +17,8 @@ import type { BarRow } from '../charts/bar-card';
 import type { ActivityCounts } from '../charts/heat';
 import { queryClient } from '../query';
 import { playedFor } from '../stats/stats';
+import { translate as t } from '../../i18n';
+import { formatDateTime, formatNumber } from '../../i18n/format';
 
 export const TASTE_URL = '/api/taste';
 export const TASTE_REFRESH_URL = '/api/taste/refresh';
@@ -131,7 +133,7 @@ export const tasteRefetchInterval = (data: TasteData | undefined): number | fals
 
 /** 快照时刻，精确到分钟：重算通常几秒内完成，只写日期看不出是哪一份。 */
 export const tasteTime = (value: string | null | undefined): string =>
-  (value ? new Date(value).toLocaleString('zh-CN', {
+  (value ? formatDateTime(value, {
     month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit',
   }) : '—');
 
@@ -212,15 +214,15 @@ export async function importTasteExport(file: File): Promise<{ dashboard: TasteD
 export const IDLE_POLL_MS = 10_000;
 
 export const tasteDate = (value: string | null | undefined): string =>
-  (value ? new Date(value).toLocaleDateString('zh-CN') : '—');
+  (value ? formatDateTime(value, { year: 'numeric', month: 'numeric', day: 'numeric' }) : '—');
 
 /** 浏览记录那张读数卡的脚注：几个数据源，加上记录覆盖的日期范围；两头都没有日期时不写范围。 */
 export function historySpan(summary: TasteSummary): string {
-  const sources = `${Number(summary.history_sources || 0).toLocaleString()} 个数据源`;
+  const sources = t('{count} 个数据源', { count: formatNumber(Number(summary.history_sources || 0)) });
   if (!summary.range_start && !summary.range_end) return sources;
   const sameYear = summary.range_start?.slice(0, 4) === summary.range_end?.slice(0, 4);
   const date = (value: string | null | undefined) => value && sameYear
-    ? new Date(value).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' }) : tasteDate(value);
+    ? formatDateTime(value, { month: 'numeric', day: 'numeric' }) : tasteDate(value);
   return `${sources} · ${date(summary.range_start)}–${date(summary.range_end)}`;
 }
 

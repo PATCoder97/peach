@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 /* 媒体库一级的来源色与处理方式，由「媒体库与目录」按媒体库分组时放在每个媒体库的标题行里，
@@ -36,11 +37,12 @@ const PRESETS: readonly (readonly [Preset, string, string])[] = [
 
 /** 三档处理方式的说明，分组上方只放一份：常显一句话，三档的差别收在可展开的对比表里。 */
 export function PolicyLegend() {
+  const uiText = useUiTranslation();
   useTranslation();
   return (
     <div data-policy-legend="" className="flex flex-col gap-1">
       <Help>{t(POLICY_SUMMARY)}</Help>
-      <Disclosure summary="三种处理方式对比">
+      <Disclosure summary={uiText("三种处理方式对比")}>
         <table data-policy-matrix="" className="text-body-2-regular">
           <thead><tr><th scope="col"><VisuallyHidden>{t("步骤")}</VisuallyHidden></th>
             {POLICY_COLUMNS.map(name => <th key={name} scope="col">{t(name)}</th>)}</tr></thead>
@@ -93,6 +95,7 @@ export function StageChooser({ name, value, onChange }: { name: string; value: r
 export function LibraryColorPicker({ id, name, value: color, onChange }: {
   id: string; name: string; value: string; onChange(color: string): void;
 }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
@@ -100,7 +103,7 @@ export function LibraryColorPicker({ id, name, value: color, onChange }: {
   const choose = (next: string) => { onChange(next); previewLibraryColor(id, next); setOpen(false) };
   return <>
     <button ref={trigger} type="button" className="text-body-medium" data-glow-chip="" data-library-color-trigger="" aria-haspopup="dialog"
-      aria-expanded={open} aria-label={`${name || '未命名媒体库'} 来源色：${label}`} title={label} onClick={() => setOpen(true)}>
+      aria-expanded={open} aria-label={uiText("{value0} 来源色：{value1}", { value0: String(name || uiText("未命名媒体库")), value1: String(label) })} title={label} onClick={() => setOpen(true)}>
       <span aria-hidden className="text-text-tertiary">{t("来源色")}</span>
       {color
         ? <span data-glow-ball="" aria-hidden="true" data-accent-ball={color} />
@@ -110,7 +113,7 @@ export function LibraryColorPicker({ id, name, value: color, onChange }: {
     <UNSAFE_PortalProvider getContainer={() => overlayHost(trigger.current)}>
       <Popover triggerRef={trigger} isOpen={open} onOpenChange={setOpen} placement="bottom start" offset={8}
         containerPadding={12} className={MENU_POPOVER_SURFACE}>
-        <Dialog aria-label={`${name || '未命名媒体库'} 来源色`} className="outline-none">
+        <Dialog aria-label={uiText("{value0} 来源色", { value0: String(name || uiText("未命名媒体库")) })} className="outline-none">
           <p className="px-1 pb-2 text-body-medium text-text-primary">{t("选择来源色")}</p>
           <div data-accent-grid="" data-library-colors="" role="group">
             <button type="button" data-glow-chip="" aria-pressed={!color} title={t("无颜色")} aria-label={t("无颜色")}

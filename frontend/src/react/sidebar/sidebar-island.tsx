@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 /* 侧栏（ADR-0031 第 11f 步）：左侧抽屉里滚动的那一层。
@@ -347,17 +348,20 @@ function ChipList({ rows, filterKey, multi, selected, counts, host: at, onToggle
   /** 点下去回给谁：缺省是目录筛选，关注页换成它自己的。 */
   onToggle?: SidebarHost['toggleChip'];
 }) {
+  const uiText = useUiTranslation();
   return (
     <div data-sidebar-chips="">
       {rows.map((row) => {
         const n = row.n === null ? null : counts ? counts.get(`${filterKey}\n${row.value}`) ?? 0 : row.n;
+        const label = ['loc', 'region', 'orient'].includes(filterKey) || filterKey === 'year' && row.value === 'none'
+          ? uiText(row.label) : row.label;
         return (
           <button type="button" key={row.value} data-sidebar-chip="" aria-pressed={selected.includes(row.value)}
             data-key={filterKey} data-val={row.value} data-multi={multi ? '1' : '0'}
-            data-offline={row.offline ? '' : undefined} disabled={!!row.offline} title={row.offline || row.label}
+            data-offline={row.offline ? '' : undefined} disabled={!!row.offline} title={row.offline ? uiText(row.offline) : label}
             onClick={() => onToggle(filterKey, row.value, multi)}>
             <Dot dot={row.dot} />
-            <span data-sidebar-chip-label="">{row.label}</span>
+            <span data-sidebar-chip-label="">{label}</span>
             {n === null ? null : <span data-sidebar-count="" data-count-badge={`${filterKey}:${row.value}`}>{n.toLocaleString()}</span>}
           </button>
         );
@@ -372,6 +376,7 @@ function MoreList({ epoch, title, rows, latest, limit, filterKey, selected, coun
   epoch: string; title: string; rows: SidebarChip[]; latest: SidebarChip[] | null; limit: number; filterKey: string;
   selected: string[]; counts: Map<string, number> | null; host: SidebarHost; expandable: boolean;
 }) {
+  const uiText = useUiTranslation();
   const toggleGroup = useContext(GroupToggle);
   const [shown, setShown] = useState<{ rows: SidebarChip[]; all: boolean } | null>(null);
   /* 新的一份聚合到来时名单从头摊：成员换回这一份的前几条，展开键回到「展开全部」。 */
@@ -416,7 +421,7 @@ function MoreList({ epoch, title, rows, latest, limit, filterKey, selected, coun
         counts={counts} host={at} />
       {expandable && rows.length > limit
         ? <button type="button" ref={button} data-sidebar-more={filterKey} aria-expanded={expanded}
-            aria-label={`${expanded ? '收起' : '展开全部'}${title}`} onClick={more}><Icon name="chevron-down" /></button>
+            aria-label={uiText(expanded ? '收起{title}' : '展开全部{title}', { title: uiText(title) })} onClick={more}><Icon name="chevron-down" /></button>
         : null}
     </>
   );
@@ -453,6 +458,7 @@ function Duration({ host: at, filters, commit: onCommit = at.setDuration }: {
   /** 松手时回给谁：缺省是目录筛选，关注页换成它自己的。 */
   commit?: SidebarHost['setDuration'];
 }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const source = `${filters.dur_min ?? ''}:${filters.dur_max ?? ''}`;
   const [seen, setSeen] = useState(source);
@@ -507,7 +513,7 @@ function Duration({ host: at, filters, commit: onCommit = at.setDuration }: {
 
   const tip = (end: 'min' | 'max', value: number) => (
     <output data-sidebar-range-tip="" data-range-end={end} data-range-active={active === end ? '' : undefined} aria-hidden="true">
-      {end === 'max' && value >= DURATION_MAX ? t("不限") : `${value} 分钟`}
+      {end === 'max' && value >= DURATION_MAX ? t("不限") : uiText("{value0} 分钟", { value0: String(value) })}
     </output>
   );
   return (

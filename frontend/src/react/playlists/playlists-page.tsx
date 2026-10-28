@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 /* 播放列表页：保存下来的 Mix 与手动建的列表，按最近改动排。
@@ -140,13 +141,14 @@ function RenameDialog({ target, close, toast }: { target: PlaylistRow | null; cl
  *  （`../cover-crop/cover-crop-page.tsx`）。BoardUI 的图标钮静止态都有面：`ghost` 是一块
  *  浅蓝，`IconButton` 是白底描边，每张卡都顶着一块，署名行就不再只是头像与标题。 */
 function PlaylistMenu({ name, onRename, onDelete }: { name: string; onRename(): void; onDelete(): void }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const run = (action: () => void) => { setOpen(false); action() };
   return (
     <>
-      <button ref={trigger} type="button" title={t("更多操作")} aria-label={`播放列表操作：${name}`}
+      <button ref={trigger} type="button" title={t("更多操作")} aria-label={uiText("播放列表操作：{value0}", { value0: String(name) })}
         aria-haspopup="dialog" aria-expanded={open} data-playlist-menu="" onClick={() => setOpen(true)}
         className="flex size-7.5 flex-none cursor-pointer items-center justify-center rounded-2lg text-foreground-icon-secondary outline-none transition-colors hover:bg-background-primary-hover hover:text-foreground-icon-primary aria-expanded:bg-background-primary-hover aria-expanded:text-foreground-icon-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring">
         <ELLIPSIS aria-hidden className="size-4.5" />
@@ -154,7 +156,7 @@ function PlaylistMenu({ name, onRename, onDelete }: { name: string; onRename(): 
       <Popover triggerRef={trigger} isOpen={open} onOpenChange={setOpen}
         placement="bottom end" offset={4} className={MENU_POPOVER_SURFACE}>
         {/* 面板外宽 172px，同旧卡片菜单：外框再加 10px 内边距与 1px 描边。 */}
-        <Dialog aria-label={`播放列表操作：${name}`} className="flex w-37.5 flex-col gap-0.5 outline-none">
+        <Dialog aria-label={uiText("播放列表操作：{value0}", { value0: String(name) })} className="flex w-37.5 flex-col gap-0.5 outline-none">
           <button type="button" className={MENU_ROW} onClick={() => run(onRename)}>
             <PENCIL aria-hidden className="size-(--icon-inline) shrink-0" />{t("编辑名称")}</button>
           <button type="button" className={MENU_ROW} onClick={() => run(onDelete)}>

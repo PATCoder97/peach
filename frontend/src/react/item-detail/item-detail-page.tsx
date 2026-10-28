@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 作品详情（ADR-0031）：舞台里那一整块——播放区、右侧队列、侧栏与下方的「接着看」。
  *
  * 舞台（`<dialog id="stage">`）、它的进出场、小窗与 Video.js 都归舞台岛（`../stage/`），关注详情
@@ -89,10 +90,10 @@ export function ItemDetailPage(props: ItemDetailProps) {
 }
 
 /** 关闭键。`id` 留着：Escape、点浮窗外面与壳的兜底都按 `#closeStage` 找它再点一下。 */
-const CloseStage = ({ onClose }: { onClose(): void }) => (
-  <button type="button" data-stage-close="" id="closeStage" title="关闭" aria-label="关闭" onClick={onClose}
+const CloseStage = ({ onClose }: { onClose(): void }) => { const uiText = useUiTranslation(); return ((
+  <button type="button" data-stage-close="" id="closeStage" title={uiText("关闭")} aria-label={uiText("关闭")} onClick={onClose}
     dangerouslySetInnerHTML={{ __html: icon('x') }} />
-);
+)); };
 
 function Detail(props: ItemDetailProps & { item: DetailItem; queue: DetailQueue | null }) {
   const { item, queue, actions, helpers } = props;
@@ -134,6 +135,7 @@ function MediaFrame({ item, gate, helpers, actions, autoplay, onEnded }: {
   item: DetailItem; gate: MediaGate; helpers: ItemDetailHelpers; actions: ItemDetailActions;
   autoplay?: boolean; onEnded(): void;
 }) {
+  const uiText = useUiTranslation();
   /* 计费来源先挡一层说明，点了才拉流；没挂载与在线拦截的那两种不挂播放器。 */
   const [started, setStarted] = useState<'auto' | 'clicked' | ''>(gate ? '' : 'auto');
   /* 播放器挂在这块框里，`<video>` 由舞台建：Video.js 会把它包进自己的 div，从小窗展开回来时
@@ -177,34 +179,34 @@ function MediaFrame({ item, gate, helpers, actions, autoplay, onEnded }: {
       <CloseStage onClose={actions.close} />
       {hasPictures ? <>
         <button type="button" data-jav-preview-toggle="" aria-pressed={image !== -2}
-          onClick={() => selectImage(image === -2 ? media[0]!.index : -2)}><Glyph name={image === -2 ? 'image' : 'play'} />{image === -2 ? '查看图片' : '播放正片'}</button>
+          onClick={() => selectImage(image === -2 ? media[0]!.index : -2)}><Glyph name={image === -2 ? 'image' : 'play'} />{image === -2 ? uiText("查看图片") : uiText("播放正片")}</button>
         {image !== -2 ? <CatalogPicture key={item.id} item={item} image={image} source={samples.find(sample => sample.index === image)?.source} /> : null}
         <MediaCarousel items={media} position={Math.max(0, media.findIndex(entry => entry.index === image))} onSelect={selectImage}
           below renderThumbnail={entry => <CatalogPicture item={item} image={entry.index === -2 ? media[0]!.index : entry.index}
             source={samples.find(sample => sample.index === (entry.index === -2 ? media[0]!.index : entry.index))?.source} thumbnail />} />
       </> : null}
       {image !== -2 && item.is_jav && item.code && !item.sample_images?.length && (source.isPending || source.error || source.data?.state === 'partial') ?
-        <div data-item-samples-state="">{source.isPending ? <span data-skeleton="samples" role="status" aria-label="正在读取样图" className="relative block h-12 w-20 skeleton-sheen" />
+        <div data-item-samples-state="">{source.isPending ? <span data-skeleton="samples" role="status" aria-label={uiText("正在读取样图")} className="relative block h-12 w-20 skeleton-sheen" />
           : <Button variant="secondary" {...busyProps(source.isFetching)} title={source.data?.message || requestErrorMessage(source.error)}
-            aria-label="立即重试样图" onClick={() => { refreshSamples.current = true; void source.refetch() }}>立即重试</Button>}</div> : null}
+            aria-label={uiText("立即重试样图")} onClick={() => { refreshSamples.current = true; void source.refetch() }}>{uiText("立即重试")}</Button>}</div> : null}
       {gate === 'offline' ? <OfflineGate item={item} badge={badge} helpers={helpers} actions={actions} />
         : gate === 'disc' ? (
           <div role="status" data-item-gate="disc">
-            <b>ISO 原盘</b>
-            <span>请使用支持原盘的外部播放器打开。</span>
+            <b>{uiText("ISO 原盘")}</b>
+            <span>{uiText("请使用支持原盘的外部播放器打开。")}</span>
             <ExternalPlayback key={item.id} id={item.id} onOpened={() => actions.toast('已请求打开本地播放器')} />
           </div>
         ) : gate === 'online' ? (
           <div id="onlineGate" role="status" data-item-gate="online">
             <Html html={badge} />
-            <b>在线作品</b>
-            <span>这条没有对应的关注条目，媒体地址无从解析。</span>
-            <button className="chip" id="openSavedFollow" type="button" onClick={actions.openSavedFollow}>打开已保存关注</button>
+            <b>{uiText("在线作品")}</b>
+            <span>{uiText("这条没有对应的关注条目，媒体地址无从解析。")}</span>
+            <button className="chip" id="openSavedFollow" type="button" onClick={actions.openSavedFollow}>{uiText("打开已保存关注")}</button>
           </div>
         ) : gate === 'metered' && !started ? (
           <div id="gate" data-item-gate="metered" onClick={() => setStarted('clicked')}>
             <Html html={badge} />
-            <span>点此开始拉流 · {sizeText(item.size)}</span>
+            <span>{uiText("点此开始拉流 · ")}{sizeText(item.size)}</span>
           </div>
         ) : null}
     </div>
@@ -214,6 +216,7 @@ function MediaFrame({ item, gate, helpers, actions, autoplay, onEnded }: {
 function OfflineGate({ item, badge, helpers, actions }: {
   item: DetailItem; badge: string; helpers: ItemDetailHelpers; actions: ItemDetailActions;
 }) {
+  const uiText = useUiTranslation();
   const [checking, setChecking] = useState(false);
   const [still, setStill] = useState(false);
   const retry = async () => {
@@ -226,10 +229,10 @@ function OfflineGate({ item, badge, helpers, actions }: {
   return (
     <div id="offlineGate" role="status" data-item-gate="offline">
       <Html html={badge} />
-      <b>媒体目录无法访问</b>
+      <b>{uiText("媒体目录无法访问")}</b>
       <span>{helpers.offlineReason(String(item.root_id || item.location || ''))}</span>
       <button className="chip" id="offlineRetry" type="button" disabled={checking} onClick={() => void retry()}>
-        {still ? '仍无法读取 · 刷新' : '刷新状态'}
+        {still ? uiText("仍无法读取 · 刷新") : uiText("刷新状态")}
       </button>
     </div>
   );
@@ -240,6 +243,7 @@ function OfflineGate({ item, badge, helpers, actions }: {
 function Queue({ queue, itemId, helpers, actions }: {
   queue: DetailQueue; itemId: number; helpers: ItemDetailHelpers; actions: ItemDetailActions;
 }) {
+  const uiText = useUiTranslation();
   const copy = queueCopy(queue);
   const list = useRef<HTMLDivElement | null>(null);
   const reorder = usePlaylistReorder(queue, itemId, actions);
@@ -260,10 +264,10 @@ function Queue({ queue, itemId, helpers, actions }: {
   }, [helpers, queue.kind]);
   const saveMix = useSaveMix(queue, actions);
   const head = queue.kind === 'mix'
-    ? <button type="button" data-save-mix="" title="保存为播放列表" aria-label="保存为播放列表" onClick={saveMix}
+    ? <button type="button" data-save-mix="" title={uiText("保存为播放列表")} aria-label={uiText("保存为播放列表")} onClick={saveMix}
       dangerouslySetInnerHTML={{ __html: icon('playlist') }} />
     : queue.kind === 'playlist'
-      ? <button type="button" data-edit-playlist="" title="编辑播放列表" aria-label="编辑播放列表" onClick={actions.editPlaylist}
+      ? <button type="button" data-edit-playlist="" title={uiText("编辑播放列表")} aria-label={uiText("编辑播放列表")} onClick={actions.editPlaylist}
         dangerouslySetInnerHTML={{ __html: icon('playlist') }} />
       : null;
   const ref = { kind: queue.kind, seedId: queue.seedId, playlistId: queue.playlistId };
@@ -276,7 +280,7 @@ function Queue({ queue, itemId, helpers, actions }: {
         const gone = queue.kind === 'playlist' && isVanished(row);
         return (
           <MixQueueRow key={row.id} current={row.id === itemId} data-queue-item={row.id} row={{ 'data-queue-row': row.id }}
-            disabled={gone} title={gone ? '文件已不在盘上，不能播放' : undefined}
+            disabled={gone} title={gone ? uiText("文件已不在盘上，不能播放") : undefined}
             {...(gone ? { 'data-queue-vanished': '' } : {})}
             onClick={() => { if (!gone) actions.openQueueItem(ref, row.id) }}
             pic={<><Html html={queueThumbHtml(row, helpers.javImage())} /><i className="mono" data-mix-item-duration="">{fmtDur(row.duration)}</i></>}
@@ -284,12 +288,12 @@ function Queue({ queue, itemId, helpers, actions }: {
             after={queue.kind === 'playlist' ? (
               <span data-queue-edit="">
                 <i data-queue-grip="" aria-hidden="true"><Glyph name="grip-vertical" /></i>
-                <button type="button" data-queue-remove={row.id} title="移出播放列表" aria-label="移出播放列表"
+                <button type="button" data-queue-remove={row.id} title={uiText("移出播放列表")} aria-label={uiText("移出播放列表")}
                   onClick={() => reorder.remove(row.id)}><Glyph name="x" /></button>
               </span>
             ) : null}>
             <span data-queue-head="">{edition}<b data-middle-truncate="">{helpers.displayName(row)}</b></span>
-            <span data-truncate-end="">{gone ? '已消失 · 文件已不在盘上'
+            <span data-truncate-end="">{gone ? uiText("已消失 · 文件已不在盘上")
               : queue.kind === 'parts' || (queue.kind === 'editions' && row.part_label)
                 ? partLabel(row.part_label) : mixLabel(row, helpers.tagLabel)}</span>
           </MixQueueRow>
@@ -368,6 +372,7 @@ function usePlaylistReorder(queue: DetailQueue, itemId: number, actions: ItemDet
 function Side({ item, queue, write, helpers, actions }: {
   item: DetailItem; queue: DetailQueue | null; write: DetailWrite; helpers: ItemDetailHelpers; actions: ItemDetailActions;
 }) {
+  const uiText = useUiTranslation();
   const online = item.location === 'online';
   const busy = write.busyAttrs;
   const [reasonOpen, setReasonOpen] = useState(false);
@@ -385,9 +390,9 @@ function Side({ item, queue, write, helpers, actions }: {
           {item.release_date ? <span data-spec-item=""><Glyph name="calendar" /><span>{item.release_date}</span></span> : null}
           {item.region_label ? (
             <button type="button" data-spec-item="" data-open-region={item.region || ''}
-              title={item.region_settled ? '已判定的产地；打开同产地的作品' : '按番号或厂牌推断的产地，批量判定后不再变；打开同产地的作品'}
+              title={item.region_settled ? uiText("已判定的产地；打开同产地的作品") : uiText("按番号或厂牌推断的产地，批量判定后不再变；打开同产地的作品")}
               onClick={() => actions.openRegion(item.region || '')}>
-              <Glyph name="globe" /><span>{item.region_label}{item.region_settled ? '' : '（推断）'}</span>
+              <Glyph name="globe" /><span>{item.region_label}{item.region_settled ? '' : uiText("（推断）")}</span>
             </button>
           ) : null}
         </div>
@@ -399,28 +404,28 @@ function Side({ item, queue, write, helpers, actions }: {
           onComplete={() => { void queryClient.invalidateQueries({ queryKey: itemKey(item.id) }) }} />
         <Trace item={item} />
         <div data-stage-actions="" data-item-feedback="">
-          <button type="button" id="likeBtn" data-fb="like" aria-label={item.liked ? '取消喜欢' : '喜欢'} title="喜欢 · 记录口味偏好"
+          <button type="button" id="likeBtn" data-fb="like" aria-label={item.liked ? uiText("取消喜欢") : uiText("喜欢")} title={uiText("喜欢 · 记录口味偏好")}
             aria-pressed={!!item.liked} {...busy('like')} onClick={() => write.preference({ liked: !item.liked })}><Glyph name="thumbs-up" /></button>
-          <button type="button" id="preferenceToggle" data-fb="reason" aria-label="喜爱理由" title="喜爱理由" aria-expanded={reasonOpen}
+          <button type="button" id="preferenceToggle" data-fb="reason" aria-label={uiText("喜爱理由")} title={uiText("喜爱理由")} aria-expanded={reasonOpen}
             aria-controls="preferencePanel" data-has-reason={String(!!item.like_reason)}
             onClick={() => setReasonOpen((open) => !open)}><Glyph name="notebook-pen" /></button>
-          <button type="button" data-stage-action="dislike" data-kind="dislike" aria-label="不合口味" title="不合口味 · 降低推荐权重"
+          <button type="button" data-stage-action="dislike" data-kind="dislike" aria-label={uiText("不合口味")} title={uiText("不合口味 · 降低推荐权重")}
             aria-pressed={item.feedback === 'dislike'} {...busy('dislike')} onClick={() => write.feedback('dislike')}><Glyph name="thumbs-down" /></button>
-          <button type="button" data-stage-action="seen" data-kind="seen" aria-label="看过了" title="看过了 · 只降低近期推荐"
+          <button type="button" data-stage-action="seen" data-kind="seen" aria-label={uiText("看过了")} title={uiText("看过了 · 只降低近期推荐")}
             aria-pressed={item.feedback === 'seen'} {...busy('seen')} onClick={() => write.feedback('seen')}><Glyph name="eye" /></button>
-          <button type="button" data-stage-action="later" id="stageLater" aria-label="稍后看" title="稍后看 · 加入或移出队列"
+          <button type="button" data-stage-action="later" id="stageLater" aria-label={uiText("稍后看")} title={uiText("稍后看 · 加入或移出队列")}
             aria-pressed={!!item.watch_later} {...busy('later')} onClick={write.later}><Glyph name={item.watch_later ? 'check' : 'bookmark-plus'} /></button>
-          <button type="button" id="addPlaylist" data-fb="playlist" aria-label="加入播放列表" title="加入播放列表"
+          <button type="button" id="addPlaylist" data-fb="playlist" aria-label={uiText("加入播放列表")} title={uiText("加入播放列表")}
             onClick={() => actions.addToPlaylist(item)}><Glyph name="playlist" /></button>
-          <button type="button" id="betterVersion" data-fb="quality" aria-label="寻找更好版本"
-            title={item.better_version ? (item.better_version_reason || '已标记寻找更好版本') : '寻找高清、无水印或完整版'}
+          <button type="button" id="betterVersion" data-fb="quality" aria-label={uiText("寻找更好版本")}
+            title={item.better_version ? (item.better_version_reason || '已标记寻找更好版本') : uiText("寻找高清、无水印或完整版")}
             aria-pressed={!!item.better_version} {...busy('quality')} onClick={write.quality}><Glyph name="sparkles" /></button>
-          <button type="button" data-kind="dispose" data-fb="dispose" aria-label="移入回收站" title="移入回收站 · 文件仍保留，可从回收站永久清除"
+          <button type="button" data-kind="dispose" data-fb="dispose" aria-label={uiText("移入回收站")} title={uiText("移入回收站 · 文件仍保留，可从回收站永久清除")}
             aria-pressed={item.disposal === 'trash'} {...busy('dispose')} onClick={() => write.feedback('dispose')}><Glyph name="trash" /></button>
         </div>
         <Preference item={item} open={reasonOpen} write={write} />
         <button type="button" data-kind="o" {...busy('o')} onClick={() => write.feedback('o')}>
-          <Glyph name="sperm" /><span>记一次高潮</span><b className="mono" id="oCount">{item.o_count || 0}</b>
+          <Glyph name="sperm" /><span>{uiText("记一次高潮")}</span><b className="mono" id="oCount">{item.o_count || 0}</b>
         </button>
       </div>
     </div>
@@ -435,6 +440,7 @@ function DetailTitle({ item, queue, helpers, actions, onStatus }: {
   item: DetailItem; queue: DetailQueue | null; helpers: ItemDetailHelpers; actions: ItemDetailActions;
   onStatus(text: string): void;
 }) {
+  const uiText = useUiTranslation();
   const { text, expanded, foldable, toggle } = useFoldedTitle(String(item.title || item.name || ''));
   const html = helpers.badgeHtml(item.location || '', item.cost || '', 'srcbig') + helpers.titleHtml(item) + partLabelHtml(item, queue);
   return (
@@ -446,7 +452,7 @@ function DetailTitle({ item, queue, helpers, actions, onStatus }: {
           dangerouslySetInnerHTML={{ __html: html }} />
         <span data-title-tools="">
           <button type="button" data-title-fold="" hidden={!foldable} aria-expanded={expanded}
-            aria-label={expanded ? '收起标题' : '展开标题'} title={expanded ? '收起标题' : '展开完整标题'} onClick={toggle}>
+            aria-label={expanded ? uiText("收起标题") : uiText("展开标题")} title={expanded ? uiText("收起标题") : uiText("展开完整标题")} onClick={toggle}>
             <CollapseChevron />
           </button>
           {/* 取景框存的是坐标不是图片：存完重取这一条，封面地址没变，变的是接口给的 `poster_box`。
@@ -469,6 +475,7 @@ function DetailTitle({ item, queue, helpers, actions, onStatus }: {
 
 /** 定位源文件与核对目录。对账删掉的可能就是这一条，删了就没什么可停留的，直接退回列表。 */
 function SourceTools({ id, actions, onStatus }: { id: number; actions: ItemDetailActions; onStatus(text: string): void }) {
+  const uiText = useUiTranslation();
   const [busy, setBusy] = useState('');
   const reveal = async () => {
     if (busy) return;
@@ -488,10 +495,10 @@ function SourceTools({ id, actions, onStatus }: { id: number; actions: ItemDetai
   };
   return (
     <>
-      <button type="button" data-reveal={id} title="在文件管理器里打开源文件所在目录" aria-label="定位源文件"
+      <button type="button" data-reveal={id} title={uiText("在文件管理器里打开源文件所在目录")} aria-label={uiText("定位源文件")}
         {...(busy === 'reveal' ? { 'aria-busy': true, 'aria-disabled': true } : {})} onClick={() => void reveal()}
         dangerouslySetInnerHTML={{ __html: busy === 'reveal' ? spinnerHtml('正在定位') : icon('folder-open') }} />
-      <button type="button" data-sync={id} title="核对该目录：磁盘上已删除的移入 Peach 回收站，带个人记录的标为已消失" aria-label="同步删除"
+      <button type="button" data-sync={id} title={uiText("核对该目录：磁盘上已删除的移入 Peach 回收站，带个人记录的标为已消失")} aria-label={uiText("同步删除")}
         {...(busy === 'sync' ? { 'aria-busy': true, 'aria-disabled': true } : {})} onClick={() => void sync()}>
         <Glyph name="folder-sync" />
       </button>
@@ -501,9 +508,10 @@ function SourceTools({ id, actions, onStatus }: { id: number; actions: ItemDetai
 
 /* 五颗星站在标题和那行规格之间：评分是对这一条作品的判断，属于身份的一部分。 */
 function Rating({ item, write }: { item: DetailItem; write: DetailWrite }) {
+  const uiText = useUiTranslation();
   const on = ratingStars(item.rating);
   return (
-    <div id="detailRating" role="group" data-item-rating="" aria-label="评分" data-value={clampRating(item.rating)}>
+    <div id="detailRating" role="group" data-item-rating="" aria-label={uiText("评分")} data-value={clampRating(item.rating)}>
       <RatingStars value={on} onRate={star => write.rate(star)}
         busyStar={[1, 2, 3, 4, 5].find(star => write.busy.has(`rate:${star}`))}
         busyAttrs={star => write.busyAttrs(`rate:${star}`)} />
@@ -515,6 +523,7 @@ function Rating({ item, write }: { item: DetailItem; write: DetailWrite }) {
 /* 身份按类别分组：标签作为组标题写在上方，同类横向排开。逐行一个名字在共演作品上会把整个侧栏
    撑满。一个都没有时，「未归属」就是这条作品所属的那一类，和女优、厂牌并列：点进去看得到全部。 */
 function Identity({ item, actions }: { item: DetailItem; helpers: ItemDetailHelpers; actions: ItemDetailActions }) {
+  const uiText = useUiTranslation();
   const groups = useMemo(() => identityGroups(item), [item]);
   const [castOpen, setCastOpen] = useState(false);
   const overflow = Math.max(0, groups.cast.length - CAST_SHOWN);
@@ -532,17 +541,17 @@ function Identity({ item, actions }: { item: DetailItem; helpers: ItemDetailHelp
   const primary = [
     groups.unowned ? (
       <section key="unowned" data-id-group="unowned">
-        <h5 data-id-label="">归属</h5>
+        <h5 data-id-label="">{uiText("归属")}</h5>
         <div data-id-row="">
-          <button type="button" data-id-cell="unowned" data-open-unowned="" title="打开未归属：馆藏里没有署名人的作品"
+          <button type="button" data-id-cell="unowned" data-open-unowned="" title={uiText("打开未归属：馆藏里没有署名人的作品")}
             onClick={actions.openUnowned}>
-            <span data-id-face=""><Glyph name="user-round" /></span><span data-id-name="">未归属</span>
+            <span data-id-face=""><Glyph name="user-round" /></span><span data-id-name="">{uiText("未归属")}</span>
           </button>
         </div>
       </section>
     ) : group(performerLabel(item), 'performer', groups.cast, overflow && !castOpen
       ? <Button variant="secondary" size="small" id="castMore" data-cast-more="" trailingIcon={RiArrowDownSLine}
-        aria-expanded={false} onClick={() => setCastOpen(true)}>还有 {overflow} 位</Button> : null),
+        aria-expanded={false} onClick={() => setCastOpen(true)}>{uiText("还有 ")}{overflow}{uiText(" 位")}</Button> : null),
     group('厂牌', 'studio', groups.studios),
     group('片商', 'studio', groups.makers),
     group('卖家', 'creator', groups.creators.filter(ref => ref.identity_categories?.includes('seller'))),
@@ -572,15 +581,16 @@ function Tags({ item, write, helpers, actions }: {
    两条读数的 id 留给壳：Video.js 挂上之后，离开位置由 `wireTelemetry` 随播放写，真实观看在每次
    上报之后回填。这里只画初值，之后不再改它们。 */
 function Trace({ item }: { item: DetailItem }) {
+  const uiText = useUiTranslation();
   const real = realWatched(item);
   return (
     <div data-item-trace="">
       <div data-trace-metric="">
-        <div data-trace-label=""><span>离开位置</span><span id="ratioTxt">0%</span></div>
+        <div data-trace-label=""><span>{uiText("离开位置")}</span><span id="ratioTxt">0%</span></div>
         <div data-trace-bar=""><u id="watched" /><b id="mark" /></div>
       </div>
       <div data-trace-metric="">
-        <div data-trace-label=""><span>真实观看</span><span id="realTxt">{real == null ? '0%' : `${real.toFixed(0)}%`}</span></div>
+        <div data-trace-label=""><span>{uiText("真实观看")}</span><span id="realTxt">{real == null ? '0%' : `${real.toFixed(0)}%`}</span></div>
         {/* oxlint-disable-next-line shadcn/no-inline-styles -- 宽度是这一条看过的比例，之后由壳的遥测随上报改写 */}
         <div data-trace-bar=""><u id="realBar" data-trace-real="" style={real == null ? undefined : { width: `${real.toFixed(1)}%` }} /></div>
       </div>
@@ -589,6 +599,7 @@ function Trace({ item }: { item: DetailItem }) {
 }
 
 function Preference({ item, open, write }: { item: DetailItem; open: boolean; write: DetailWrite }) {
+  const uiText = useUiTranslation();
   const [reason, setReason] = useState(item.like_reason || '');
   const field = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { if (open) field.current?.focus() }, [open]);
@@ -597,11 +608,11 @@ function Preference({ item, open, write }: { item: DetailItem; open: boolean; wr
   const saving = write.busy.has('preference');
   return (
     <div id="preferencePanel" data-item-preference="" hidden={!open}>
-      <textarea ref={field} id="likeReason" maxLength={2000} placeholder="为什么喜欢？" value={reason}
+      <textarea ref={field} id="likeReason" maxLength={2000} placeholder={uiText("为什么喜欢？")} value={reason}
         onChange={(event) => setReason(event.target.value)} />
       <div data-preference-foot="">
         <span id="preferenceState" aria-live="polite">{write.preferenceState}</span>
-        <button type="button" className="geist-button primary" id="savePreference" data-save-preference="" title="提交喜爱理由" aria-label="提交喜爱理由"
+        <button type="button" className="geist-button primary" id="savePreference" data-save-preference="" title={uiText("提交喜爱理由")} aria-label={uiText("提交喜爱理由")}
           {...write.busyAttrs('preference')} onClick={() => write.preference({ reason })}
           dangerouslySetInnerHTML={{ __html: saving ? `${spinnerHtml('正在提交喜爱理由')}<span>提交中</span>` : '<span>提交</span>' }} />
       </div>

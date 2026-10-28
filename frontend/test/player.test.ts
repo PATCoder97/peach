@@ -13,6 +13,7 @@ import { wireTelemetry } from '../src/player/telemetry';
 import type { QualityLevel, QualityLevelList, VjsPlayer } from '../src/player/types';
 import * as videojsLoader from '../src/player/videojs';
 import { mountPlayerPipControl } from '../src/player/pip';
+import { setLocale } from '../src/i18n';
 
 type FetchCall = { url: string; init: RequestInit | undefined };
 
@@ -267,6 +268,46 @@ describe('播放器清晰度', () => {
     return { bar, video, levels, open, labels, change: () => events.get('change')?.(), notify: (name: string) => events.get(name)?.(),
       close: () => { fire('dispose'); root.remove() } };
   }
+
+  it('字幕菜单换语言时保留选项节点和样式值', () => {
+    setLocale('en');
+    const view = menu([]);
+    try {
+      view.bar.querySelector<HTMLButtonElement>('.vjs-peach-settings-toggle')!.click();
+      view.bar.querySelector<HTMLButtonElement>('[data-player-subtitles]')!.click();
+      const file = view.bar.querySelector<HTMLButtonElement>('[data-subtitle-file]')!;
+      expect(file.textContent).toBe('Load subtitle file');
+      setLocale('vi');
+      expect(view.bar.querySelector('[data-subtitle-file]')).toBe(file);
+      expect(file.textContent).toBe('Tải tệp phụ đề');
+      view.bar.querySelector<HTMLButtonElement>('[data-subtitle-options]')!.click();
+      view.bar.querySelector<HTMLButtonElement>('[data-subtitle-style="color"]')!.click();
+      const choice = view.bar.querySelector<HTMLButtonElement>('[data-subtitle-value="white"]')!;
+      expect(choice.textContent).toContain('Trắng');
+      setLocale('en');
+      expect(view.bar.querySelector('[data-subtitle-value="white"]')).toBe(choice);
+      expect(choice.textContent).toContain('White');
+      expect(choice.dataset.subtitleValue).toBe('white');
+    } finally { view.close(); setLocale('zh-CN') }
+  });
+
+  it('菜单随语言变化更新，清晰度 key 和播放速度保持不变', () => {
+    setLocale('en');
+    const view = menu([{ width: 1280, height: 720, enabled: true }, { width: 1920, height: 1080, enabled: true }]);
+    try {
+      view.open();
+      expect(view.labels()).toEqual(['Automatic', '720p', '1080p']);
+      setLocale('vi');
+      expect(view.labels()).toEqual(['Tự động', '720p', '1080p']);
+      expect([...view.bar.querySelectorAll<HTMLElement>('[data-player-quality-option]')].map(node => node.dataset.playerQualityOption)).toEqual(['auto', '0', '1']);
+      view.bar.querySelector<HTMLButtonElement>('[data-player-menu-back]')!.click();
+      view.bar.querySelector<HTMLButtonElement>('[data-player-speed]')!.click();
+      view.bar.querySelector<HTMLButtonElement>('[data-player-speed-option="1.5"]')!.click();
+      setLocale('en');
+      expect(view.bar.querySelector<HTMLInputElement>('[data-player-speed-range]')?.value).toBe('1.5');
+      expect(view.bar.querySelector('[data-player-speed-range]')?.getAttribute('aria-label')).toBe('Playback speed');
+    } finally { view.close(); setLocale('zh-CN') }
+  });
 
   it('设置菜单选择四个方向并可恢复原始画面', () => {
     const view = menu([]);

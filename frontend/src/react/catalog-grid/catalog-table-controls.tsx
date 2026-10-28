@@ -1,6 +1,7 @@
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 import { useRef } from 'react';
+import { formatDateTime } from '../../i18n/format';
 import { Button } from '@/components/base/buttons/button';
 import { RatingStars } from '../components/rating-stars';
 import { ratingStars } from '../components/rating-values';
@@ -16,7 +17,7 @@ export function CatalogRating({ item, actions }: { item: MediaItem; actions: Pic
   const action = useAction();
   const lastStar = useRef(0);
   const score = ratingStars(rating);
-  const label = rating == null ? '未评分' : `评分 ${score} / 5`;
+  const label = rating == null ? t('未评分') : t('评分 {score} / 5', { score });
   const apply = (rating: number | null) => {
     replaceCatalogItem(item.id, { rating });
     queryClient.setQueryData<MediaItem>(['item', item.id], cached => cached ? { ...cached, rating } : cached);
@@ -38,7 +39,7 @@ export function catalogTableDate(value: string | number | null | undefined): str
   const text = String(value);
   if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
   const date = new Date(/^\d+(?:\.\d+)?$/.test(text) ? Number(value) * 1000 : text);
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('zh-CN', {
+  return Number.isNaN(date.getTime()) ? '—' : formatDateTime(date, {
     year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
   });
 }

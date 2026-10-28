@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 列表里的一段报错：平时只露一行（`errorHeadline`），「查看详情」展开全文。
  *
  * 后端回的常是整段 traceback 或整页 HTML，铺开会把一张卡撑成几屏高；只露一行又看不到全文，
@@ -23,6 +24,7 @@ export function ErrorDetails({ children, label, id }: { children: ReactNode; lab
 }
 
 export function ErrorExcerpt({ text, className = '' }: { text: string; className?: string }) {
+  const uiText = useUiTranslation();
   const [open, setOpen] = useState(false);
   const id = useId();
   const full = String(text || '').trim();
@@ -32,12 +34,12 @@ export function ErrorExcerpt({ text, className = '' }: { text: string; className
   return (
     <div data-error-excerpt="" className={`flex min-w-0 max-w-full flex-col items-start gap-1 ${className}`}>
       {open
-        ? <ErrorDetails id={id} label="完整错误详情">{full}</ErrorDetails>
+        ? <ErrorDetails id={id} label={uiText("完整错误详情")}>{full}</ErrorDetails>
         : <p className="w-full wrap-anywhere">{head}</p>}
       {more
         ? <Button variant="ghost" size="small" data-error-details-toggle="" className="-ml-2" aria-expanded={open} aria-controls={open ? id : undefined}
             onClick={() => setOpen(!open)}>
-            {open ? '收起详情' : '查看详情'}
+            {open ? uiText("收起详情") : uiText("查看详情")}
           </Button>
         : null}
     </div>

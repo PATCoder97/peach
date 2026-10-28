@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 编辑与确认沿用 formModal / confirmModal，表单字段复用 BoardUI。 */
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -77,14 +78,15 @@ function TagFields({ operation, selected, dialog, update }: {
   operation: 'rename' | 'merge'; selected: ManagedTag[]; dialog: FormDialog;
   update(value: { name: string; target_id: TagId }): void;
 }) {
+  const uiText = useUiTranslation();
   const [name, setName] = useState(selected[0]?.k || '');
   const [target, setTarget] = useState<TagId>(selected[0] ? managedTagId(selected[0]) : 0);
   useEffect(() => {
     update({ name, target_id: target });
     dialog.confirmButton.disabled = operation === 'rename' && (!name.trim() || name.trim() === selected[0]?.k);
   }, [name, target, dialog, operation, selected, update]);
-  return operation === 'rename' ? <Input autoFocus aria-label="标签名称" value={name} onChange={setName} maxLength={80} />
-    : <Select aria-label="保留的标签" prefix="保留" selectedKey={String(target)} onSelectionChange={key => {
+  return operation === 'rename' ? <Input autoFocus aria-label={uiText("标签名称")} value={name} onChange={setName} maxLength={80} />
+    : <Select aria-label={uiText("保留的标签")} prefix={uiText("保留")} selectedKey={String(target)} onSelectionChange={key => {
       const row = selected.find(tag => String(managedTagId(tag)) === String(key)); if (row) setTarget(managedTagId(row));
     }}>
       {selected.map(row => <SelectItem key={managedTagId(row)} id={String(managedTagId(row))}>{row.k}</SelectItem>)}

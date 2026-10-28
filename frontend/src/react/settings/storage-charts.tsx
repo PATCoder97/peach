@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 「存储空间」统计结果的两张图：数据目录里各类各占多少，以及 Peach 在整块磁盘里占多少。
  *
  * 两张图回答的是不同的整体，所以分开画、各有各的总数。各类占比用 EvilCharts 的环形图，
@@ -43,6 +44,7 @@ export function storageSlices(categories: StorageCategory[]) {
 }
 
 export function StorageOverview({ storage }: { storage: StorageState }) {
+  const uiText = useUiTranslation();
   const usage = storage.usage!;
   const slices = storageSlices(usage.categories);
   const config: ChartConfig = Object.fromEntries(slices.map((slice) =>
@@ -52,7 +54,7 @@ export function StorageOverview({ storage }: { storage: StorageState }) {
     <div className="flex flex-col gap-5 md:flex-row md:items-center">
       {/* 环形图的总量写在圈里：图的容器自带 `flex-1`，在这一行 flex 里换成定宽。 */}
       <div className="relative mx-auto size-48 flex-none" role="img"
-        aria-label={`数据目录共 ${size(usage.total_bytes)}，各类占比`}>
+        aria-label={uiText("数据目录共 {value0}，各类占比", { value0: String(size(usage.total_bytes)) })}>
         <EvilPieChart data={data} dataKey="value" nameKey="slice" config={config}
           className="aspect-square size-48 flex-none">
           <EvilPieChart.Pie innerRadius="68%" outerRadius="100%" paddingAngle={1} cornerRadius={3} />
@@ -61,12 +63,11 @@ export function StorageOverview({ storage }: { storage: StorageState }) {
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <b className="text-title-2-medium tabular-nums text-text-primary">{size(usage.total_bytes)}</b>
           <small className="text-caption-1-regular tabular-nums text-text-secondary">
-            {usage.total_files.toLocaleString()} 个文件
-          </small>
+            {usage.total_files.toLocaleString()}{uiText(" 个文件")}</small>
         </div>
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-4">
-        <ul className="flex flex-wrap gap-x-4 gap-y-1.5" aria-label="图例">
+        <ul className="flex flex-wrap gap-x-4 gap-y-1.5" aria-label={uiText("图例")}>
           {slices.map((slice) => (
             <li key={slice.key} className="flex items-center gap-1.5 text-caption-1-regular text-text-secondary">
               <i aria-hidden className={`${TIP_SWATCH} ${CATEGORY_SWATCH[slice.key] || REST_SWATCH}`} />
@@ -83,6 +84,7 @@ export function StorageOverview({ storage }: { storage: StorageState }) {
 
 /** 整块磁盘：Peach 占的、别的文件占的、还剩的。读不到磁盘容量时整块不画。 */
 function DiskBar({ storage }: { storage: StorageState }) {
+  const uiText = useUiTranslation();
   if (storage.total_bytes === null || storage.free_bytes === null || !storage.usage) return null;
   const peach = Math.min(storage.usage.total_bytes, storage.total_bytes);
   const free = storage.free_bytes;
@@ -99,9 +101,7 @@ function DiskBar({ storage }: { storage: StorageState }) {
   };
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-caption-1-regular text-text-secondary">
-        所在磁盘共 {size(storage.total_bytes)}{storage.system_drive ? '（系统盘）' : ''}，Peach 占 {share(peach)}，
-        可用 {size(free)}
+      <p className="text-caption-1-regular text-text-secondary">{uiText("所在磁盘共 ")}{size(storage.total_bytes)}{storage.system_drive ? uiText("（系统盘）") : ''}{uiText("，Peach 占 ")}{share(peach)}{uiText("， 可用 ")}{size(free)}
       </p>
       <EvilBarChart data={[{ disk: '磁盘', peach, others, free }]} config={config}
         layout="horizontal" stackType="percent" barRadius={4}

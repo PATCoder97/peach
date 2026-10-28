@@ -2,6 +2,7 @@ import { StatusDot } from '@/components/base/badges/status-dot';
 import { cx } from '@/utils/cx';
 import type { ReactNode } from 'react';
 import './connection-status.css';
+import { useTranslation } from '../i18n';
 
 type ConnectionTone = 'success' | 'warning' | 'progress' | 'neutral' | 'error';
 
@@ -17,11 +18,12 @@ const TEXT: Record<ConnectionTone, string> = {
 export function ConnectionStatus({ online, tone, children }: {
   online?: boolean; tone?: ConnectionTone; children?: ReactNode;
 }) {
+  const t = useTranslation();
   const color = tone ?? (online === true ? 'success' : online === false ? 'warning' : 'neutral');
   return <span data-mount={online === true ? 'online' : online === false ? 'offline' : 'unknown'}
     data-connection-tone={color}
     className={cx('inline-flex items-center gap-1.5 whitespace-nowrap text-body-2-medium', TEXT[color])}>
     <StatusDot color={color === 'success' ? 'green' : color === 'warning' ? 'yellow' : 'indigo'} />
-    {children ?? (online === true ? '在线' : online === false ? '离线' : '未检测')}
+    {children == null ? t(online === true ? '在线' : online === false ? '离线' : '未检测') : typeof children === 'string' ? t(children) : children}
   </span>;
 }

@@ -2,6 +2,7 @@ import { act } from 'react';
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 
 import { mountToaster, showToast, unmountToaster } from '../../src/react/toaster';
+import { setLocale } from '../../src/i18n';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -15,6 +16,23 @@ afterAll(async () => { await act(async () => unmountToaster()); host.remove(); }
 
 const toastsWith = (text: string) => [...host.querySelectorAll<HTMLElement>('[data-sonner-toast]')]
   .filter((node) => node.textContent?.includes(text));
+
+it('通知栈切换语言后更新辅助标签，保留原始回执内容与节点', async () => {
+  await act(async () => showToast('language', { html: '原始来源标题', alert: false, timeout: Infinity, action: null }));
+  await vi.waitFor(() => expect(toastsWith('原始来源标题')).toHaveLength(1));
+  const receipt = toastsWith('原始来源标题')[0];
+  try {
+    await act(async () => setLocale('en'));
+    expect(host.querySelector('[aria-label^="Notifications "]')).not.toBeNull();
+    expect(receipt.querySelector('[aria-label="Dismiss notification"]')).not.toBeNull();
+    await act(async () => setLocale('vi'));
+    expect(host.querySelector('[aria-label^="Thông báo "]')).not.toBeNull();
+    expect(receipt.querySelector('[aria-label="Đóng thông báo"]')).not.toBeNull();
+    expect(toastsWith('原始来源标题')[0]).toBe(receipt);
+  } finally {
+    await act(async () => setLocale('zh-CN'));
+  }
+});
 
 it('撤销的结果写回同一条，栈里不另起一条', async () => {
   const run = vi.fn();

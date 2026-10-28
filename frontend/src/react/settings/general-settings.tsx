@@ -1,7 +1,8 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 「应用与维护」的前半段：版本更新与开机自启。版本状态最常看，排在整组最前，自动更新的档位紧跟其后。 */
 import { useState, type FormEvent } from 'react';
 
-import { SettingsRow } from '@/components/application/settings/settings-rows';
+import { SettingsRow } from '../components/settings-rows';
 import { Button } from '@/components/base/buttons/button';
 import { Switch } from '@/components/base/switch/switch';
 
@@ -26,6 +27,7 @@ export function GeneralSettings({ data, receipt, panel }: ConfigurationGroupProp
 }
 
 export function StartupSettings({ startup, receipt }: { startup: StartupState; receipt(message: string): void }) {
+  const uiText = useUiTranslation();
   const [enabled, setEnabled] = useState(startup.enabled);
   const [silent, setSilent] = useState(startup.silent);
   const [desktop, setDesktop] = useState(startup.desktop);
@@ -42,16 +44,16 @@ export function StartupSettings({ startup, receipt }: { startup: StartupState; r
   };
 
   return (
-    <Section title="开机自启" onSubmit={submit}>
+    <Section title={uiText("开机自启")} onSubmit={submit}>
       <Rows>
-        <SettingsRow label="开机后启动 Peach">
-          <Switch aria-label="开机后启动 Peach" isSelected={enabled} isDisabled={!startup.available} onChange={setEnabled} />
+        <SettingsRow label={uiText("开机后启动 Peach")}>
+          <Switch aria-label={uiText("开机后启动 Peach")} isSelected={enabled} isDisabled={!startup.available} onChange={setEnabled} />
         </SettingsRow>
-        <SettingsRow label="只启动托盘，不打开网页">
-          <Switch aria-label="只启动托盘，不打开网页" isSelected={silent} isDisabled={!startup.available || !enabled} onChange={setSilent} />
+        <SettingsRow label={uiText("只启动托盘，不打开网页")}>
+          <Switch aria-label={uiText("只启动托盘，不打开网页")} isSelected={silent} isDisabled={!startup.available || !enabled} onChange={setSilent} />
         </SettingsRow>
-        <SettingsRow label="在桌面创建快捷方式" description={startup.desktop_message || undefined}>
-          <Switch aria-label="在桌面创建快捷方式" isSelected={desktop} isDisabled={!desktopReady} onChange={setDesktop} />
+        <SettingsRow label={uiText("在桌面创建快捷方式")} description={startup.desktop_message || undefined}>
+          <Switch aria-label={uiText("在桌面创建快捷方式")} isSelected={desktop} isDisabled={!desktopReady} onChange={setDesktop} />
         </SettingsRow>
       </Rows>
       {startup.message || action.error ? (
@@ -61,7 +63,7 @@ export function StartupSettings({ startup, receipt }: { startup: StartupState; r
         </Stack>
       ) : null}
       <Footer>
-        <Button type="submit" disabled={!startup.available} {...busyProps(action.busy === 'save')}>保存配置</Button>
+        <Button type="submit" disabled={!startup.available} {...busyProps(action.busy === 'save')}>{uiText("保存配置")}</Button>
       </Footer>
     </Section>
   );

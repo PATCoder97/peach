@@ -6,8 +6,7 @@
 数据与服务，Node 那一侧只认 `PEACH_E2E_ORIGIN`。
 
 数据全在临时目录：`scripts/demo_dataset.py` 生成 SFW 合成库，账本来自迁移模板，
-设置文件把 `local` 的数据库路径前缀写成演示库目录。Windows 上 `[media.mounts]` 不参与
-路径转换，若使用程序默认的前缀，测试进程会读到这台机器的真实媒体目录。
+设置文件使用独立演示目录；POSIX 上保留 Windows 数据库前缀，并映射到临时媒体目录。
 
 短片由 ffmpeg 编码成真能解码的 2 秒片段：详情页的播放器会预加载源，占位字节只会让
 `/stream` 返回 503。缺 Node、`playwright-core`、ffmpeg 或本机 Chrome 时，本机显式跳过，
@@ -43,7 +42,7 @@ from peach import platform as peach_platform
 from peach.config import FFMPEG_DIR
 from peach.ffmpeg import FFmpegResolver
 from peach.library_processing import process_library
-from support.conditions import missing_prerequisite, windows_ledger_roots
+from support.conditions import missing_prerequisite
 from support.browser import chrome_executable
 from support.ledger import fresh_ledger
 from support.demo import seed_metadata_cache
@@ -169,7 +168,6 @@ class PlayerFramingE2ETests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
-@windows_ledger_roots
 class WebE2ESmokeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -223,7 +221,8 @@ class WebE2ESmokeTests(unittest.TestCase):
         cls.port = free_port()
         config = settings_file.PeachConfig(
             data, data / settings_file.SETTINGS_FILENAME, present=True, data_root_found=True,
-            locations={"local": (str(media),)},
+            locations={"local": (str(media) if os.name == "nt" else "R:\\peach-e2e",)},
+            mounts={} if os.name == "nt" else {"local": (str(media),)},
             server=settings_file.ServerSettings(port=cls.port),
         )
         settings_file.write(config)
@@ -252,8 +251,9 @@ class WebE2ESmokeTests(unittest.TestCase):
             cached.parent.mkdir(parents=True, exist_ok=True)
             cached.write_bytes(mark)
         seed_metadata_cache(media, config.directory('sources'))
-        result = process_library(config, cls.db, generated, generated / "covers",
-                                 provider_factory=refuse_network)
+        with mock.patch.object(settings_file, 'active', return_value=config):
+            result = process_library(config, cls.db, generated, generated / "covers",
+                                     provider_factory=refuse_network)
         if result["status"] != "complete":
             raise AssertionError(f"演示库 process 没有完成：{result}")
         with closing(sqlite3.connect(cls.db)) as connection:

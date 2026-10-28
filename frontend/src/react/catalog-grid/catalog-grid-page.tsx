@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 /* 馆藏卡片网格：目录与回收站（由路由树画进 `#grid`）、资料页作品区、详情页的接着看。
@@ -318,13 +319,14 @@ function useShortsStrips(
 function ShortsStrip({ cut, props, onOpen }: {
   cut: ShortsCut; props: CatalogGridProps; onOpen: (item: MediaItem) => void;
 }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const row = useRef<HTMLDivElement | null>(null);
   const { wireDrag } = props;
   useEffect(() => { if (row.current) wireDrag(row.current) }, [wireDrag]);
   return (
     <section data-shorts-strip="">
-      <h2>{t("竖屏")}<span data-shorts-count="">{`${cut.total.toLocaleString()} 个`}</span>
+      <h2>{t("竖屏")}<span data-shorts-count="">{uiText("{value0} 个", { value0: String(cut.total.toLocaleString()) })}</span>
         <button type="button" data-shorts-enter="" onClick={() => props.actions.openShorts()}>
           <Icon name="gallery-vertical-end" /><span>{t("进入沉浸模式")}</span>
         </button>
@@ -349,10 +351,11 @@ function mixFace(item: MediaItem, layout: MediaCardLayout, eager: boolean): Artw
 function HomeMix({ seed, layout, helpers, actions }: {
   seed: MediaItem; layout: MediaCardLayout; helpers: MediaCardHelpers; actions: CatalogGridProps['actions'];
 }) {
+  const uiText = useUiTranslation();
   const faces = useRef(new Map<string, string>());
   const latest = useRef(layout);
   latest.current = layout;
-  const label = mixLabel(seed, helpers.tagLabel);
+  const label = mixLabel(seed, helpers.tagLabel, uiText('为你推荐'));
   const flipImages = useCallback(async () => {
     const current = latest.current;
     const related = await actions.mixRelated(seed.id);
@@ -365,13 +368,13 @@ function HomeMix({ seed, layout, helpers, actions }: {
   const artwork = mixFace(seed, layout, false);
   return (
     <MixCard data-mix-seed={String(seed.id)} name={`Mix · ${label}`}
-      caption={`${helpers.displayName(seed, seed.name || '')}及相似作品`} count={0} badge="Mix" glyph wholeCard
+      caption={uiText("{value0}及相似作品", { value0: String(helpers.displayName(seed, seed.name || '')) })} count={0} badge="Mix" glyph wholeCard
       poster={null} artwork={artwork}
       artworkIdentity={size === 'small' ? artwork.html : mixFace(seed, { ...layout, size: 'small' }, false).html}
       relayoutArt={(root) => relayoutCovers(root, size)}
       ratio={cardRatio(seed, 'grid', layout)}
       flipImages={flipImages} faceHtml={(id) => faces.current.get(id) || ''} canFlip={actions.canFlip}
       faces={[]} onOpenEntity={actions.openEntity}
-      onOpen={(anchor) => actions.openMix(seed.id, anchor)} openLabel={`打开 Mix · ${label}`} />
+      onOpen={(anchor) => actions.openMix(seed.id, anchor)} openLabel={uiText('打开 Mix · {name}', { name: label })} />
   );
 }

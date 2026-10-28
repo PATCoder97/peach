@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 媒体来源选了网盘时的 CloudDrive 起步配置。
  *
  * 页内只留填哪里、填多少、怎么确认；三处缓存的分工、换算与起步值的来源在
@@ -13,17 +14,16 @@ export const CLOUDDRIVE_PROFILES = [
 const READINGS = [['cache', '缓存上限'], ['read', '读取长度（默认 / 最小）'], ['task', '同时处理视频']] as const;
 
 export function CloudDriveGuide() {
+  const uiText = useUiTranslation();
   return (
     <div className="@container flex flex-col gap-3">
-      <Disclosure summary="CloudDrive 设置帮助">
-        <Help>
-          先将 CloudDrive2 或 OpenList 中的网盘挂载为本机文件夹，再在这里选择。
-          <ExternalLink href="https://www.clouddrive2.com/help.html">挂载帮助</ExternalLink>
+      <Disclosure summary={uiText("CloudDrive 设置帮助")}>
+        <Help>{uiText("先将 CloudDrive2 或 OpenList 中的网盘挂载为本机文件夹，再在这里选择。")}<ExternalLink href="https://www.clouddrive2.com/help.html">{uiText("挂载帮助")}</ExternalLink>
         </Help>
-        <Help>缓存按所在硬盘和可用内存选起步值，再根据播放表现调整。</Help>
-        <Help>文件操作需要挂载工具和网盘账号授予写入权限。光鸭云盘的上传、建文件夹、改名和移动需要 CloudDrive2 v1.1.0 或更高版本，删除和复制暂不支持。</Help>
+        <Help>{uiText("缓存按所在硬盘和可用内存选起步值，再根据播放表现调整。")}</Help>
+        <Help>{uiText("文件操作需要挂载工具和网盘账号授予写入权限。光鸭云盘的上传、建文件夹、改名和移动需要 CloudDrive2 v1.1.0 或更高版本，删除和复制暂不支持。")}</Help>
         {/* 三档同形、跨档比较：窄处每档一块纵排，宽处三项读数排成三列对齐。 */}
-        <ul aria-label="按缓存所在硬盘分档" className="flex flex-col gap-2">
+        <ul aria-label={uiText("按缓存所在硬盘分档")} className="flex flex-col gap-2">
           {CLOUDDRIVE_PROFILES.map((profile) => (
             <li key={profile.name} className="flex flex-col gap-2 rounded-2lg border border-separator-border bg-background-primary-default p-3">
               <p className="text-body-medium text-text-primary">{profile.name}</p>
@@ -39,12 +39,12 @@ export function CloudDriveGuide() {
           ))}
         </ul>
         <ul className="flex list-disc flex-col gap-1 pl-5 text-body-2-regular text-text-secondary">
-          <li>缓存上限和清理方式填在 CloudDrive「设置」里，清理方式选 LRU。上限不要填 0，系统盘至少留 40 GiB；填完重开设置页确认存住了。</li>
-          <li>读取长度和下载线程填在每个网盘各自的下载设置里，线程都从 2 开始。</li>
-          <li>Buffer Cache 占内存，磁盘缓存和文件夹缓存占硬盘，改一个管不住另外两个。</li>
+          <li>{uiText("缓存上限和清理方式填在 CloudDrive「设置」里，清理方式选 LRU。上限不要填 0，系统盘至少留 40 GiB；填完重开设置页确认存住了。")}</li>
+          <li>{uiText("读取长度和下载线程填在每个网盘各自的下载设置里，线程都从 2 开始。")}</li>
+          <li>{uiText("Buffer Cache 占内存，磁盘缓存和文件夹缓存占硬盘，改一个管不住另外两个。")}</li>
         </ul>
         <Help>
-          <ExternalLink href="https://github.com/peach-mitao/peach/blob/master/docs/CLOUDDRIVE.md">完整配置与调优说明</ExternalLink>
+          <ExternalLink href="https://github.com/peach-mitao/peach/blob/master/docs/CLOUDDRIVE.md">{uiText("完整配置与调优说明")}</ExternalLink>
         </Help>
       </Disclosure>
     </div>

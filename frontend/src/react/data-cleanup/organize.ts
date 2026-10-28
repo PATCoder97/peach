@@ -19,8 +19,8 @@ export const ORGANIZE_KEY = ['organize'] as const;
 export const ORGANIZE_EXAMPLE_URL = '/api/organize/example';
 
 export interface OrganizeExample { ok: boolean; example?: string; error?: string; field?: 'file' | 'dir' }
-export const fetchOrganizeExample = (file: string, dir: string, signal?: AbortSignal) =>
-  apiGet<OrganizeExample>(`${ORGANIZE_EXAMPLE_URL}?${new URLSearchParams({ file_template: file, dir_template: dir })}`, signal);
+export const fetchOrganizeExample = (file: string, dir: string, signal?: AbortSignal, locale = 'zh-CN') =>
+  apiGet<OrganizeExample>(`${ORGANIZE_EXAMPLE_URL}?${new URLSearchParams({ file_template: file, dir_template: dir, locale })}`, signal);
 
 export interface OrganizeTemplate { file: string; dir: string }
 

@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 沉浸模式（ADR-0031 第 11e 步）：`/immerse` 的全屏连播。片单、每一格的播放器、加载提示、手势、
  * 动作键、作者与标题都在这一面里。
  *
@@ -553,6 +554,7 @@ function useDetail(id: number | null) {
 }
 
 function ImmerseAction({ kind, glyph, label, id }: { kind: FeedbackKind; glyph: string; label: string; id: number | null }) {
+  const uiText = useUiTranslation();
   const full = useDetail(id);
   const mutation = useMutation({
     mutationFn: async (target: number) => {
@@ -583,9 +585,9 @@ function ImmerseAction({ kind, glyph, label, id }: { kind: FeedbackKind; glyph: 
         <svg viewBox="0 0 24 24"><use href={`#i-${glyph}`} /></svg>
       </button>
       <span data-immerse-label="">
-        {kind === 'dislike' ? '不喜欢' : null}
+        {kind === 'dislike' ? uiText("不喜欢") : null}
         {kind === 'seen' ? (full?.feedback === 'seen' ? '已看' : '看过') : null}
-        {kind === 'o' ? <>高潮 <b>{full?.o_count || 0}</b></> : null}
+        {kind === 'o' ? <>{uiText("高潮 ")}<b>{full?.o_count || 0}</b></> : null}
       </span>
     </div>
   );
@@ -594,6 +596,7 @@ function ImmerseAction({ kind, glyph, label, id }: { kind: FeedbackKind; glyph: 
 /* ── 作者与标题 ── */
 
 function Caption({ shown }: { shown: Shown | null }) {
+  const uiText = useUiTranslation();
   const item = shown?.item ?? null;
   const full = useDetail(item?.id ?? null);
   const owner = full ? ownerOf(full) : null;
@@ -618,12 +621,12 @@ function Caption({ shown }: { shown: Shown | null }) {
   return (
     <div data-immerse-ui="">
       <div data-immerse-author="">
-        <button type="button" data-immerse-avatar="" aria-label="打开资料" onClick={openOwner}
+        <button type="button" data-immerse-avatar="" aria-label={uiText("打开资料")} onClick={openOwner}
           dangerouslySetInnerHTML={{ __html: avatar }} />
         <a href="#" onClick={openOwner}>{owner?.who ?? ''}</a>
         <span>{shown && item ? `· ${fmtDur(item.duration)} · ${item.ctx_orient || ''} · ${shown.index + 1}/${shown.length}` : ''}</span>
       </div>
-      <button type="button" data-immerse-title="" onClick={openTitle}>{item ? helpers.displayName(item).trim() || '未命名视频' : ''}</button>
+      <button type="button" data-immerse-title="" onClick={openTitle}>{item ? helpers.displayName(item).trim() || uiText("未命名视频") : ''}</button>
     </div>
   );
 }
@@ -633,6 +636,7 @@ function Caption({ shown }: { shown: Shown | null }) {
 const SPINNER = { __html: spinnerHtml('媒体加载中') };
 
 function ImmerseView({ view: at }: { view: View }) {
+  const uiText = useUiTranslation();
   const frame = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLDivElement>(null);
@@ -670,7 +674,7 @@ function ImmerseView({ view: at }: { view: View }) {
         <span data-immerse-spinner="" dangerouslySetInnerHTML={SPINNER} />
         <span>{at.loading ?? ''}</span>
       </div>
-      <button type="button" data-immerse-close="" title="关闭" aria-label="关闭" onClick={close}>
+      <button type="button" data-immerse-close="" title={uiText("关闭")} aria-label={uiText("关闭")} onClick={close}>
         <svg viewBox="0 0 24 24"><use href="#i-x" /></svg>
       </button>
       <div ref={bar} data-immerse-bar="" onPointerDown={scrubStart} onPointerMove={scrubMove}

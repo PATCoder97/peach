@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 import { useContext, useState } from 'react';
@@ -29,6 +30,7 @@ interface Preview {
 export function FolderRuleDialog({ folder, rule, revision, close }: {
   folder: MediaFolder; rule: FolderRule | null; revision: number; close(): void;
 }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const actions = useContext(ShellActionsContext);
   const action = useAction();
@@ -89,7 +91,7 @@ export function FolderRuleDialog({ folder, rule, revision, close }: {
           {preview.sample.length ? <ul className="flex flex-col gap-1 text-body-2-regular text-text-secondary">
             {preview.sample.map(item => <li className="wrap-anywhere" key={item.id}>{item.name}</li>)}
           </ul> : null}
-          {preview.conflicts.length ? <Note tone="warning" extra={<Disclosure summary="查看归属冲突">
+          {preview.conflicts.length ? <Note tone="warning" extra={<Disclosure summary={uiText("查看归属冲突")}>
             <ul className="mt-2 flex flex-col gap-2">{preview.conflicts.slice(0, 30).map(item => <li className="wrap-anywhere" key={item.id}>{item.name}：{item.reason}</li>)}</ul>
           </Disclosure>}>{t("已有归属或逐件确认的内容保留，目录规则只应用到其余内容。")}</Note> : null}
         </section> : null}

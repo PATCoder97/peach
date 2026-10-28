@@ -1,3 +1,6 @@
+import { uiTextHtml, systemTextHtml } from '../i18n/html';
+import { translate as t } from '../i18n';
+import { esc } from '../core';
 /* tutorial 域控制器：本域状态与动作，启动由 Application 的生命周期统一安装。 */
 import { cameFromSetup, writeShell } from './../shell/index';
 import { isCurrentPostSetupTutorialRequest, nextPostSetupTutorialRequest, postSetupTutorialCollapsed, postSetupTutorialMarker, postSetupTutorialErrorHtml, postSetupTutorialSignature, postSetupTutorialSkipped, resetPostSetupTutorialState, setCollapseRegionOpen, setPostSetupTutorialCollapsed, setPostSetupTutorialMarker, setPostSetupTutorialSkipped } from '../ui-kit';
@@ -25,7 +28,7 @@ export async function syncPostSetupTutorial(){
   if(postSetupTutorialMarker()!=='pending'||await tutorialState.readPostSetupTutorialDone()){hide();return}
   const request=nextPostSetupTutorialRequest();root.hidden=false;root.setAttribute('aria-busy','true');
   if(!root.firstElementChild){
-    root.innerHTML=`<article class="post-setup-notification post-setup-loading">${icon('compass')}<p>正在检查安装进度…</p></article>`;
+    root.innerHTML=`<article class="post-setup-notification post-setup-loading">${icon('compass')}<p>${uiTextHtml("正在检查安装进度…")}</p></article>`;
   }
   try{
     const tasks=await tutorialState.postSetupTutorialTasks();
@@ -153,21 +156,21 @@ tutorialState.postSetupTutorialHtml = (tasks,skippedCount,totalCount)=>{
   const rows=ordered.map(task=>`<li class="post-setup-task" data-state="${task.done?'checked':'unchecked'}">
     <a href="${task.href}" data-tutorial-task="${task.key}">
       <span class="post-setup-check" aria-hidden="true">${task.done?icon('check'):icon(task.icon)}</span>
-      <span><b>${task.label}</b><small>${task.description}</small></span>
+      <span><b>${uiTextHtml(task.label)}</b><small>${systemTextHtml(task.description)}</small></span>
       ${icon('chevron-right')}</a>
-    ${task.done?'':`<button class="post-setup-skip" type="button" data-tutorial-skip="${task.key}" data-tutorial-label="${task.label}">跳过</button>`}
+    ${task.done?'':`<button class="post-setup-skip" type="button" data-tutorial-skip="${task.key}" data-tutorial-label="${task.label}">${uiTextHtml("跳过")}</button>`}
     </li>`).join('');
   return `<article class="post-setup-notification" data-collapsed="${collapsed}">
       <header class="post-setup-notification-head">
         <span class="post-setup-notification-icon" aria-hidden="true">${icon('compass')}</span>
-        <div><h2>完成 Peach 的安装教程</h2>
-        <p>已处理 ${completeCount}/${totalCount} 项。</p></div>
+        <div><h2>${uiTextHtml("完成 Peach 的安装教程")}</h2>
+        <p>${esc(t('已处理 {done}/{total} 项。', { done: completeCount, total: totalCount }))}</p></div>
         <button class="post-setup-collapse" type="button" data-tutorial-collapse aria-controls="postSetupCollapseBody" aria-expanded="${!collapsed}"
-          aria-label="${collapsed?'展开安装教程':'折叠安装教程'}">${icon('chevron-down')}</button>
+          aria-label="${esc(t(collapsed?'展开安装教程':'折叠安装教程'))}">${icon('chevron-down')}</button>
       </header>
       <div class="post-setup-collapse-body ui-fcollapse" id="postSetupCollapseBody"${collapsed?' hidden':''}>
       <ol class="post-setup-task-list" id="postSetupTaskList">${rows}</ol>
-      <footer><button class="geist-button" type="button" data-tutorial-action="next">继续：${next.label}</button></footer>
+      <footer><button class="geist-button" type="button" data-tutorial-action="next">${uiTextHtml("继续：")}${uiTextHtml(next.label)}</button></footer>
       </div>
     </article>`;
 };

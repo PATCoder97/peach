@@ -4,6 +4,8 @@ import { PillTabList } from './pill-tabs';
 
 import { spriteGlyph } from './sprite-glyph';
 import { useHorizontalScroller } from './use-horizontal-scroller';
+import { useTranslation } from '../i18n';
+import { formatNumber } from '../../i18n/format';
 
 export interface BoardTab<V extends string> {
   value: V;
@@ -15,10 +17,11 @@ export interface BoardTab<V extends string> {
 /** 页签与分组标题后面挂的那个计数徽标（遗留层 `.ui-board-tab-count` 的同款）：12/16 半档字重、主文字色
  *  10% 的底，整块降到五成，是附注不是读数。口径由调用方给，徽标自己不算数。 */
 export function TabCount({ value }: { value: number }) {
+  useTranslation();
   return (
     <span data-tab-count=""
       className="ml-1.5 inline-block rounded-sm bg-text-primary/10 px-1 py-px text-caption-1-medium text-text-primary opacity-50">
-      {value.toLocaleString()}
+      {formatNumber(value)}
     </span>
   );
 }
@@ -33,6 +36,7 @@ export function BoardTabs<V extends string>(
   { tabs, value, label, onChange, className = 'mb-5.5' }:
   { tabs: readonly BoardTab<V>[]; value: V; label: string; onChange(value: V): void; className?: string },
 ) {
+  const t = useTranslation();
   const list = useRef<HTMLDivElement>(null);
   const scrollRef = useHorizontalScroller(list);
 
@@ -64,7 +68,7 @@ export function BoardTabs<V extends string>(
   };
 
   return (
-    <PillTabList ref={scrollRef} role="tablist" aria-label={label} data-board-tab-list="" data-pill-nav="" onKeyDown={onKeyDown}
+    <PillTabList ref={scrollRef} role="tablist" aria-label={t(label)} data-board-tab-list="" data-pill-nav="" onKeyDown={onKeyDown}
       className={`relative flex flex-none gap-1 overflow-x-auto max-board-narrow:gap-0 ${className}`}>
       {tabs.map((tab) => {
         const Glyph = tab.symbol ? spriteGlyph(tab.symbol) : null;
@@ -75,7 +79,7 @@ export function BoardTabs<V extends string>(
             tabIndex={selected ? 0 : -1} className={TAB}
             onClick={() => { if (!selected) onChange(tab.value) }}>
             {Glyph ? <Glyph className="mr-1.5 size-(--icon-inline)" /> : null}
-            {tab.label}
+            {t(tab.label)}
           </button>
         );
       })}

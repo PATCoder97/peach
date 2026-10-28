@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 /* 实体资料页资料卡下面那一整块：交集条，加一块两排的玻璃浮层（上排视图键、观看状态与标签，
@@ -33,6 +34,7 @@ const ShuffleIcon = spriteGlyph('shuffle');
 const SortUpIcon = spriteGlyph('arrow-up'), SortDownIcon = spriteGlyph('arrow-down');
 
 export function EntityFilterPage(props: EntityFilterProps) {
+  const uiText = useUiTranslation();
   useTranslation();
   const { view, views, state, states, tags, combo, actions, helpers } = props;
   const onVideos = videoOnly(view);
@@ -68,7 +70,7 @@ export function EntityFilterPage(props: EntityFilterProps) {
   return (
     <>
       <Combo items={combo} hidden={!onVideos} actions={actions} />
-      <FilterGlassRows label={t("筛选与排序")} topLabel="媒体与标签"
+      <FilterGlassRows label={t("筛选与排序")} topLabel={uiText("媒体与标签")}
         attrs={{ 'data-filter-frame': '', 'data-entity-filter-glass': '' }}
         topClassName="gap-1.5 overflow-visible"
         bottomClassName="min-h-12" bottomRef={bottomRow} busy={props.busy}
@@ -100,7 +102,7 @@ export function EntityFilterPage(props: EntityFilterProps) {
                     if (stateNow === option.k) return;
                     if (online) actions.onlineStatus(option.k); else actions.setState(option.k);
                   }}>
-                  {option.label}
+                  {uiText(option.label)}
                 </button>
               ))}
               {!online || online.providers.length || online.tags.length ? <Sep /> : null}
@@ -149,11 +151,12 @@ function OnlineMediaKeys({ head, row, glide, onMedia }: {
 
 /** 在线视图的来源站标与标签药丸，同关注页那条浮层：站标按下是只看这个来源，标签是交集。 */
 function OnlineFilters({ head, actions }: { head: EntityOnlineHead; actions: EntityFilterActions }) {
+  const uiText = useUiTranslation();
   return (
     <>
       {head.providers.map(([key, label]) => (
         <button key={key} type="button" data-follow-provider={key} data-entity-press=""
-          aria-pressed={head.provider === key} title={label} aria-label={`来源：${label}`}
+          aria-pressed={head.provider === key} title={label} aria-label={uiText("来源：{value0}", { value0: String(label) })}
           onClick={() => actions.onlineProvider(key)} dangerouslySetInnerHTML={{ __html: sourceIcon(key) }} />
       ))}
       {head.providers.length && head.tags.length ? <Sep /> : null}
@@ -200,6 +203,7 @@ function ViewKeys({ keys, view, row, glide, onView }: {
 export function Combo({ items, hidden, actions }: {
   items: EntityComboItem[]; hidden: boolean; actions: Pick<EntityFilterActions, 'toggleTag' | 'clearFilter' | 'clearAll'>;
 }) {
+  const uiText = useUiTranslation();
   useTranslation();
   return (
     <div data-entity-combo="" hidden={hidden}>
@@ -208,7 +212,7 @@ export function Combo({ items, hidden, actions }: {
           {items.map((item) => (
             <span key={`${item.kind}:${item.key}`} data-combo-chip="">
               {item.label}
-              <button type="button" aria-label={`撤掉 ${item.label}`}
+              <button type="button" aria-label={uiText("撤掉 {value0}", { value0: String(item.label) })}
                 onClick={() => (item.kind === 'untag' ? actions.toggleTag(item.key) : actions.clearFilter(item.key))}>
                 ✕
               </button>

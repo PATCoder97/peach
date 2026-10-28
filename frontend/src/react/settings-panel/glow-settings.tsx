@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 /* 侧栏光晕的详细设置，照 feralui.dev/gradients 的工作台面板来：参数行是「84px 标签 + 自绘拉条 +
@@ -33,6 +34,7 @@ const FIELDS: readonly [Field, string, number][] = [
 
 
 function StopRow({ host, spot, index, glow }: { host: SettingsPanelHost; spot: Spot; index: number; glow: HomeGlow }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const label = GLOW_SPOT_LABELS[index];
   const row = useRef<HTMLDivElement | null>(null);
@@ -73,11 +75,11 @@ function StopRow({ host, spot, index, glow }: { host: SettingsPanelHost; spot: S
           ))}
         </div>
         <div data-glow-palette-frame="">
-        <div ref={palette} data-glow-palette="" role="radiogroup" aria-label={`${label}颜色`}>
+        <div ref={palette} data-glow-palette="" role="radiogroup" aria-label={uiText("{value0}颜色", { value0: uiText(label) })}>
           {GLOW_SWATCHES.map(([swatchFamily, name, hex]) => (
             <button type="button" key={hex} role="radio" aria-checked={hex === color} data-glow-swatch={hex}
               data-glow-family={swatchFamily} style={{ '--glow-swatch': hex } as CSSProperties}
-              title={name} aria-label={name} hidden={family !== 'all' && swatchFamily !== family}
+              title={t(name)} aria-label={t(name)} hidden={family !== 'all' && swatchFamily !== family}
               onClick={() => pick(hex)} />
           ))}
         </div>

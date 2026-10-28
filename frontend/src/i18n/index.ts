@@ -58,8 +58,13 @@ export function subscribeLocale(listener: () => void): () => void {
 }
 
 export function translate(source: string, values: Readonly<Record<string, string | number>> = {}, language = getLocale()): string {
-  const entry = messages[source];
-  const text = language === 'zh-CN' || !entry ? source : entry[language === 'vi' ? 1 : 0];
+  const key = Object.hasOwn(messages, source) ? source : source.trim();
+  const entry = Object.hasOwn(messages, key) ? messages[key] : undefined;
+  let text = language === 'zh-CN' || !entry ? source : entry[language === 'vi' ? 1 : 0];
+  if (entry && language !== 'zh-CN' && key !== source) {
+    const offset = source.indexOf(key);
+    text = source.slice(0, offset) + text + source.slice(offset + key.length);
+  }
   return text.replace(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g, (match, key: string) =>
     Object.hasOwn(values, key) ? String(values[key]) : match);
 }

@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 /* 顶栏搜索的下拉栏与键盘（`search` 岛）。
@@ -395,6 +396,7 @@ function Row({ entry, active, helpers, onPick, onPeek, onRemove }: {
   entry: SearchOption; active: boolean; helpers: SearchProps['helpers'];
   onPick(entry: SearchOption): void; onPeek(card: SuggestCard): void; onRemove(value: string): Promise<void>;
 }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const shared = {
     'data-search-value': entry.value, 'data-active': active ? '' : undefined,
@@ -417,7 +419,7 @@ function Row({ entry, active, helpers, onPick, onPeek, onRemove }: {
         {entry.type === 'history' ? (
           /* 按下就 preventDefault，不让删除键把焦点从输入框抢走：抢走会触发 `#q` 的失焦，那个处理器
              140ms 后收起整个下拉栏，于是「删一条记录」实际等于「关掉整个下拉栏」。 */
-          <button type="button" data-remove-history={entry.value} aria-label={`删除历史 ${entry.value}`}
+          <button type="button" data-remove-history={entry.value} aria-label={uiText("删除历史 {value0}", { value0: String(entry.value) })}
             onMouseDown={keep} onClick={(event) => { event.stopPropagation(); void onRemove(entry.value) }}>
             <Sprite name="x" />
           </button>
@@ -446,14 +448,14 @@ function Row({ entry, active, helpers, onPick, onPeek, onRemove }: {
     return (
       <div data-search-option="person" data-open-entity={opens} {...shared} onMouseDown={keep}>
         <Face item={item} kind={kind} />
-        <button type="button" data-search-person="" data-search-meta="" aria-label={`查看 ${item.value}`}>
+        <button type="button" data-search-person="" data-search-meta="" aria-label={uiText("查看 {value0}", { value0: String(item.value) })}>
           <span data-search-name=""><span>{item.value}</span>{matched}</span>
           <span data-search-sub="">{sub}</span>
         </button>
         {works.length ? (
           <span data-search-peeks="">
             {works.map((card) => (
-              <button key={card.id} type="button" data-open-work={card.id} aria-label={`打开 ${card.code || item.value}`}
+              <button key={card.id} type="button" data-open-work={card.id} aria-label={uiText("打开 {value0}", { value0: String(card.code || item.value) })}
                 onMouseDown={keep} onClick={(event) => { event.stopPropagation(); onPeek(card) }}>
                 <Cover card={card} helpers={helpers} />
               </button>

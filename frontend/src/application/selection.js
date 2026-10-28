@@ -1,3 +1,5 @@
+import { translate as t } from '../i18n';
+import { esc as escapeUi } from '../core';
 import { selectionSurface, selectionDock, setSelectionMode, toggleSelection as toggleSelected } from '../react/catalog-grid/selection-controller';
 import { selectSurface } from '../shell';
 /* selection 域控制器：本域状态与动作，启动由 Application 的生命周期统一安装。 */
@@ -82,7 +84,7 @@ export async function pickBatchRegion(){
   const modal=formModal({
     title:'判定产地',
     description:`选中的 ${ids.length} 项归为同一个产地。判定之后，刮削和自动推断不再改写产地。`,
-    body:`<div class="chips" role="group" aria-label="产地">`+selectionState.REGION_CHOICES.map(([key,label])=>
+    body:`<div class="chips" role="group" aria-label="${escapeUi(t("产地"))}" data-i18n-aria-label="产地">`+selectionState.REGION_CHOICES.map(([key,label])=>
       `<button type="button" class="chip" aria-pressed="false" data-region-pick="${key}">
         <span class="chip-label">${label}</span></button>`).join('')+`</div>`,
     confirmLabel:'判定产地',

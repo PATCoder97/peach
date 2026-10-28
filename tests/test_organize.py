@@ -11,7 +11,7 @@ from unittest import mock
 
 from peach import organize
 from peach.organize_templates import (
-    TemplateError, render, sanitise_component, validate_template, clean_filename,
+    TemplateError, render, sanitise_component, validate_template, clean_filename, example_path,
 )
 from support.ledger import fresh_ledger
 
@@ -26,6 +26,15 @@ VALUES = {
 
 
 class TemplateRenderTests(unittest.TestCase):
+    def test_example_language_changes_sample_values_and_preserves_literal_template_text(self):
+        self.assertEqual(example_path('{code} {title}', '{studio}', locale='en')['example'],
+                         'Studio/ABC-123 Title.mp4')
+        self.assertEqual(example_path('{code} {title}', '{studio}', locale='vi')['example'],
+                         'Hãng phim/ABC-123 Tiêu đề.mp4')
+        self.assertEqual(example_path('标题 {code}', '', locale='en')['example'], '标题 ABC-123.mp4')
+        self.assertEqual(example_path('', '', locale='en')['example'], 'ABC-123 Title.mp4')
+        self.assertEqual(example_path('', '', locale='invalid')['example'], 'ABC-123 标题.mp4')
+
     CASES = [
         # (模板, 取值覆盖, 期望)
         ("{code}", {}, "ABC-123"),

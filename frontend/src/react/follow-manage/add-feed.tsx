@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 添加 JAV 订阅：输入女优名，到 JavDB 搜她的演员卡，勾选后登记到她名下并订上（ADR-0083）。
  *
  * 查找只是列出候选、不写任何东西：同名的人站上可能不止一位，替用户决定「就是这个」是错的。
@@ -44,6 +45,7 @@ function destination(result: FeedLookup, picked: ReadonlySet<string>): { text: s
 }
 
 function CandidateRow({ card, picked, onPick }: { card: FeedCandidate; picked: boolean; onPick(on: boolean): void }) {
+  const uiText = useUiTranslation();
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Checkbox isSelected={picked} onChange={onPick}>
@@ -51,7 +53,7 @@ function CandidateRow({ card, picked, onPick }: { card: FeedCandidate; picked: b
           <span className="min-w-0 break-words">{card.names.join('、')}</span>
           {card.record ? <Chip variant="caption" color="neutral">{card.record}</Chip> : null}
           {card.held_by ? (
-            <small className="text-caption-1-regular text-text-secondary">{`已在「${card.held_by.name}」名下`}</small>
+            <small className="text-caption-1-regular text-text-secondary">{uiText("已在「{value0}」名下", { value0: String(card.held_by.name) })}</small>
           ) : null}
         </span>
       </Checkbox>
@@ -61,6 +63,7 @@ function CandidateRow({ card, picked, onPick }: { card: FeedCandidate; picked: b
 }
 
 export function AddFeed({ readOnly, toast, onAdded }: AddFeedProps) {
+  const uiText = useUiTranslation();
   const [name, setName] = useState('');
   const [result, setResult] = useState<FeedLookup | null>(null);
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set<string>());
@@ -98,18 +101,18 @@ export function AddFeed({ readOnly, toast, onAdded }: AddFeedProps) {
       <h3 className="text-title-2-medium text-text-primary">{TITLE}</h3>
       <div className="flex flex-wrap items-end gap-2">
         <div className="min-w-64 grow">
-          <Input aria-label="女优名" placeholder={PLACEHOLDER} value={name} leadingIcon={RiSearchLine}
+          <Input aria-label={uiText("女优名")} placeholder={PLACEHOLDER} value={name} leadingIcon={RiSearchLine}
             enterKeyHint="search" isDisabled={readOnly} onChange={setName} onKeyDown={onKeyDown} />
         </div>
         <Button variant="primary" disabled={readOnly || !name.trim()} {...busyProps(action.busy === 'lookup')}
-          onClick={search}>查找</Button>
+          onClick={search}>{uiText("查找")}</Button>
       </div>
 
-      {action.error ? <Note tone="error" title="这一次没有完成">{action.error}</Note> : null}
+      {action.error ? <Note tone="error" title={uiText("这一次没有完成")}>{action.error}</Note> : null}
 
       {result ? (
         <div className="flex flex-col gap-3">
-          <FieldLabel>JavDB 上的演员卡</FieldLabel>
+          <FieldLabel>{uiText("JavDB 上的演员卡")}</FieldLabel>
           {result.candidates.length ? result.candidates.map((card) => (
             <CandidateRow key={card.id} card={card} picked={picked.has(card.id)}
               onPick={(on) => setPicked((now) => {
@@ -117,15 +120,15 @@ export function AddFeed({ readOnly, toast, onAdded }: AddFeedProps) {
                 if (on) next.add(card.id); else next.delete(card.id);
                 return next;
               })} />
-          )) : <Help>JavDB 上没有搜到这个名字。</Help>}
+          )) : <Help>{uiText("JavDB 上没有搜到这个名字。")}</Help>}
           {result.candidates.length ? (
-            <Help role="status">{picked.size ? where!.text : '勾选她的演员卡；有碼与無碼两条记录都是她的话，两张都勾。'}</Help>
+            <Help role="status">{picked.size ? where!.text : uiText("勾选她的演员卡；有碼与無碼两条记录都是她的话，两张都勾。")}</Help>
           ) : null}
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" size="small" onClick={close}>关闭</Button>
+            <Button variant="secondary" size="small" onClick={close}>{uiText("关闭")}</Button>
             {result.candidates.length ? (
               <Button variant="primary" size="small" disabled={readOnly || !picked.size || where!.blocked}
-                {...busyProps(action.busy === 'follow')} onClick={add}>{`添加订阅（${picked.size}）`}</Button>
+                {...busyProps(action.busy === 'follow')} onClick={add}>{uiText("添加订阅（{value0}）", { value0: String(picked.size) })}</Button>
             ) : null}
           </div>
         </div>

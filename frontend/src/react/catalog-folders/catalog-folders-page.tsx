@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 import { useContext, useDeferredValue, useEffect, useId, useLayoutEffect, useState, type ReactNode } from 'react';
@@ -128,6 +129,7 @@ export function CatalogFolders({ treeTarget, headerTarget, enabled = true }: {
 }
 
 function FolderChildren({ nodes, go }: { nodes: MediaFolder[]; go(id: string): void }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const [expanded, setExpanded] = useState(false);
   const id = useId();
@@ -137,7 +139,7 @@ function FolderChildren({ nodes, go }: { nodes: MediaFolder[]; go(id: string): v
       <Button key={node.id} variant="secondary" size="small" leadingIcon={RiFolder3Line}
         onClick={() => go(node.id)}><span className="truncate">{node.name}</span></Button>)}</div>
     {nodes.length > 12 ? <Button variant="ghost" size="small" aria-expanded={expanded} aria-controls={id}
-      onClick={() => setExpanded(value => !value)}>{expanded ? t("收起文件夹") : `展开全部 ${nodes.length} 个文件夹`}</Button> : null}
+      onClick={() => setExpanded(value => !value)}>{expanded ? t("收起文件夹") : uiText("展开全部 {value0} 个文件夹", { value0: String(nodes.length) })}</Button> : null}
   </div>;
 }
 

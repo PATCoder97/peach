@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 「番号识别规则」：内置规则认不出的命名，由使用者写正则补上。
  *
  * 一行一条，对完整文件名搜索，不分大小写；番号取命名组 `code`，没有就取第一个括号，
@@ -19,6 +20,7 @@ import { busyProps, useAction } from './use-action';
 const PLACEHOLDER = '^\\+{3}\\s*(?<code>FC2-PPV-\\d+)\n\\[(?<code>[A-Z]+-\\d+)\\]';
 
 export function CodePatternSettings({ receipt }: { receipt(message: string): void }) {
+  const uiText = useUiTranslation();
   const settings = useQuery({ queryKey: SETTINGS_KEY, queryFn: ({ signal }) => fetchSettings(signal) });
   /* 没动过时显示账本里那一份；改过就是本地草稿，保存成功后丢掉草稿、回到账本那一份。 */
   const [draft, setDraft] = useState<string | null>(null);
@@ -39,16 +41,16 @@ export function CodePatternSettings({ receipt }: { receipt(message: string): voi
   };
 
   return (
-    <Section title="番号识别规则" onSubmit={submit}>
+    <Section title={uiText("番号识别规则")} onSubmit={submit}>
       <Stack>
-        <Help>内置规则认不出番号时，按这里的规则从文件名里取。每行一条正则表达式，番号写在 (?&lt;code&gt;…) 里，没有命名组就取第一个括号。规则在下一次处理时对还没有番号的视频生效。</Help>
-        <Textarea id="codePatternSetting" aria-label="番号识别规则" rows={3} autoResize maxRows={12}
+        <Help>{uiText("内置规则认不出番号时，按这里的规则从文件名里取。每行一条正则表达式，番号写在 (?<code>…) 里，没有命名组就取第一个括号。规则在下一次处理时对还没有番号的视频生效。")}</Help>
+        <Textarea id="codePatternSetting" aria-label={uiText("番号识别规则")} rows={3} autoResize maxRows={12}
           spellCheck="false" autoComplete="off" placeholder={PLACEHOLDER} value={value}
           isDisabled={!settings.data} isInvalid={!!failure} hint={failure || undefined}
           onChange={setDraft} />
       </Stack>
       <Footer>
-        <Button type="submit" {...busyProps(action.busy === 'save')}>保存配置</Button>
+        <Button type="submit" {...busyProps(action.busy === 'save')}>{uiText("保存配置")}</Button>
       </Footer>
     </Section>
   );

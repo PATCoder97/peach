@@ -1,3 +1,5 @@
+import { translate as t } from './i18n';
+import { esc as escapeUi } from './core';
 import { esc } from '@peach/legacy/core';
 import { noteHtml, loadingDotsHtml } from '@peach/legacy/ui';
 
@@ -75,7 +77,7 @@ export function followJobProgress(options: {
   const note=options.note || (text=>noteHtml(text,{label:'任务状态',variant:'error'}));
   const loading=options.loading || loadingDotsHtml;
   const progress=options.progress || ((value,max,label)=>jobActivityHtml(label||`已处理 ${value} / ${max}`,value,max));
-  const container=options.container || (content=>`<section class="followtask" data-geist-fieldset aria-label="任务进度"><div class="geist-fieldset-content">${content}</div></section>`);
+  const container=options.container || (content=>`<section class="followtask" data-geist-fieldset aria-label="${escapeUi(t("任务进度"))}" data-i18n-aria-label="任务进度"><div class="geist-fieldset-content">${content}</div></section>`);
   const panel = document.createElement('div');
   options.host.hidden = true;
   panel.dataset.followJob = '';

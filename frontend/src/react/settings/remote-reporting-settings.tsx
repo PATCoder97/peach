@@ -2,7 +2,7 @@ import { translate as t } from '../../i18n/index';
 import { useTranslation } from '../i18n';
 import { useState } from 'react';
 
-import { SettingsRow } from '@/components/application/settings/settings-rows';
+import { SettingsRow } from '../components/settings-rows';
 import { Switch } from '@/components/base/switch/switch';
 import { StatusLabel } from '../components/status-label';
 

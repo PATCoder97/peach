@@ -1,3 +1,5 @@
+import { useTranslation as useUiTranslation } from "../i18n";
+import { useSystemTranslation } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { cardArtwork } from '@peach/card-art';
@@ -33,6 +35,8 @@ export function LibraryCompletionPrompt({ assetIds, onComplete, className = 'mb-
 }
 
 function Completion({ assetIds, onComplete, className }: { assetIds: number[]; onComplete?(): void; className: string }) {
+  const uiText = useUiTranslation();
+  const systemText = useSystemTranslation();
   const job = useQuery({ queryKey: LIBRARY_PROCESSING_KEY,
     queryFn: ({ signal }) => fetchLibraryProcessing(signal),
     refetchInterval: query => pollInterval(query.state.data, true) });
@@ -65,14 +69,14 @@ function Completion({ assetIds, onComplete, className }: { assetIds: number[]; o
     : started && state?.job_id === started && state.status === 'failed' ? state.error || '补全未完成' : '';
   const message = problem || (start.isPending ? '正在启动补全…'
     : outcome || `这批影片中有 ${assetIds.length.toLocaleString()} 部暂无预览，${processingActive(state) ? '当前任务结束后可单独补全。' : '可补全资料与图片。'}`);
-  return <section aria-label="补全预览" aria-live="polite" data-library-completion="" className={cx('@container', className)}>
+  return <section aria-label={uiText("补全预览")} aria-live="polite" data-library-completion="" className={cx('@container', className)}>
     <Note tone={problem ? 'warning' : 'neutral'} action={<div className="flex flex-wrap items-center gap-2"><ProcessingActions busy={busy} metadataOnly={state?.metadata_only} onRun={command => {
       if (busy) return;
       setOutcome('');
       start.mutate(command);
     }} /></div>}>
-      {message}{' '}<LinkButton href="/data-cleanup#libraryProcessing" size="small" trailingIcon={RiArrowRightLine}>
-      {problem ? '打开扫描与采集' : '查看处理详情'}
+      {systemText(message)}{' '}<LinkButton href="/data-cleanup#libraryProcessing" size="small" trailingIcon={RiArrowRightLine}>
+      {uiText(problem ? '打开扫描与采集' : '查看处理详情')}
     </LinkButton></Note>
   </section>;
 }

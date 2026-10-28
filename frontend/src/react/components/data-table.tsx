@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { useMemo, useState, type ReactNode } from 'react';
 import {
   createColumnHelper, createPaginatedRowModel, createSortedRowModel, flexRender,
@@ -16,6 +17,7 @@ import { useTableSelection } from './use-table-selection';
 import { useTablePreferences } from './table-column-preferences';
 import { TableColumnControls, TableColumnResizer } from './table-column-controls';
 import { TableSelectionHeader } from './table-selection-header';
+import { formatNumber } from '../../i18n/format';
 
 const features = tableFeatures({
   rowSortingFeature, rowSelectionFeature, rowPaginationFeature, columnVisibilityFeature,
@@ -53,6 +55,7 @@ interface DataTableProps<T> {
 /** 数据表共用排序、跨页选择与分页；业务动作只接收仍在清单里的所选行。 */
 export function DataTable<T extends RowData>({ label, items, columns, rowId, rowLabel, selected, onSelected, actions,
   title = label, titleId, description, footerActions, panel = true, unit = '条记录' }: DataTableProps<T>) {
+  const uiText = useUiTranslation();
   const [sorting, setSorting] = useState<SortingState>([]);
   const preferenceColumns = useMemo(() => [
     { id: 'select', label: '选择', width: 48, min: 48, max: 48, required: true },
@@ -69,13 +72,13 @@ export function DataTable<T extends RowData>({ label, items, columns, rowId, row
     const helper = createColumnHelper<typeof features, T>();
     return helper.columns([
       helper.display({ id: 'select', header: ({ table }) => (
-        <TableSelectionHeader table={table} label={`全选${label}`} />
+        <TableSelectionHeader table={table} label={uiText('全选{label}', { label: uiText(label) })} />
       ), cell: ({ row }) => (
-        <Checkbox slot={null} aria-label={`选择 ${rowLabel(row.original)}`} isSelected={row.getIsSelected()}
+        <Checkbox slot={null} aria-label={uiText('选择 {name}', { name: rowLabel(row.original) })} isSelected={row.getIsSelected()}
           onChange={(on) => row.toggleSelected(on)} />
       ) }),
       ...columns.map((column) => helper.accessor((item: T) => column.value?.(item) ?? '', {
-        id: column.id, header: column.label, enableSorting: Boolean(column.value),
+        id: column.id, header: uiText(column.label), enableSorting: Boolean(column.value),
         sortFn: (a, b) => {
           const first = column.value!(a.original), second = column.value!(b.original);
           return typeof first === 'number' && typeof second === 'number'
@@ -84,7 +87,7 @@ export function DataTable<T extends RowData>({ label, items, columns, rowId, row
         cell: ({ row }) => column.render(row.original),
       })),
     ]);
-  }, [columns, label, rowLabel]);
+  }, [columns, label, rowLabel, uiText]);
   const table = useTable({
     features, data: items, columns: definitions, getRowId: rowId,
     state: { sorting, rowSelection, pagination: { ...pagination, pageIndex }, columnVisibility: preferences.visibility },
@@ -102,11 +105,11 @@ export function DataTable<T extends RowData>({ label, items, columns, rowId, row
     <div data-data-table-panel={panel || undefined} className={panel
       ? cardClass({ padding: 'none', bordered: 'line', className: 'flex flex-col gap-4 px-6 py-5 max-sm:px-4' })
       : 'flex min-w-0 flex-col gap-4'}>
-      <div data-responsive-toolbar="" role="toolbar" aria-label={`${label}工具栏`}>
+      <div data-responsive-toolbar="" role="toolbar" aria-label={uiText('{label}工具栏', { label: uiText(label) })}>
         <div data-toolbar-heading="">
-        <h3 id={titleId} className="text-title-2-medium text-text-primary">{title}</h3>
+        <h3 id={titleId} className="text-title-2-medium text-text-primary">{uiText(title)}</h3>
         <span className="text-body-2-regular tabular-nums text-text-secondary">
-          {`${items.length.toLocaleString()} ${unit}`}
+          {`${formatNumber(items.length)} ${uiText(unit)}`}
         </span>
         </div>
         <div data-toolbar-actions="">
@@ -116,12 +119,13 @@ export function DataTable<T extends RowData>({ label, items, columns, rowId, row
         </div>
       </div>
       {description ? <p className="text-body-2-regular text-text-secondary">{description}</p> : null}
-      <SelectionDock label={`${label}批量操作`} visible={chosen.length > 0} count={`已选 ${chosen.length.toLocaleString()} ${unit}`}>
+      <SelectionDock label={uiText('{label}批量操作', { label: uiText(label) })} visible={chosen.length > 0}
+        count={uiText('已选 {count} {unit}', { count: formatNumber(chosen.length), unit: uiText(unit) })}>
         {actions(chosen, () => onSelected([]))}
-        <Button variant="ghost" size="small" onClick={() => onSelected([])}>取消选择</Button>
+        <Button variant="ghost" size="small" onClick={() => onSelected([])}>{uiText("取消选择")}</Button>
       </SelectionDock>
       <DataTableFrame follow preferences={preferences} onRowClick={(id) => table.getRow(id)?.toggleSelected()}>
-        <Table aria-label={label} size="sm"
+        <Table aria-label={uiText(label)} size="sm"
           sortDescriptor={sorting[0] ? { column: sorting[0].id, direction: sorting[0].desc ? 'descending' : 'ascending' } : undefined}
           onSortChange={(sort) => table.getColumn(String(sort.column))?.toggleSorting(sort.direction === 'descending')}>
           <TableHeader>
@@ -133,9 +137,9 @@ export function DataTable<T extends RowData>({ label, items, columns, rowId, row
                 </span><TableColumnResizer preferences={preferences} id={header.id} /></>}
               </TableColumn>
             ))}
-            <TableColumn id="remaining-space" aria-label="行空白区域" data-table-space="" width={preferences.spaceWidth} minWidth={0} />
+            <TableColumn id="remaining-space" aria-label={uiText("行空白区域")} data-table-space="" width={preferences.spaceWidth} minWidth={0} />
           </TableHeader>
-          <TableBody renderEmptyState={() => '没有记录'}>
+          <TableBody renderEmptyState={() => uiText('没有记录')}>
             {table.getRowModel().rows.map((row) => (
               <TableRow key={row.id} id={row.id} data-board-selected={row.getIsSelected() || undefined}>
                 {row.getVisibleCells().map((cell) => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}

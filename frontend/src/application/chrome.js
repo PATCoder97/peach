@@ -1,3 +1,4 @@
+import { esc as escapeUi } from '../core';
 /* chrome 域控制器：本域状态与动作，启动由 Application 的生命周期统一安装。 */
 import { applicationEffects } from './effects';
 import { MEDIA_SOURCE_ICONS, moveGlidePane, wireAnchoredMenu } from '../ui-kit';
@@ -115,13 +116,13 @@ const boardToggle=document.querySelector('#filterBtn'),toggleHome=document.creat
 effects.own(()=>toggleHome.remove());
 const boardFoot=document.createElement('div');boardFoot.className='board-sidebar-foot';
 effects.own(()=>boardFoot.remove());
-boardFoot.innerHTML=`<div class="board-theme-toggle" role="group" data-i18n-aria-label="明暗主题" aria-label="明暗主题"><span class="board-theme-thumb" aria-hidden="true"></span><button type="button" data-board-theme="light" data-i18n-aria-label="浅色主题" aria-label="浅色主题">${icon('sun')}</button><button type="button" data-board-theme="dark" data-i18n-aria-label="深色主题" aria-label="深色主题">${icon('moon')}</button></div>`;
+boardFoot.innerHTML=`<div class="board-theme-toggle" role="group" data-i18n-aria-label="${escapeUi(t("明暗主题"))}" data-i18n-aria-label="明暗主题" aria-label="${escapeUi(t("明暗主题"))}" data-i18n-aria-label="明暗主题"><span class="board-theme-thumb" aria-hidden="true"></span><button type="button" data-board-theme="light" data-i18n-aria-label="${escapeUi(t("浅色主题"))}" data-i18n-aria-label="浅色主题" aria-label="${escapeUi(t("浅色主题"))}" data-i18n-aria-label="浅色主题">${icon('sun')}</button><button type="button" data-board-theme="dark" data-i18n-aria-label="${escapeUi(t("深色主题"))}" data-i18n-aria-label="深色主题" aria-label="${escapeUi(t("深色主题"))}" data-i18n-aria-label="深色主题">${icon('moon')}</button></div>`;
 /* 光晕配色钮和设置钮归一组，明暗键单独一组。展开时从左到右、收起时从上到下
    均按明暗、配色、设置排列，键盘焦点也沿用同一顺序。
    字形直接引 `#ri-palette-line`，不走 `icon()`：那一枚是 Remix 的实心路径，`icon()` 拼的是
    `#i-` 前缀的线条件。它和设置分区「界面」那一枚是同一个意思——这枚钮的弹层底部「详细
    设置」开的正是那一页，两处说的都是外观，同一个意思本来就只该有一枚字形。 */
-boardFoot.insertAdjacentHTML('beforeend',`<div class="board-foot-actions"><button type="button" class="board-glow-toggle" id="boardGlowBtn" aria-label="光晕配色" aria-haspopup="dialog" aria-expanded="false" aria-controls="boardGlowMenu"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ri-palette-line"/></svg><span class="board-glow-mark" aria-hidden="true"><span class="board-glow-mark-glow"></span><span class="board-glow-mark-accent"></span></span></button></div>`);
+boardFoot.insertAdjacentHTML('beforeend',`<div class="board-foot-actions"><button type="button" class="board-glow-toggle" id="boardGlowBtn" aria-label="${escapeUi(t("光晕配色"))}" data-i18n-aria-label="光晕配色" aria-haspopup="dialog" aria-expanded="false" aria-controls="boardGlowMenu"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ri-palette-line"/></svg><span class="board-glow-mark" aria-hidden="true"><span class="board-glow-mark-glow"></span><span class="board-glow-mark-accent"></span></span></button></div>`);
 boardFoot.querySelector('.board-foot-actions').append(document.querySelector('#settingsBtn'));
 setShellAttribute(boardFoot.querySelector('#boardGlowBtn'),'aria-label','光晕配色');
 document.querySelector('#drawer').append(boardFoot);

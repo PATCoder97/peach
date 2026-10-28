@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 带单位、可选开关与字段错误反馈的数值设置。
  *
  * 可选的那几项（悬停放大、相关推荐、搜索记录、关注自动更新）前面有一枚开关：关掉就是 0，
@@ -41,6 +42,7 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
   disabled?: boolean;
   onApply(value: number): void;
 }) {
+  const uiText = useUiTranslation();
   useTranslation();
   const spec: NumberSpec = NUMBER_SPECS[id];
   const { min, max, unit, fallback } = spec;
@@ -110,13 +112,13 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
   return (
     <div data-number-setting="">
       {optional
-        ? <input type="checkbox" data-toggle="" role="switch" aria-label={`启用${label}`}
+        ? <input type="checkbox" data-toggle="" role="switch" aria-label={uiText("启用{value0}", { value0: uiText(label) })}
             checked={on} disabled={blocked} onChange={toggle} />
         : null}
       <div data-number-fields="" hidden={optional && !on}>
         <div data-number-control="">
           <input ref={input} type="number" inputMode="numeric" className="geist-input" min={min} max={max} step={1}
-            value={draft} disabled={blocked} aria-label={label} aria-describedby={`${id}-error`}
+            value={draft} disabled={blocked} aria-label={uiText(label)} aria-describedby={`${id}-error`}
             onChange={(event) => {
               setDraft(event.target.value);
               if (event.target.value && event.target.checkValidity()) {

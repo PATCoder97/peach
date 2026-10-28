@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 元数据字段那一类卡片的正文：一组互斥的来源值，加上还没收录的 genre。
  *
  * 一张候选卡上下两段读的是两件事：上段是这个来源给的那个值，也就是选中它就会写进数据库
@@ -38,6 +39,7 @@ export function GenreTagList({ tags }: { tags: string[] }) {
 
 /** 来源依据独立展开，点击说明不会同时选中另一个来源。 */
 function CandidateEvidence({ candidate, row }: { candidate: ReviewCandidate; row: ReviewRow }) {
+  const uiText = useUiTranslation();
   const [open, setOpen] = useState(false);
   const panel = useId();
   const evidence = Object.entries(candidate.catalog_evidence || {})
@@ -47,16 +49,16 @@ function CandidateEvidence({ candidate, row }: { candidate: ReviewCandidate; row
     <div className="min-w-0">
       <Button variant="secondary" size="small" leadingIcon={CollapseChevron}
         aria-expanded={open} aria-controls={panel}
-        aria-label={`${open ? '收起' : '展开'} ${candidate.source || '该来源'} 的来源依据`}
+        aria-label={uiText(open ? '收起 {source} 的来源依据' : '展开 {source} 的来源依据', { source: candidate.source || uiText('该来源') })}
         onClick={() => setOpen(!open)}>
-        <span data-copy-key="review.card.source_evidence">来源依据</span>{` · ${evidence.length}`}
+        <span data-copy-key="review.card.source_evidence">{uiText("来源依据")}</span>{` · ${evidence.length}`}
       </Button>
       <CollapseRegion id={panel} open={open}>
         <dl className="flex min-w-0 flex-col gap-2 px-3 pt-2 pb-1">
           {evidence.map(([field, item]) => (
             <div key={field} className="flex min-w-0 flex-wrap gap-x-2">
               <dt className="text-caption-1-regular text-text-tertiary">
-                {EVIDENCE_LABELS[field] || field}
+                {uiText(EVIDENCE_LABELS[field] || field)}
               </dt>
               <dd className="min-w-0 text-body-2-regular break-words text-text-primary">
                 <ComparisonText value={item.display_value || ''}
@@ -105,6 +107,7 @@ export function CandidateChoices(
     locked: boolean;
   },
 ) {
+  const uiText = useUiTranslation();
   const candidates = row.candidates || [];
   if (!candidates.length) return null;
   if (candidates.length === 1) {
@@ -119,7 +122,7 @@ export function CandidateChoices(
     );
   }
   return (
-    <RadioGroup aria-label={`${fieldName || '资料'}的来源`} value={value} isDisabled={locked}
+    <RadioGroup aria-label={uiText('{field}的来源', { field: fieldName || uiText('资料') })} value={value} isDisabled={locked}
       onChange={onChange}>
       <div className="flex min-w-0 flex-col gap-3">
       {candidates.map((candidate) => (
@@ -142,6 +145,7 @@ function GenreRow(
     genre: string; tags: string[]; locked: boolean; toast(message: string): void;
   },
 ) {
+  const uiText = useUiTranslation();
   const [draft, setDraft] = useState('');
   const [problem, setProblem] = useState('');
   const record = useMutation({
@@ -162,11 +166,11 @@ function GenreRow(
   return (
     <div className="flex flex-wrap items-center gap-2">
       <b lang="ja" className="text-body-medium text-text-primary">{genre}</b>
-      <TextField aria-label={`「${genre}」收录成的中文标签`} value={draft} onChange={setDraft}
+      <TextField aria-label={uiText("「{value0}」收录成的中文标签", { value0: String(genre) })} value={draft} onChange={setDraft}
         maxLength={40} isDisabled={locked || record.isPending} className="min-w-40 flex-1">
         {/* 输入法还在组词时的那一下 Enter 是「选这个词」，不是「提交」。 */}
         <InputBase size="small" list={tags.length ? GENRE_TAGS_ID : undefined}
-          autoComplete="off" placeholder="中文标签"
+          autoComplete="off" placeholder={uiText("中文标签")}
           onKeyDown={(event) => {
             if (event.key !== 'Enter' || event.nativeEvent.isComposing) return;
             event.preventDefault();
@@ -176,9 +180,9 @@ function GenreRow(
       {/* 两个结论都是次级键：这张卡上的主动作是「通过」，把词收进表里只是让那一步有得
           可选。收录挂上 primary 的话，同一张卡上会有两个蓝底键在抢「按这里」。 */}
       <Button variant="secondary" size="small" disabled={locked || record.isPending}
-        onClick={accept}>收录</Button>
+        onClick={accept}>{uiText("收录")}</Button>
       <Button variant="secondary" size="small" disabled={locked || record.isPending}
-        onClick={() => { setProblem(''); record.mutate('') }}>不是内容</Button>
+        onClick={() => { setProblem(''); record.mutate('') }}>{uiText("不是内容")}</Button>
       {problem
         ? <p role="status" className="w-full text-body-2-regular text-text-error-primary">{problem}</p>
         : null}
@@ -194,11 +198,12 @@ export function PendingGenres(
     row: ReviewRow; tags: string[]; locked: boolean; toast(message: string): void;
   },
 ) {
+  const uiText = useUiTranslation();
   const genres = pendingGenres(row);
   if (!genres.length) return null;
   return (
-    <div role="group" aria-label="未收录 genre" className="flex flex-col gap-2 border-t border-separator-border pt-4">
-      <h5 className="text-body-2-medium text-text-secondary">{`未收录 genre · ${genres.length}`}</h5>
+    <div role="group" aria-label={uiText("未收录 genre")} className="flex flex-col gap-2 border-t border-separator-border pt-4">
+      <h5 className="text-body-2-medium text-text-secondary">{uiText("未收录 genre · {value0}", { value0: String(genres.length) })}</h5>
       <div role="list" className="flex flex-col">
         {genres.map((genre, index) => (
           <div key={genre} role="listitem"

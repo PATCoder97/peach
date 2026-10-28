@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import type { ButtonHTMLAttributes } from 'react';
 import { spinnerHtml } from '@peach/legacy/ui';
 import { spriteGlyph } from './sprite-glyph';
@@ -12,16 +13,17 @@ export function RatingStars({ value, onRate, busyStar, busyAttrs }: {
   busyStar?: number;
   busyAttrs?(star: number): ButtonHTMLAttributes<HTMLButtonElement>;
 }) {
+  const uiText = useUiTranslation();
   const score = Math.max(0, Math.min(5, value));
   const current = Math.round(score);
   return <span data-rating-stars="" aria-hidden={onRate ? undefined : true}>
     {[1, 2, 3, 4, 5].map(star => onRate
       ? <button key={star} type="button" data-rate={star} data-on={String(star <= current)}
-        title={star === current ? '再点一次取消评分' : `${star} 星`}
-        aria-label={star === current ? `取消评分（当前 ${star} 星）` : `评为 ${star} 星`}
+        title={star === current ? uiText("再点一次取消评分") : uiText("{value0} 星", { value0: String(star) })}
+        aria-label={star === current ? uiText("取消评分（当前 {value0} 星）", { value0: String(star) }) : uiText("评为 {value0} 星", { value0: String(star) })}
         {...busyAttrs?.(star)} aria-disabled={busyStar ? true : undefined} aria-busy={busyStar === star || undefined}
         onClick={() => { if (!busyStar) onRate(star) }}>
-        {busyStar === star ? <span dangerouslySetInnerHTML={{ __html: spinnerHtml('正在保存评分') }} /> : <Star />}
+        {busyStar === star ? <span dangerouslySetInnerHTML={{ __html: spinnerHtml(uiText('正在保存评分')) }} /> : <Star />}
       </button>
       : <span key={star} data-rate={star} data-on={String(score >= star)}>
         <span data-rating-icon=""><Star />

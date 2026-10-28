@@ -3,6 +3,7 @@
  *
  * 左侧导航只认地址和本地设置，一个请求都不等；React 包装载回来之前这一列不能是空的。骨架与组件画的是
  * 同一份结构（标题行的空槽、导航那一列），两者之间换手没有位移。 */
+import { translate as t } from './i18n';
 const escape = (value: string) => value.replace(/[&<>"']/g, (char) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
 
@@ -16,8 +17,8 @@ export function sidebarSkeletonHtml(
       ? '<img data-sidebar-home-logo="" src="/peach-logo-64.png" srcset="/peach-logo-64.png 64w, /peach-logo-128.png 128w"'
         + ' sizes="24px" width="24" height="24" alt="" decoding="async">'
       : `<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-${escape(glyph)}"/></svg>`;
-    return `<button type="button" data-nav="${escape(key)}" aria-pressed="${pressed(key)}" aria-label="${escape(label)}">`
-      + `${mark}<span>${escape(label)}</span></button>`;
+    return `<button type="button" data-nav="${escape(key)}" aria-pressed="${pressed(key)}" aria-label="${escape(t(label))}">`
+      + `${mark}<span>${escape(t(label))}</span></button>`;
   });
   return `<div data-sidebar-head=""></div><div data-sidebar-nav="">${buttons.join('')}</div>`;
 }

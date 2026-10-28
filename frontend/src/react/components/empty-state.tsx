@@ -5,6 +5,7 @@
  * 钩子，不参与样式。标准与紧凑两档共用图标、字体、背景和边框。 */
 import type { ComponentType, ReactNode } from 'react';
 import { Button } from '@/components/base/buttons/button';
+import { useTranslation } from '../i18n';
 
 type Glyph = ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
 
@@ -23,13 +24,14 @@ export function EmptyState(
   { icon: Glyph; title: string; actions?: ReactNode; children: ReactNode;
     size?: keyof typeof SIZE },
 ) {
+  const t = useTranslation();
   return (
     <div data-empty-state="" data-empty-size={size} className={`flex min-w-0 max-w-full flex-col items-center justify-center gap-2 rounded-floating border border-separator-border bg-background-secondary-default text-center ${SIZE[size]}`}>
       <span aria-hidden className="mb-2 flex size-empty-glyph shrink-0 items-center justify-center rounded-floating border border-text-primary/15 p-2.5 text-text-secondary">
         <Icon aria-hidden className="size-8 shrink-0" />
       </span>
-      <h3 className="text-body-semibold text-pretty text-text-primary">{title}</h3>
-      {children != null ? <p className="max-w-empty-copy text-body-2-regular leading-empty-copy text-text-secondary">{children}</p> : null}
+      <h3 className="text-body-semibold text-pretty text-text-primary">{t(title)}</h3>
+      {children != null ? <p className="max-w-empty-copy text-body-2-regular leading-empty-copy text-text-secondary">{typeof children === 'string' ? t(children) : children}</p> : null}
       {/* 去处属于这一块，不摆到框外面：「还没有内容」和一个不知道属于谁的按钮分开放时，
           读者要先把两样东西连起来才知道按下去做什么。 */}
       {actions ? <div className="mt-2 flex flex-wrap justify-center gap-2">{actions}</div> : null}

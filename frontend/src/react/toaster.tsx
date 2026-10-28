@@ -10,6 +10,7 @@ import { Toaster, toast } from 'sonner';
 
 import type * as Bundle from './bundle';
 import { Providers } from './providers';
+import { useTranslation } from './i18n';
 
 /* 成功那一枚勾自己画出来（`src/ui-kit/motion.css` 的 `[data-toast-glyph=draw]`），失败那一枚
    不画：错误要的是立刻看清。字形由遗留层的 `icon()` 给，和全站其余图标同一套描边件。 */
@@ -35,21 +36,26 @@ export const mountToaster: typeof Bundle.mountToaster = (host, icons) => {
   mounted = { host, root };
   /* 底边读 `--toast-bottom`：教程卡在右下角时，遗留层把它写成卡上沿之上的位置；没写就是
      Sonner 的默认边距。栈为长回执留出空间，每条回执的宽度由内容决定。 */
-  root.render(
-    <Providers><Toaster id="receipts" position="bottom-right" closeButton gap={8}
+  root.render(<Providers><ApplicationToasters icons={icons} /></Providers>);
+};
+
+function ApplicationToasters({ icons }: { icons: Parameters<typeof Bundle.mountToaster>[1] }) {
+  const t = useTranslation();
+  return (
+    <><Toaster id="receipts" position="bottom-right" closeButton gap={8}
       style={{ ...FRAME, '--width': 'min(560px, calc(100vw - 48px))' } as CSSProperties}
       offset={{ right: 24, bottom: 'calc(var(--toast-bottom, 24px) + var(--processing-toast-space, 0px))' }}
       mobileOffset={{ right: 16, left: 16, bottom: 'calc(var(--toast-bottom, 16px) + var(--processing-toast-space, 0px))' }}
-      toastOptions={{ closeButtonAriaLabel: '关闭提示' }} containerAriaLabel="通知"
+      toastOptions={{ closeButtonAriaLabel: t('关闭提示') }} containerAriaLabel={t('通知')}
       icons={{ success: glyph(icons.success, true), error: glyph(icons.error, false) }} />
       <Toaster id="processing" position="bottom-right" gap={8} expand
         style={{ ...FRAME, '--width': 'min(400px, calc(100vw - 32px))' } as CSSProperties}
         offset={{ right: 24, bottom: 'var(--toast-bottom, 24px)' }}
         mobileOffset={{ right: 16, left: 16, bottom: 'var(--toast-bottom, 16px)' }}
-        toastOptions={{ closeButtonAriaLabel: '关闭任务提示' }} containerAriaLabel="后台任务" />
-    </Providers>,
+        toastOptions={{ closeButtonAriaLabel: t('关闭任务提示') }} containerAriaLabel={t('后台任务')} />
+    </>
   );
-};
+}
 
 /* 同一个 `id` 再调一次就是改写那一条：撤销的结果写回原回执，不另起一条，底部对齐的栈里
    不会一进一出地跳一格。改写时 `action` 显式给成 `undefined`，Sonner 按 id 合并，不写这一项

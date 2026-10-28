@@ -2,9 +2,11 @@
  * 忙态落在触发它的那颗按钮上，同一分区里的几颗按 key 区分。 */
 import { useEffect, useRef, useState } from 'react';
 
-import { errorMessage } from '../../api';
+import { requestErrorSource } from '../../core/request-error';
+import { useTranslation } from '../i18n';
 
 export function useAction(initialError = '') {
+  const t = useTranslation();
   const pending = useRef<AbortController | null>(null);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState(initialError);
@@ -22,14 +24,14 @@ export function useAction(initialError = '') {
       if (!controller.signal.aborted) done(result);
     } catch (cause) {
       if (controller.signal.aborted) return;
-      if (failed) failed(cause); else setError(errorMessage(cause));
+      if (failed) failed(cause); else setError(requestErrorSource(cause));
     } finally {
       if (pending.current === controller) pending.current = null;
       if (!controller.signal.aborted) setBusy('');
     }
   }
 
-  return { run, busy, error, setError };
+  return { run, busy, error: t(error), setError };
 }
 
 export { busyProps } from './busy-props';

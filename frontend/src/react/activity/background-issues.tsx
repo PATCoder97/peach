@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 任务中心顶部「需要处理」：后台服务此刻存在的问题，每项一行。
  *
  * 这些是持续状态（调度连续失败、公网入口断开、网络不通），不是跑过的一轮，所以不进任务表；
@@ -40,6 +41,7 @@ export interface BackgroundIssue {
 }
 
 export function BackgroundIssues() {
+  const uiText = useUiTranslation();
   const id = useId();
   const query = useQuery({
     queryKey: BACKGROUND_ISSUES_KEY,
@@ -50,7 +52,7 @@ export function BackgroundIssues() {
   if (!issues.length) return null;
   return (
     <section aria-labelledby={id} className="flex min-w-0 flex-col gap-3">
-      <h3 id={id} className="text-title-2-medium text-text-primary">需要处理</h3>
+      <h3 id={id} className="text-title-2-medium text-text-primary">{uiText("需要处理")}</h3>
       <ul className="flex min-w-0 flex-col gap-3">
         {issues.map((issue) => <li key={issue.key}><IssueRow issue={issue} /></li>)}
       </ul>
@@ -59,23 +61,24 @@ export function BackgroundIssues() {
 }
 
 function IssueRow({ issue }: { issue: BackgroundIssue }) {
+  const uiText = useUiTranslation();
   const client = useQueryClient();
   const retry = useMutation({
     mutationFn: () => apiSend(issue.retry!, {}),
     onSuccess: () => { void client.invalidateQueries({ queryKey: BACKGROUND_ISSUES_KEY }) },
   });
-  const moment = issue.since ? `自 ${momentText(issue.since)} 起` : `发现于 ${momentText(issue.noticed_at)}`;
+  const moment = issue.since ? uiText('自 {time} 起', { time: momentText(issue.since) }) : uiText('发现于 {time}', { time: momentText(issue.noticed_at) });
   return (
     <Note tone="error" title={issue.title} action={
       <div className="flex flex-wrap items-center gap-2">
-        <LinkButton href={issue.href} size="small" trailingIcon={RiArrowRightLine}>{issue.link_label}</LinkButton>
+        <LinkButton href={issue.href} size="small" trailingIcon={RiArrowRightLine}>{uiText(issue.link_label)}</LinkButton>
         {issue.retry
           ? <Button variant="secondary" size="small" disabled={!issue.retry_available}
-              {...busyProps(retry.isPending)} onClick={() => retry.mutate()}>立即重试</Button>
+              {...busyProps(retry.isPending)} onClick={() => retry.mutate()}>{uiText("立即重试")}</Button>
           : null}
       </div>
     }>
-      {retry.error ? `${moment}\n没有重试：${errorMessage(retry.error)}` : moment}
+      {retry.error ? uiText("{value0}\n没有重试：{value1}", { value0: String(moment), value1: String(errorMessage(retry.error)) }) : moment}
     </Note>
   );
 }
