@@ -1,5 +1,7 @@
 /** 间接传入公共控件的系统词表：批量操作、播放器与配置的次级状态。 */
 export const supplementalMessages: Readonly<Record<string, readonly [string, string]>> = {
+  '系统默认播放器': ['System default player', 'Trình phát mặc định của hệ thống'],
+  '加载速度': ['Loading speed', 'Tốc độ tải'],
   '查看全部 {count} 个视频': ['View all {count} videos', 'Xem tất cả {count} video'],
   '源码安装请先关闭开机自启并退出托盘，再手动移除项目与数据目录': ['For a source installation, disable startup and quit the tray first, then manually remove the project and data folders.', 'Với bản cài từ mã nguồn, hãy tắt tự khởi động và thoát khay hệ thống trước, rồi xóa thủ công thư mục dự án và dữ liệu.'],
   '源码安装请先退出托盘，再手动移除项目；数据目录见下方': ['For a source installation, quit the tray first, then manually remove the project. The data folder is shown below.', 'Với bản cài từ mã nguồn, hãy thoát khay hệ thống trước rồi xóa thủ công dự án. Thư mục dữ liệu được hiển thị bên dưới.'],

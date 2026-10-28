@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { act } from 'react';
+import { setLocale } from '../../src/i18n';
 import { ExternalPlayback } from '../../src/react/item-detail/external-playback';
 import { choose, click, mount, settle } from './render';
 
@@ -14,9 +16,23 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  setLocale('zh-CN');
   const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
   delete proto.showPopover;
   delete proto.hidePopover;
+});
+
+it('网络检测失败随语言切换说明原因，并保留网络播放选项', async () => {
+  setLocale('en');
+  vi.stubGlobal('fetch',vi.fn(async()=>{throw new TypeError('Failed to fetch')}));
+  const host = await mount(<ExternalPlayback id={8} />);
+  await settle();
+  expect(host.textContent).toContain('Cannot connect to Peach');
+  expect(host.textContent).toContain('M3U playlist');
+  await act(async()=>setLocale('vi'));
+  expect(host.textContent).toContain('Không thể kết nối đến Peach');
+  expect(host.textContent).toContain('Danh sách phát M3U');
+  expect(host.textContent).not.toContain('Failed to fetch');
 });
 
 it('外部播放器只在用户请求后签发链接，并保留网络地址供 VR 播放器使用', async () => {

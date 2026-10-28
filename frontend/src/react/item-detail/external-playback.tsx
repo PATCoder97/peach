@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/base/buttons/button';
 import { Input } from '@/components/base/input/input';
 import { apiGet, apiSend } from '../../api';
+import { requestErrorSource } from '../../core/request-error';
 import { SelectField } from '../settings-panel/legacy-controls';
 import { ErrorText, Help } from '../settings/section';
 import { busyProps, useAction } from '../settings/use-action';
@@ -37,7 +38,7 @@ export function ExternalPlayback({ id, onOpened }: { id: number; onOpened?(): vo
       if (controller.signal.aborted) return;
       setPlayers([]);
       setPlayer(current => NETWORK_TARGETS.some(([key]) => key === current) ? current : 'm3u');
-      setLoadError(String(cause.message || cause));
+      setLoadError(requestErrorSource(cause));
     });
     return () => controller.abort();
   }, [epoch]);
