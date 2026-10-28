@@ -1,3 +1,5 @@
+import { translate as t } from '../../i18n/index';
+import { useTranslation } from '../i18n';
 /* 馆藏卡片网格：目录与回收站（由路由树画进 `#grid`）、资料页作品区、详情页的接着看。
  *
  * 取数、排法与续页都在这里；打开、选择、稍后看与回收站操作是壳递进来的动作。换筛选或壳要求
@@ -254,7 +256,7 @@ export function LoadMore({ entity, load, enabled, children }: {
   return (
     <>
       {entity
-        ? <button ref={attach} type="button" data-entity-more="" {...aria} onClick={() => void run(true)}>{children ?? '载入更多'}</button>
+        ? <button ref={attach} type="button" data-entity-more="" {...aria} onClick={() => void run(true)}>{children ?? t("载入更多")}</button>
         /* 失败时只留下面那条重试：哨兵收起但不卸下，重试接上之后照旧由它续页。 */
         : <div ref={attach} data-load-more="" {...aria} hidden={Boolean(state.error)} onClick={() => void run(true)}
           dangerouslySetInnerHTML={{ __html: loadingDotsHtml(LOAD_MORE_STATUS) }} />}
@@ -316,15 +318,15 @@ function useShortsStrips(
 function ShortsStrip({ cut, props, onOpen }: {
   cut: ShortsCut; props: CatalogGridProps; onOpen: (item: MediaItem) => void;
 }) {
+  useTranslation();
   const row = useRef<HTMLDivElement | null>(null);
   const { wireDrag } = props;
   useEffect(() => { if (row.current) wireDrag(row.current) }, [wireDrag]);
   return (
     <section data-shorts-strip="">
-      <h2>
-        竖屏 <span data-shorts-count="">{`${cut.total.toLocaleString()} 个`}</span>
+      <h2>{t("竖屏")}<span data-shorts-count="">{`${cut.total.toLocaleString()} 个`}</span>
         <button type="button" data-shorts-enter="" onClick={() => props.actions.openShorts()}>
-          <Icon name="gallery-vertical-end" /><span>进入沉浸模式</span>
+          <Icon name="gallery-vertical-end" /><span>{t("进入沉浸模式")}</span>
         </button>
       </h2>
       <div ref={row} data-shorts-row="">

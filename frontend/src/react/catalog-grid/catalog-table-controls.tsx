@@ -1,3 +1,5 @@
+import { translate as t } from '../../i18n/index';
+import { useTranslation } from '../i18n';
 import { useRef } from 'react';
 import { Button } from '@/components/base/buttons/button';
 import { RatingStars } from '../components/rating-stars';
@@ -9,6 +11,7 @@ import { replaceCatalogItem } from './catalog-grid';
 import type { MediaCardActions, MediaItem } from './types';
 
 export function CatalogRating({ item, actions }: { item: MediaItem; actions: Pick<MediaCardActions, 'rate'> }) {
+  useTranslation();
   const { rating } = item;
   const action = useAction();
   const lastStar = useRef(0);
@@ -24,7 +27,7 @@ export function CatalogRating({ item, actions }: { item: MediaItem; actions: Pic
   };
   return <div data-catalog-rating="" role="group" aria-label={label} title={label}>
     <RatingStars value={score} onRate={rate} busyStar={action.busy ? Number(action.busy) : undefined} />
-    {action.error ? <Note tone="error" action={<Button variant="secondary" size="small" aria-label="立即重试评分" onClick={() => rate(lastStar.current)}>立即重试</Button>}>
+    {action.error ? <Note tone="error" action={<Button variant="secondary" size="small" aria-label={t("立即重试评分")} onClick={() => rate(lastStar.current)}>{t("立即重试")}</Button>}>
       {action.error}
     </Note> : null}
   </div>;

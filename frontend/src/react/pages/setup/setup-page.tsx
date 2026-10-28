@@ -1,3 +1,5 @@
+import { translate as t } from '../../../i18n/index';
+import { useTranslation } from '../../i18n';
 /* 首次运行页：取题目、画表单，成功后在同一页换成完成态。
  *
  * 题目接口只对运行 Peach 的这台电脑开放；别的设备打开时它回 403，页面不画表单，只说去哪里打开。 */
@@ -20,6 +22,7 @@ type View =
   | { kind: 'done'; done: SetupDone };
 
 export function SetupPage() {
+  useTranslation();
   const [view, setView] = useState<View>({ kind: 'loading' });
   const [attempt, setAttempt] = useState(0);
   const [restoring, setRestoring] = useState(false);
@@ -49,16 +52,16 @@ export function SetupPage() {
   return (
     <SetupShell step={0}>
     <section data-setup-form-panel="" aria-labelledby="auth-card-title" aria-busy={view.kind === 'loading' || undefined}>
-      <div data-setup-top=""><span className="text-body-2-regular text-text-secondary">首次设置</span></div>
+      <div data-setup-top=""><span className="text-body-2-regular text-text-secondary">{t("首次设置")}</span></div>
       <div data-setup-step-scroll=""><div data-setup-step-content="">
       <header data-setup-step-heading="">
-        <h1 id="auth-card-title" className="text-title-1-semibold text-text-primary">欢迎使用 Peach</h1>
-        <p className="text-body-regular text-text-secondary">花一点时间，让 Peach 更适合你。</p>
+        <h1 id="auth-card-title" className="text-title-1-semibold text-text-primary">{t("欢迎使用 Peach")}</h1>
+        <p className="text-body-regular text-text-secondary">{t("花一点时间，让 Peach 更适合你。")}</p>
       </header>
-      {view.kind === 'loading' ? <div data-setup-loading="" data-skeleton="" role="status" aria-label="正在读取设置"><span /><span /><span /></div> : null}
-      {view.kind === 'denied' ? <Note tone="error">请在运行 Peach 的这台电脑上打开设置。</Note> : null}
+      {view.kind === 'loading' ? <div data-setup-loading="" data-skeleton="" role="status" aria-label={t("正在读取设置")}><span /><span /><span /></div> : null}
+      {view.kind === 'denied' ? <Note tone="error">{t("请在运行 Peach 的这台电脑上打开设置。")}</Note> : null}
       {view.kind === 'failed'
-        ? <Note tone="error" action={<Button variant="secondary" onClick={retry}>立即重试</Button>}>{view.message}</Note>
+        ? <Note tone="error" action={<Button variant="secondary" onClick={retry}>{t("立即重试")}</Button>}>{view.message}</Note>
         : null}
       </div></div>
     </section>

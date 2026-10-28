@@ -1,3 +1,5 @@
+import { translate as t } from '../../i18n/index';
+import { useTranslation } from '../i18n';
 /* 实体资料页资料卡下面那一整块：交集条，加一块两排的玻璃浮层（上排视图键、观看状态与标签，
  * 下排读数与这一屏的排序、版式和换一批）。三种视图（名册、作品、照片）共用这一块，下排按视图换内容。
  *
@@ -31,6 +33,7 @@ const ShuffleIcon = spriteGlyph('shuffle');
 const SortUpIcon = spriteGlyph('arrow-up'), SortDownIcon = spriteGlyph('arrow-down');
 
 export function EntityFilterPage(props: EntityFilterProps) {
+  useTranslation();
   const { view, views, state, states, tags, combo, actions, helpers } = props;
   const onVideos = videoOnly(view);
   /* 在线视图也有自己的状态、来源与标签（关注页那一套），只是数的是关注里的条目。 */
@@ -65,7 +68,7 @@ export function EntityFilterPage(props: EntityFilterProps) {
   return (
     <>
       <Combo items={combo} hidden={!onVideos} actions={actions} />
-      <FilterGlassRows label="筛选与排序" topLabel="媒体与标签"
+      <FilterGlassRows label={t("筛选与排序")} topLabel="媒体与标签"
         attrs={{ 'data-filter-frame': '', 'data-entity-filter-glass': '' }}
         topClassName="gap-1.5 overflow-visible"
         bottomClassName="min-h-12" bottomRef={bottomRow} busy={props.busy}
@@ -88,7 +91,7 @@ export function EntityFilterPage(props: EntityFilterProps) {
             </>
           ) : null}
           <div ref={scroll} data-entity-scroll="">
-            <div ref={stateRow} role="group" aria-label={online ? '状态' : '观看状态'} data-entity-states=""
+            <div ref={stateRow} role="group" aria-label={online ? t("状态") : t("观看状态")} data-entity-states=""
               hidden={!filtered} onPointerLeave={stateGlide.leave}>
               {stateOptions.map((option) => (
                 <button key={option.k} type="button" data-entity-state={option.k} data-entity-press=""
@@ -128,11 +131,12 @@ function OnlineMediaKeys({ head, row, glide, onMedia }: {
   glide: ReturnType<typeof useViewGlide>;
   onMedia(media: 'videos' | 'images'): void;
 }) {
+  useTranslation();
   return (
-    <div ref={row} role="group" aria-label="在线媒体类型" data-entity-media="" data-online-media=""
+    <div ref={row} role="group" aria-label={t("在线媒体类型")} data-entity-media="" data-online-media=""
       onPointerLeave={glide.leave}>
       {ONLINE_MEDIA.map(([value, text, symbol, kind]) => {
-        const title = `${text} ${Math.max(0, head.mediaCounts?.[value] || 0).toLocaleString()}`;
+        const title = `${t(text)} ${Math.max(0, head.mediaCounts?.[value] || 0).toLocaleString()}`;
         return (
           <button key={value} type="button" data-media-view={value} data-media-icon={kind}
             aria-pressed={head.media === value} aria-label={title} title={title} onPointerEnter={glide.hover}
@@ -180,7 +184,7 @@ function ViewKeys({ keys, view, row, glide, onView }: {
   return (
     <div ref={row} role="group" aria-label={keys.label} data-entity-media="" onPointerLeave={glide.leave}>
       {buttons.map(({ value, text, count, symbol, kind }) => {
-        const title = `${text} ${Math.max(0, count || 0).toLocaleString()}`;
+        const title = `${t(text)} ${Math.max(0, count || 0).toLocaleString()}`;
         return (
           <button key={value} type="button" data-media-view={value} data-media-icon={kind}
             aria-pressed={view === value} aria-label={title} title={title} onPointerEnter={glide.hover}
@@ -196,6 +200,7 @@ function ViewKeys({ keys, view, row, glide, onView }: {
 export function Combo({ items, hidden, actions }: {
   items: EntityComboItem[]; hidden: boolean; actions: Pick<EntityFilterActions, 'toggleTag' | 'clearFilter' | 'clearAll'>;
 }) {
+  useTranslation();
   return (
     <div data-entity-combo="" hidden={hidden}>
       {items.length ? (
@@ -209,7 +214,7 @@ export function Combo({ items, hidden, actions }: {
               </button>
             </span>
           ))}
-          <button type="button" data-combo-clear="" onClick={actions.clearAll}>全部清除</button>
+          <button type="button" data-combo-clear="" onClick={actions.clearAll}>{t("全部清除")}</button>
         </>
       ) : null}
     </div>
@@ -218,12 +223,13 @@ export function Combo({ items, hidden, actions }: {
 
 /** 下排：读数，加这一种视图自己的那几枚控件。名册只有读数。 */
 function Head(props: EntityFilterProps) {
+  useTranslation();
   const { view, readout, busy, video, photo, actions, helpers } = props;
   return (
     <>
       {view === 'photos' && photo?.back ? (
         <button type="button" data-photo-back="" onClick={actions.photoBack}>
-          <span className="contents" dangerouslySetInnerHTML={{ __html: icon('chevron-left') }} /><span>全部照片</span>
+          <span className="contents" dangerouslySetInnerHTML={{ __html: icon('chevron-left') }} /><span>{t("全部照片")}</span>
         </button>
       ) : null}
       <Readout text={readout} busy={busy} />
@@ -251,14 +257,15 @@ function Readout({ text, busy }: { text: string; busy: boolean }) {
 export function Segments({ name, label, value, options, onChange }: {
   name?: string; label: string; value: string; options: readonly SegmentOption[]; onChange(value: string): void;
 }) {
+  useTranslation();
   return (
-    <RadioGroup name={name} aria-label={label} orientation="horizontal" value={value} onChange={onChange}
+    <RadioGroup name={name} aria-label={t(label)} orientation="horizontal" value={value} onChange={onChange}
       data-entity-layout="" className={SEGMENTED_GLASS_TRACK}>
       {options.map(([option, text, symbol]) => {
         const Glyph = spriteGlyph(symbol);
         return (
-          <Radio key={option} value={option} aria-label={text} data-glass-segment="" className={SEGMENT_GLASS}>
-            <span title={text} className="contents"><Glyph className="size-4" /></span>
+          <Radio key={option} value={option} aria-label={t(text)} data-glass-segment="" className={SEGMENT_GLASS}>
+            <span title={t(text)} className="contents"><Glyph className="size-4" /></span>
           </Radio>
         );
       })}
@@ -267,19 +274,21 @@ export function Segments({ name, label, value, options, onChange }: {
 }
 
 export function Shuffle({ onPress, busy = false }: { onPress(): void; busy?: boolean }) {
+  useTranslation();
   return (
-    <FilterIconButton data-entity-batch="" label="换一批" busy={busy} busyStyle="strand" icon={ShuffleIcon} onPress={onPress} />
+    <FilterIconButton data-entity-batch="" label={t("换一批")} busy={busy} busyStyle="strand" icon={ShuffleIcon} onPress={onPress} />
   );
 }
 
 /** 作品视图：换一批、JAV 语境下的卡片版式，排序键一律排在最末，挨着它说明的那批内容。 */
 function VideoControls({ head, actions }: { head: EntityVideoHead; actions: EntityFilterActions }) {
+  useTranslation();
   const view = useCatalogView();
   return (
     <span data-entity-sorts="">
       <Shuffle onPress={() => void actions.reshuffle()} />
       {head.jav && view === 'cards' ? (
-        <Segments label="JAV 卡片版式" value={head.jav.layout} options={head.jav.options} onChange={actions.setJavLayout} />
+        <Segments label={t("JAV 卡片版式")} value={head.jav.layout} options={head.jav.options} onChange={actions.setJavLayout} />
       ) : null}
       <CatalogViewToggle />
       <FolderBrowseToggle />
@@ -291,13 +300,14 @@ function VideoControls({ head, actions }: { head: EntityVideoHead; actions: Enti
 /** 一排排序键。方向只画在选中的那一枚上：箭头既是当前方向，也是「再点一次能翻」的唯一提示。
  *  无障碍名称播报的是点下去会得到什么，当前状态由 `aria-pressed` 与这枚箭头各自表达。 */
 export function SortKeys({ sorts, onSort }: { sorts: readonly EntitySortKey[]; onSort(key: string): void }) {
+  useTranslation();
   return (
     <>
       {sorts.map((sort) => {
         return (
           <button key={sort.key} type="button" data-entity-sort={sort.key} data-entity-press=""
-            aria-pressed={sort.pressed} aria-label={sort.ariaLabel || undefined} onClick={() => onSort(sort.key)}>
-            {sort.label}{sort.pressed && sort.dir ? <IconSwap a={SortUpIcon} b={SortDownIcon} state={sort.dir === 'asc' ? 'a' : 'b'} className="size-(--icon-inline)" /> : null}
+            aria-pressed={sort.pressed} aria-label={sort.ariaLabel ? t(sort.ariaLabel) : undefined} onClick={() => onSort(sort.key)}>
+            {t(sort.label)}{sort.pressed && sort.dir ? <IconSwap a={SortUpIcon} b={SortDownIcon} state={sort.dir === 'asc' ? 'a' : 'b'} className="size-(--icon-inline)" /> : null}
           </button>
         );
       })}
@@ -307,14 +317,15 @@ export function SortKeys({ sorts, onSort }: { sorts: readonly EntitySortKey[]; o
 
 /** 在线视图的下排，同关注页：换一批，图片墙上多图片布局与「仅显示图片」，排序键排在最末。 */
 function OnlineControls({ head, actions }: { head: EntityOnlineHead; actions: EntityFilterActions }) {
+  useTranslation();
   return (
     <span data-entity-sorts="">
       <Shuffle onPress={actions.onlineShuffle} />
       {head.media === 'images' ? (
         <>
-          <Segments label="图片布局" value={head.photoLayout} options={head.photoLayouts} onChange={actions.setPhotoLayout} />
-          <button type="button" data-follow-images-only="" aria-pressed={head.imagesOnly} title="仅显示图片"
-            aria-label="仅显示图片" onClick={() => actions.onlineImagesOnly(!head.imagesOnly)}>
+          <Segments label={t("图片布局")} value={head.photoLayout} options={head.photoLayouts} onChange={actions.setPhotoLayout} />
+          <button type="button" data-follow-images-only="" aria-pressed={head.imagesOnly} title={t("仅显示图片")}
+            aria-label={t("仅显示图片")} onClick={() => actions.onlineImagesOnly(!head.imagesOnly)}>
             {head.imagesOnly ? <span data-view-glide="" aria-hidden="true" /> : null}
             <span className="contents" dangerouslySetInnerHTML={{ __html: icon('captions-off') }} />
           </button>
@@ -330,6 +341,7 @@ function OnlineControls({ head, actions }: { head: EntityOnlineHead; actions: En
 function PhotoControls({ head, actions, helpers }: {
   head: EntityPhotoHead; actions: EntityFilterActions; helpers: EntityFilterHelpers;
 }) {
+  useTranslation();
   const [shuffling, setShuffling] = useState(false);
   const tools = useRef<HTMLSpanElement>(null);
   const toolsHtml = head.back ? helpers.sourceToolsHtml(head.setId) : '';
@@ -341,7 +353,7 @@ function PhotoControls({ head, actions, helpers }: {
   return (
     <span data-entity-sorts="">
       {head.shuffle ? <Shuffle onPress={shuffle} busy={shuffling} /> : null}
-      <Segments label="图片布局" value={head.layout} options={head.layouts} onChange={actions.setPhotoLayout} />
+      <Segments label={t("图片布局")} value={head.layout} options={head.layouts} onChange={actions.setPhotoLayout} />
       {toolsHtml ? <span ref={tools} data-entity-srctools="" dangerouslySetInnerHTML={{ __html: toolsHtml }} /> : null}
     </span>
   );

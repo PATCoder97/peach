@@ -1,3 +1,5 @@
+import { translate as t } from '../i18n/index';
+import { useTranslation } from './i18n';
 /** 外网连不上时的通栏横幅：读服务端按 Peach 代理探测的快照，联网后自己消失。 */
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -14,6 +16,7 @@ export function networkPollInterval(data?: NetworkStatus): number {
 }
 
 export function NetworkBanner() {
+  useTranslation();
   const query = useQuery({
     queryKey: NETWORK_STATUS_KEY,
     queryFn: ({ signal }) => apiGet<NetworkStatus>('/api/network-status', signal),
@@ -25,7 +28,7 @@ export function NetworkBanner() {
   return createPortal(
     <aside className="ui-project-banner ui-project-banner-warning" role="status" data-network-offline="">
       <div><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-alert" /></svg><p>{NETWORK_OFFLINE_TEXT}</p></div>
-      <a href="/settings/network#peachProxy">检查 Peach 代理</a>
+      <a href="/settings/network#peachProxy">{t("检查 Peach 代理")}</a>
     </aside>,
     host,
   );

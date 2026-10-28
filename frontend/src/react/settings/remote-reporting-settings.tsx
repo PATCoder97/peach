@@ -1,3 +1,5 @@
+import { translate as t } from '../../i18n/index';
+import { useTranslation } from '../i18n';
 import { useState } from 'react';
 
 import { SettingsRow } from '@/components/application/settings/settings-rows';
@@ -16,14 +18,15 @@ export interface RemoteReportingState {
 export function ReportingChoices({ value, onChange, busy = false }: {
   value: RemoteReportingState; onChange(value: RemoteReportingState): void; busy?: boolean;
 }) {
+  useTranslation();
   return <>
     <Rows>
-      <SettingsRow label="发送版本统计与错误诊断（推荐）" description="上传版本、系统信息、故障类型、代码位置与发生次数。">
-        <Switch aria-label="发送版本统计与错误诊断（推荐）" isSelected={value.usage && value.errors}
+      <SettingsRow label={t("发送版本统计与错误诊断（推荐）")} description={t("上传版本、系统信息、故障类型、代码位置与发生次数。")}>
+        <Switch aria-label={t("发送版本统计与错误诊断（推荐）")} isSelected={value.usage && value.errors}
           onChange={(enabled) => onChange({ ...value, usage: enabled, errors: enabled })} {...busyProps(busy)} />
       </SettingsRow>
     </Rows>
-    {!value.available ? <Stack divided><span className="self-start"><StatusLabel>上传服务未配置</StatusLabel></span></Stack> : null}
+    {!value.available ? <Stack divided><span className="self-start"><StatusLabel>{t("上传服务未配置")}</StatusLabel></span></Stack> : null}
   </>;
 }
 

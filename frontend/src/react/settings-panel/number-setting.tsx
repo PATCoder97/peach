@@ -6,6 +6,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { boundedPreference } from '../../number-setting';
+import { translate as t } from '../../i18n';
+import { useTranslation } from '../i18n';
 
 export interface NumberSpec { min: number; max: number; unit: string; optional?: boolean; fallback: number }
 
@@ -29,7 +31,7 @@ const storageKey = (id: string) => `peach.number.${id}`;
 export function dayReading(value: number, unit: string): string {
   if (unit !== '分钟' || !Number.isInteger(value) || value < 1440) return '';
   const days = value / 1440;
-  return Number.isInteger(days) ? `${days.toLocaleString()} 天` : `约 ${days.toFixed(1)} 天`;
+  return Number.isInteger(days) ? t('{count} 天', { count: days.toLocaleString() }) : t('约 {count} 天', { count: days.toFixed(1) });
 }
 
 export function NumberSetting({ id, label, value, disabled = false, onApply }: {
@@ -39,6 +41,7 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
   disabled?: boolean;
   onApply(value: number): void;
 }) {
+  useTranslation();
   const spec: NumberSpec = NUMBER_SPECS[id];
   const { min, max, unit, fallback } = spec;
   const optional = spec.optional === true;
@@ -66,7 +69,7 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
     if (!node) return;
     if (!node.value || !node.checkValidity()) {
       node.setAttribute('aria-invalid', 'true');
-      setError(`请输入 ${min}–${max} 的整数（${unit}）`);
+      setError(t('请输入 {min}–{max} 的整数（{unit}）', { min, max, unit: t(unit) }));
       return;
     }
     node.removeAttribute('aria-invalid');
@@ -122,7 +125,7 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
               }
             }}
             onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); commit() } }} />
-          <span aria-hidden="true">{unit}{dayReading(Number(draft), unit) ? ` · ${dayReading(Number(draft), unit)}` : ''}</span>
+          <span aria-hidden="true">{t(unit)}{dayReading(Number(draft), unit) ? ` · ${dayReading(Number(draft), unit)}` : ''}</span>
         </div>
         <small id={`${id}-error`} data-number-error="" role="status" hidden={!error}>{error}</small>
       </div>

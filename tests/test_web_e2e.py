@@ -481,10 +481,10 @@ class SetupE2ETests(unittest.TestCase):
         log_path.write_text(output, encoding="utf-8")
         test_history.record_external(test_history.tap_rows(SETUP_SUITE, completed.stdout))
         test_history.record_external([test_history.file_result('e2e', SETUP_SUITE,
-            completed.returncode == 0 and bool(re.search(r'# pass 1\b', output))
+            completed.returncode == 0 and bool(re.search(r'# pass 2\b', output))
             and bool(re.search(r'# skipped 0\b', output)))])
         self.assertEqual(completed.returncode, 0, f"{output}\n--- serve.log ---\n{self._server_log()}")
-        self.assertRegex(output, r"# pass 1\b", output)
+        self.assertRegex(output, r"# pass 2\b", output)
         self.assertRegex(output, r"# skipped 0\b", output)
         # 改对的那一次提交在临时 Peach 数据目录里落了设置文件，媒体库就是传进去的那个目录。
         written = settings_file.load_config(environ={settings_file.DATA_ROOT_ENV: str(self.data)})

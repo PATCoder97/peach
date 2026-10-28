@@ -23,6 +23,7 @@
 @source "../components/note.tsx";
 @source "../components/segmented.tsx";
 @source "../components/configuration-fields.tsx";
+@source "../components/language-setting.tsx";
 @source "../settings/library-icon-picker.tsx";
 @source "../settings/library-policy-settings.tsx";
 @source "../boardui/components/base/";
