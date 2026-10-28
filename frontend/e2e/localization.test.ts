@@ -71,6 +71,7 @@ for (const language of ['en', 'vi']) {
       await view.page.locator('[data-player-quality-view]').click();
       assert.doesNotMatch(await menu.innerText(), /\p{Script=Han}/u);
       assert.ok(await menu.locator('[data-player-quality-option]').count() > 0);
+      assert.doesNotMatch(await view.page.locator('#stage').innerText(), /\p{Script=Han}/u);
       const geometry = await layout(view.page);
       assert.ok(geometry.scrollWidth <= geometry.viewportWidth + 1, JSON.stringify(geometry));
       mkdirSync('../build/agent-verification/localization', { recursive: true });

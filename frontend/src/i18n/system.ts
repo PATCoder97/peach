@@ -11,8 +11,9 @@ const templates = Object.keys(systemMessages).map(source => {
     }
     return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }).join('');
-  return { source, names, pattern: new RegExp(`^${pattern}$`, 'su') };
-});
+  return { source, names, specificity: source.replace(/\{[a-zA-Z][a-zA-Z0-9_]*\}/g, '').length,
+    pattern: new RegExp(`^${pattern}$`, 'su') };
+}).sort((left, right) => right.specificity - left.specificity || left.names.length - right.names.length);
 
 /** 只用于系统文案，不用于馆藏标题、来源摘录、文件路径或用户输入。 */
 export function translateSystem(source: string, language: Locale = getLocale()): string {

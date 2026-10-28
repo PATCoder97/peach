@@ -7,6 +7,9 @@
  * 当前在哪个管理区、菜单里列哪几项、回收站读数由壳算好推进来：路由表、`/healthz` 的
  * `configurable` 与目录计数都还在壳里。 */
 
+import { translate as t } from './i18n';
+import { translateSystem } from './i18n/system';
+
 /** `[键, 名称, 字形]`，同壳的 `MANAGE_SECTIONS`。 */
 export type ManageEntry = readonly [key: string, label: string, glyph: string];
 
@@ -98,19 +101,19 @@ export function manageHeaderSkeletonHtml(props: ManageHeaderProps): string {
   const menu = props.menu.map(([key, label, mark]) => {
     const on = key === view.pressed;
     return `<button type="button" data-manage="${escape(key)}" data-pill-variant="gray" aria-pressed="${on}"${on ? ' aria-current="page" data-pill-selected=""' : ''}>`
-      + `${glyph(mark)}<span>${escape(label)}</span></button>`;
+      + `${glyph(mark)}<span>${escape(t(label))}</span></button>`;
   }).join('');
   const crumb = view.crumb
-    ? `<nav data-manage-crumb="" aria-label="Breadcrumb"><ol><li><a href="/data-cleanup">数据管理</a>${glyph('chevron-right')}</li>`
-      + `<li aria-current="true"><span>${escape(view.crumb)}</span></li></ol></nav>`
+    ? `<nav data-manage-crumb="" aria-label="Breadcrumb"><ol><li><a href="/data-cleanup">${escape(t('数据管理'))}</a>${glyph('chevron-right')}</li>`
+      + `<li aria-current="true"><span>${escape(t(view.crumb))}</span></li></ol></nav>`
     : '';
   const lede = view.lede.kind === 'none' ? ''
     : `<p class="mono" data-manage-lede="">${view.lede.kind === 'skeleton' ? TRASH_LEDE_SKELETON_HTML
-      : `<span data-lede-text="">${escape(view.lede.text)}</span>${view.lede.total ? EMPTY_TRASH_HTML : ''}`}</p>`;
-  return `<nav data-manage-bar="" aria-label="管理"><div data-manage-menu="" data-pill-nav="" role="group">${menu}</div></nav>`
+      : `<span data-lede-text="">${escape(translateSystem(view.lede.text))}</span>${view.lede.total ? emptyTrashHtml() : ''}`}</p>`;
+  return `<nav data-manage-bar="" aria-label="${escape(t('管理'))}"><div data-manage-menu="" data-pill-nav="" role="group">${menu}</div></nav>`
     + crumb
-    + `<h2 data-manage-title=""${view.compact ? ' data-compact=""' : ''}>${escape(view.title)}</h2>`
+    + `<h2 data-manage-title=""${view.compact ? ' data-compact=""' : ''}>${escape(t(view.title))}</h2>`
     + lede;
 }
 
-const EMPTY_TRASH_HTML = '<button type="button" data-empty-trash="" title="永久删除回收站内容">清空回收站</button>';
+const emptyTrashHtml = () => `<button type="button" data-empty-trash="" title="${escape(t('永久删除回收站内容'))}">${escape(t('清空回收站'))}</button>`;

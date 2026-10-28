@@ -219,9 +219,9 @@ export function ReviewPage(props: ReviewProps) {
       forget(done);
       failures.forEach(([key, message]) => fail(key, message));
       setFeedback('');
-      const action = { approved: '通过', rejected: '忽略', skipped: '移至稍后处理', restore: '恢复待处理' }[status];
-      toast(`已${action} ${done.length} 项`
-        + (failures.length ? `，${failures.length} 项未完成` : ''));
+      const message = { approved: '已通过 {count} 项', rejected: '已忽略 {count} 项', skipped: '已移至稍后处理 {count} 项', restore: '已恢复待处理 {count} 项' }[status];
+      toast(uiText(message,{count:done.length})
+        + (failures.length ? uiText('，{value0} 项未完成',{value0:failures.length}) : ''));
     },
     onError: (cause) => { setFeedback(errorMessage(cause)) },
   });

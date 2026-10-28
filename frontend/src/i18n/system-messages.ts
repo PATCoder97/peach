@@ -1,5 +1,9 @@
+import { runtimeMessages } from './runtime-messages';
+
 /** 服务端生成的系统消息模板；占位内容保留原始路径、名称与计数。 */
 export const systemMessages: Readonly<Record<string, readonly [string, string]>> = {
+  ...runtimeMessages,
+  '{total} 个符合 · 显示 {shown}': ['{total} matches · showing {shown}', '{total} mục phù hợp · hiển thị {shown}'],
   '已加载 {name}': ['Loaded {name}', 'Đã tải {name}'],
   '找到 {count} 条中文字幕': ['Found {count} Chinese subtitles', 'Tìm thấy {count} phụ đề tiếng Trung'],
   '合并 {count} 个标签，涉及 {assets} 个资源，重叠关联 {overlap} 个。旧名称保留为别名。此操作无法直接撤销。': ['Merge {count} tags affecting {assets} assets, with {overlap} overlapping associations. Old names remain as aliases. This operation cannot be directly undone.', 'Gộp {count} thẻ, ảnh hưởng {assets} tài nguyên và {overlap} liên kết trùng nhau. Tên cũ được giữ làm bí danh. Không thể hoàn tác trực tiếp thao tác này.'],

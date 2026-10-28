@@ -441,6 +441,8 @@ describe('写完之后', () => {
     vi.stubGlobal('fetch',fetcher);
     setLocale('en');
     const {host} = await show(item(1));
+    expect(host.querySelector('[data-rating-value]')?.textContent).toBe('3 stars');
+    expect(host.querySelector('[data-local-playback]')?.textContent).toContain('M3U playlist');
     await click(host.querySelector('#preferenceToggle'));
     const field = host.querySelector<HTMLTextAreaElement>('#likeReason')!;
     await typeText(field,'原文理由');
@@ -449,6 +451,8 @@ describe('写完之后', () => {
     await click(save);
     expect(save.textContent).toContain('Submitting');
     await act(async()=>setLocale('vi'));
+    expect(host.querySelector('[data-rating-value]')?.textContent).toBe('3 sao');
+    expect(host.querySelector('[data-local-playback]')?.textContent).toContain('Danh sách phát M3U');
     expect(host.querySelector('#likeReason')).toBe(field);
     expect(field.value).toBe('原文理由');
     expect(save.textContent).toContain('Đang gửi');

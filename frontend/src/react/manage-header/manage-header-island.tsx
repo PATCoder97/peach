@@ -1,5 +1,5 @@
 import { translate as t } from '../../i18n/index';
-import { useTranslation } from '../i18n';
+import { useTranslation, useSystemTranslation } from '../i18n';
 /* 管理区页头（ADR-0031 第 11g 步）：管理条、面包屑、页面标题与回收站说明行。
  *
  * 常驻组件 `manage-header`（`router/managed-routes.tsx` 的常驻表）：路由树把它画进壳常驻的
@@ -147,7 +147,9 @@ function TrashLede({ host: at, lede }: { host: ManageHeaderHost; lede: Lede }) {
 }
 
 function LedeText({ text }: { text: string }) {
+  const systemText = useSystemTranslation();
+  const label = systemText(text);
   const slot = useRef<HTMLSpanElement>(null);
-  useLayoutEffect(() => { swapText(slot.current, text) }, [text]);
+  useLayoutEffect(() => { swapText(slot.current, label) }, [label]);
   return <span ref={slot} data-lede-text="" />;
 }

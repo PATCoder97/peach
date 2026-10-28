@@ -1,4 +1,5 @@
 import { useTranslation as useUiTranslation } from "../i18n";
+import { uiTextHtml } from '../../i18n/html';
 /* 图片灯箱：一枚原生模态 dialog，主画布与缩略图条各是一个 Swiper。
  *
  * 宿主是 body 末尾一个带 `.peach-react` 的容器，一棵根常驻：打开时换上新的一份灯箱
@@ -194,7 +195,7 @@ function PhotoLightbox({ slides, index, Swiper, host: actions }: {
     setBroken((prev) => new Set(prev).add(at));
   };
   const apply = (raw: number | 'fit') => zoom.current?.apply(raw);
-  const revealLabel = '<span>在资源管理器中显示</span>';
+  const revealLabel = uiTextHtml('在资源管理器中显示');
 
   return (
     <dialog ref={box} aria-label={uiText("图片浏览")} data-photo-lightbox="" data-has-strip={many ? '' : undefined}

@@ -1,4 +1,6 @@
 import { islandButton, islandGlyph, islandSelect } from './island-skeleton';
+import { translate as t } from './i18n';
+import { esc } from './core';
 import { FIELDSET_FACE, FIELDSET_BODY, FIELDSET_FOOT, fieldsetClass, type FieldsetLayout } from './react/components/fieldset-layout';
 
 /* 「扫描与采集」「媒体修复」两张卡的正文。卡片本体由 React 画，骨架与遗留层的取数占位
@@ -17,22 +19,22 @@ const waitingAction = 'disabled data-skeleton-action';
 const unavailable = 'aria-disabled="true"';
 const island = (card: string) => `<div class="peach-react"><div class="flex flex-col gap-4">${card}</div></div>`;
 const cardText = (title: string, text: string, layout: FieldsetLayout) => `<div class="${FIELDSET_BODY[layout]}"><div class="flex flex-col gap-2">
-          <h3 class="text-title-2-medium text-text-primary">${title}</h3>
-          <p class="text-body-2-regular text-text-secondary">${text}</p></div></div>`;
+          <h3 class="text-title-2-medium text-text-primary">${esc(t(title))}</h3>
+          <p class="text-body-2-regular text-text-secondary">${esc(t(text))}</p></div></div>`;
 
 /** 「扫描与采集」卡：与 React `LibraryProcessingCard` 同一副容器、同一段正文、同一组键。
  *  「复核资料」只在有候选时出现，这里不预画。 */
 export function scanCardSkeletonHtml(): string {
-  return island(`<section aria-label="扫描与采集" class="${fieldsetClass('stack')}" data-cleanup-task data-cleanup-processing>
+  return island(`<section aria-label="${esc(t('扫描与采集'))}" class="${fieldsetClass('stack')}" data-cleanup-task data-cleanup-processing>
         ${cardText('扫描与采集', SCAN_CARD_TEXT, 'stack')}
-        <footer class="${FIELDSET_FOOT.stack}"><a href="/sources" class="inline-flex items-center justify-center gap-1 whitespace-nowrap font-sans rounded-sm text-body-medium text-accent-600"><span>来源和凭证</span>${islandGlyph('arrow-up', 'size-(--icon-inline) shrink-0 rotate-90')}</a><span data-button-group data-split-button data-variant="primary">${islandButton({ label: '同步新增文件', attrs: waitingAction })}${islandButton({ glyph: 'chevron-down', attrs: `${waitingAction} aria-label="更多同步方式"` })}</span></footer>
+        <footer class="${FIELDSET_FOOT.stack}"><a href="/sources" class="inline-flex items-center justify-center gap-1 whitespace-nowrap font-sans rounded-sm text-body-medium text-accent-600"><span>${esc(t('来源和凭证'))}</span>${islandGlyph('arrow-up', 'size-(--icon-inline) shrink-0 rotate-90')}</a><span data-button-group data-split-button data-variant="primary">${islandButton({ label: '同步新增文件', attrs: waitingAction })}${islandButton({ glyph: 'chevron-down', attrs: `${waitingAction} aria-label="${esc(t('更多同步方式'))}"` })}</span></footer>
       </section>`);
 }
 
 /** 「媒体修复」卡：页脚的媒体库下拉框先按最终尺寸画出来，库名要等数据；「开始修复」要等选定
  *  媒体库，骨架里是禁用态。 */
 export function repairCardSkeletonHtml(): string {
-  return island(`<section aria-label="媒体修复" class="${fieldsetClass('split')}" data-cleanup-task data-cleanup-processing>
+  return island(`<section aria-label="${esc(t('媒体修复'))}" class="${fieldsetClass('split')}" data-cleanup-task data-cleanup-processing>
         ${cardText('媒体修复', REPAIR_CARD_TEXT, 'split')}
         <footer class="${FIELDSET_FOOT.split}">${islandSelect(bar, { className: 'w-48', attrs: unavailable })}${islandButton({ label: '开始修复', attrs: waitingAction })}</footer>
       </section>`);

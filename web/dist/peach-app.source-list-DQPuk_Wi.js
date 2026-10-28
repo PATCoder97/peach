@@ -1,7 +1,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "3c619d1a-c117-4f38-bb9f-7e76d239c2ff", e._sentryDebugIdIdentifier = "sentry-dbid-3c619d1a-c117-4f38-bb9f-7e76d239c2ff");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "76a01be6-99bb-4c9b-aaca-a7d5dbba5b09", e._sentryDebugIdIdentifier = "sentry-dbid-76a01be6-99bb-4c9b-aaca-a7d5dbba5b09");
 	} catch {}
 })();
 import { createPaginatedRowModel as e } from "./peach-app.createPaginatedRowModel-ClHnhG_T.js";
@@ -276,8 +276,8 @@ function j(e) {
 				return;
 			}
 			I("");
-			let n = e.action === "remove" ? "删除" : e.action === "enabled" ? "启用" : "暂停";
-			j(`已${n} ${e.done.length} 个关注来源`);
+			let n = e.action === "remove" ? "已删除 {count} 个关注来源" : e.action === "enabled" ? "已启用 {count} 个关注来源" : "已暂停 {count} 个关注来源";
+			j(c(n, { count: e.done.length }));
 		},
 		onError: (e) => I(_(e))
 	}), W = w({
@@ -799,4 +799,4 @@ function j(e) {
 }
 export { j as SourceList };
 
-//# debugId=3c619d1a-c117-4f38-bb9f-7e76d239c2ff
+//# debugId=76a01be6-99bb-4c9b-aaca-a7d5dbba5b09

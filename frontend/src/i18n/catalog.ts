@@ -23,9 +23,11 @@ import { detailMessages } from './detail-messages';
 import { operationMessages } from './operation-messages';
 import { colorMessages } from './color-messages';
 import { diagnosticMessages } from './diagnostic-messages';
+import { supplementalMessages } from './supplemental-messages';
 
 /** 界面译文以原文为键；业务身份和来源原文不进入词表。 */
 export const messages: Readonly<Record<string, readonly [english: string, vietnamese: string]>> = {
+  ...supplementalMessages,
   ...requestMessages,
   ...interfaceMessages,
   ...taskMessages,

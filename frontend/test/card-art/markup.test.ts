@@ -334,7 +334,11 @@ describe('cardArtwork 与队列小图', () => {
   });
 
   it('队列一行没有图时写「无预览」占住那一格；番号作品按小图取', () => {
-    expect(queueThumbHtml({ id: 1 }, 'cover')).toBe('<span class="nopic">无预览</span>');
+    const host = document.createElement('div');
+    host.innerHTML = queueThumbHtml({ id: 1 }, 'cover');
+    const empty = host.firstElementChild!;
+    expect(empty.className).toBe('nopic');
+    expect(empty.textContent).toBe('无预览');
     expect(parse(queueThumbHtml(JAV, 'cover'))!.className).toBe('poster cover whole');
   });
 });

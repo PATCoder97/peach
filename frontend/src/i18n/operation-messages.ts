@@ -1,5 +1,7 @@
 /** 操作进度、配置和资料复核的动态界面文案。 */
 export const operationMessages: Readonly<Record<string, readonly [string, string]>> = {
+  'M3U 播放列表': ['M3U playlist', 'Danh sách phát M3U'],
+  '网络播放地址 / VR': ['Network playback URL / VR', 'Địa chỉ phát qua mạng / VR'],
   '从高到低': ['highest first', 'cao nhất trước'],
   '从低到高': ['lowest first', 'thấp nhất trước'],
   '从多到少': ['most first', 'nhiều nhất trước'],

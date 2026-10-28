@@ -2,10 +2,14 @@ import { useCallback, useSyncExternalStore } from 'react';
 import { getLocale, subscribeLocale, translate } from '../i18n';
 import { translateSystem } from '../i18n/system';
 
-/** 订阅语言变化，更新文案而不卸载表单或清空当前操作。 */
+/** 明确的界面文案接收词条或已登记系统模板；来源字段仍由调用方原样呈现。 */
 export function useTranslation(): typeof translate {
   const locale = useSyncExternalStore(subscribeLocale, getLocale, getLocale);
-  return useCallback<typeof translate>((source, values, language = locale) => translate(source, values, language), [locale]);
+  return useCallback<typeof translate>((source, values, language = locale) => {
+    const text = translate(source, values, language);
+    return text === source && (!values || Object.keys(values).length === 0)
+      ? translateSystem(source, language) : text;
+  }, [locale]);
 }
 
 /** 系统消息中的路径和名称只作为模板参数展示。 */

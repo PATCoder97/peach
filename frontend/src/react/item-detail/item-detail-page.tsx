@@ -43,7 +43,7 @@ import {
   CAST_SHOWN, EDITION_TONE, FEEDBACK_URL, ITEM_TAG_URL, PLAYLIST_URL, PREFERENCE_URL, QUALITY_GOAL_URL,
   RELATED_URL, WATCH_LATER_URL, chooseItem, clampRating, detailTags, feedbackReceipt, fetchItem, fetchQueue,
   hasTag, identityGroups, isVanished, itemKey, mediaGate, movedOrder, nextPart, nextRating, partLabel, partLabelHtml, playlistQueue,
-  queueCopy, queueKey, ratingStars, ratingText, realWatched, relatedKey, rememberTag, sameOrder,
+  queueCopy, queueKey, ratingStars, realWatched, relatedKey, rememberTag, sameOrder,
   withPartLabel, withTag, withoutTag,
   type DetailEntityRef, type DetailItem, type DetailQueue, type DetailTag, type ItemDetailActions,
   type ItemDetailHelpers, type ItemDetailProps, type MediaGate, type PlaylistPayload,
@@ -515,7 +515,7 @@ function Rating({ item, write }: { item: DetailItem; write: DetailWrite }) {
       <RatingStars value={on} onRate={star => write.rate(star)}
         busyStar={[1, 2, 3, 4, 5].find(star => write.busy.has(`rate:${star}`))}
         busyAttrs={star => write.busyAttrs(`rate:${star}`)} />
-      <span data-rating-value="" aria-live="polite">{ratingText(item.rating)}</span>
+      <span data-rating-value="" aria-live="polite">{on ? uiText('{value0} 星',{value0:on}) : uiText('未评分')}</span>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "3e56f58f-7143-439a-a063-7a6dd61f99a7", e._sentryDebugIdIdentifier = "sentry-dbid-3e56f58f-7143-439a-a063-7a6dd61f99a7");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "94c7f534-67ad-42c3-80e2-822d06528721", e._sentryDebugIdIdentifier = "sentry-dbid-94c7f534-67ad-42c3-80e2-822d06528721");
 	} catch {}
 })();
 import { $b4f18e3395fe64d7$export$3d96ec278d3efce4 as e, $b4f18e3395fe64d7$export$3e41faf802a29e71 as t, $b4f18e3395fe64d7$export$b2539bed5023c21c as n, $ea3928288112382f$export$439d29a4e110a164 as r, $fe21c36db05242bb$export$a98f0dcb43a68a25 as i, $fe21c36db05242bb$export$d7b12c4107be0d61 as a, Button as o, ButtonLink as s, Checkbox as c, CheckboxGlyph as l, Chip as u, CollapseChevron as d, CollapseRegion as f, DEFAULT_CATEGORY as p, ENTITY_REVIEW_KINDS as m, Ea as h, EmptyState as ee, ExternalLink as te, FIELDSET_FOOT as g, FilterGlassRows as _, Gg as v, InputBase as y, LinkButton as ne, Note as b, REVIEW_CATEGORIES as x, REVIEW_DECISION_LABELS as re, REVIEW_KEY as S, REVIEW_LABELS as C, REVIEW_QUEUES as ie, REVIEW_QUEUE_LABELS as w, Select as T, SelectItem as E, SelectionActions as D, SelectionDock as O, TextField as k, Wt as A, __toESM as j, avatarInner as M, busyProps as N, canApprove as ae, cardClass as oe, commonReviewSources as P, currentReviewRow as F, cx as I, decisionPayload as se, decisionReceipt as ce, defaultChoice as le, errorMessage as ue, fetchReview as de, filterReviewRows as fe, groupReviewRows as pe, isReviewCategory as me, l7 as L, m7 as he, mirrorText as ge, paginationRange as _e, pendingGenres as R, recordGenre as ve, reloadReview as ye, require_jsx_runtime as be, require_react as xe, reviewGroupingOptions as Se, reviewQueueData as Ce, reviewQueueOf as we, reviewWindow as Te, rowEvidence as Ee, rowFieldName as De, rowSubject as z, rowTags as B, rowTitle as Oe, selectReviewRange as ke, settleReviewRows as Ae, spinnerHtml as je, submitDecision as Me, useMutation as Ne, useOverlayScrollbar as V, useQuery as Pe, useTranslation as H, useViewGlide as U } from "./peach-app.js";
@@ -1470,13 +1470,13 @@ function Dt(r) {
 		},
 		onSuccess: ({ status: e, category: t, done: n, failures: r }) => {
 			Ae(t, n, e), qe(n), r.forEach(([e, t]) => Je(e, t)), R("");
-			let i = {
-				approved: "通过",
-				rejected: "忽略",
-				skipped: "移至稍后处理",
-				restore: "恢复待处理"
+			let a = {
+				approved: "已通过 {count} 项",
+				rejected: "已忽略 {count} 项",
+				skipped: "已移至稍后处理 {count} 项",
+				restore: "已恢复待处理 {count} 项"
 			}[e];
-			f(`已${i} ${n.length} 项` + (r.length ? `，${r.length} 项未完成` : ""));
+			f(i(a, { count: n.length }) + (r.length ? i("，{value0} 项未完成", { value0: r.length }) : ""));
 		},
 		onError: (e) => {
 			R(ue(e));
@@ -1678,4 +1678,4 @@ function Dt(r) {
 }
 export { Dt as ReviewPage };
 
-//# debugId=3e56f58f-7143-439a-a063-7a6dd61f99a7
+//# debugId=94c7f534-67ad-42c3-80e2-822d06528721

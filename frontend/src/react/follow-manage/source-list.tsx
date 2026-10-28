@@ -343,8 +343,8 @@ export function SourceList(props: SourceListProps) {
         return;
       }
       setProblem('');
-      const word = result.action === 'remove' ? '删除' : result.action === 'enabled' ? '启用' : '暂停';
-      toast(`已${word} ${result.done.length} 个关注来源`);
+      const message = result.action === 'remove' ? '已删除 {count} 个关注来源' : result.action === 'enabled' ? '已启用 {count} 个关注来源' : '已暂停 {count} 个关注来源';
+      toast(uiText(message,{count:result.done.length}));
     },
     onError: (cause) => setProblem(errorMessage(cause)),
   });
