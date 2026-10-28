@@ -1,0 +1,5 @@
+[data-language-setting]{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+[data-language-description]{display:flex;flex:1 1 180px;flex-direction:column;gap:4px}
+[data-language-description] b{font-weight:500}
+[data-language-description] small{color:var(--color-text-secondary);font-size:var(--text-caption-1-regular);line-height:var(--text-caption-1-regular--line-height)}
+[data-language-setting]>[role=alert]{flex-basis:100%;color:var(--color-text-error-primary)}

@@ -27,6 +27,40 @@ describe('首次运行页', { skip: origin && media && dataRoot ? false : '只�
   before(async () => { browser = await launch(); });
   after(async () => { await browser?.close(); });
 
+  it('英越语言选择即时生效、保留表单并在刷新后恢复', { timeout: 60_000 }, async () => {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+    const errors: string[] = [];
+    try {
+      await context.addInitScript(() => {
+        if (!localStorage.getItem('peach.locale.v1')) localStorage.setItem('peach.locale.v1', 'en');
+      });
+      const page = await context.newPage();
+      page.on('pageerror', error => errors.push(error.message));
+      await page.goto(origin, { waitUntil: 'load' });
+      await page.getByRole('heading', { name: 'Welcome to Peach', exact: true }).waitFor();
+      const choose = async (name: string) => {
+        await page.locator('[data-language-setting] button').click();
+        await page.getByRole('option', { name, exact: true }).click();
+      };
+      await choose('Tiếng Việt');
+      await page.getByRole('heading', { name: 'Chào mừng đến với Peach', exact: true }).waitFor();
+      assert.equal(await page.locator('html').getAttribute('lang'), 'vi');
+      await page.getByRole('button', { name: 'Bắt đầu thiết lập', exact: true }).click();
+      const folder = page.getByRole('textbox', { name: 'Thư mục nội dung 1', exact: true });
+      await folder.fill(media);
+      await choose('English');
+      assert.equal(await page.getByRole('textbox', { name: 'Media folders 1', exact: true }).inputValue(), media);
+      await choose('Tiếng Việt');
+      assert.equal(await folder.inputValue(), media);
+      assert.deepEqual((await layout(page)).offenders, []);
+      await page.reload({ waitUntil: 'load' });
+      await page.getByRole('heading', { name: 'Chào mừng đến với Peach', exact: true }).waitFor();
+      assert.equal(await page.locator('html').getAttribute('lang'), 'vi');
+      assert.equal(await page.evaluate(() => localStorage.getItem('peach.locale.v1')), 'vi');
+      assert.deepEqual(errors, []);
+    } finally { await context.close(); }
+  });
+
   it('填错原位写回，改对后进入完成态', { timeout: 120_000 }, async () => {
     const viewport = VIEWPORTS.find((candidate) => candidate.name === 'desktop')!;
     const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });

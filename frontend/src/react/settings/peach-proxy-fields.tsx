@@ -1,3 +1,5 @@
+import { translate as t } from '../../i18n/index';
+import { useTranslation } from '../i18n';
 /* 首次设置与配置页共用的代理输入。地址只由用户输入，服务端状态不回传凭据。 */
 import type { ReactNode } from 'react';
 
@@ -9,17 +11,19 @@ const PROXY_MODES = [['environment', '跟随环境'], ['direct', '直连'], ['pr
 export function ProxyModeSelect({ mode, onChange, labelledBy }: {
   mode: string; onChange(mode: string): void; labelledBy?: string;
 }) {
-  return <Select aria-label={labelledBy ? undefined : '连接方式'} aria-labelledby={labelledBy} selectedKey={mode}
+  useTranslation();
+  return <Select aria-label={labelledBy ? undefined : t('连接方式')} aria-labelledby={labelledBy} selectedKey={mode}
     onSelectionChange={(key) => { if (key !== null) onChange(String(key)); }}>
-    {PROXY_MODES.map(([key, name]) => <SelectItem key={key} id={key}>{name}</SelectItem>)}
+    {PROXY_MODES.map(([key, name]) => <SelectItem key={key} id={key}>{t(name)}</SelectItem>)}
   </Select>;
 }
 
 export function ProxyAddressField({ id, value, onChange, saved = false, error }: {
   id: string; value: string; onChange(value: string): void; saved?: boolean; error?: ReactNode;
 }) {
-  return <Input id={id} type="password" label="代理地址" autoComplete="off" spellCheck="false"
-    value={value} onChange={onChange} placeholder={saved ? '已保存，留空保留' : 'http://127.0.0.1:7890'}
+  useTranslation();
+  return <Input id={id} type="password" label={t("代理地址")} autoComplete="off" spellCheck="false"
+    value={value} onChange={onChange} placeholder={saved ? t('已保存，留空保留') : 'http://127.0.0.1:7890'}
     validationBehavior="aria" isInvalid={Boolean(error)} hint={error} />;
 }
 

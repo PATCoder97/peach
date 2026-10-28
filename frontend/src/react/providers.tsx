@@ -8,6 +8,7 @@ import { MotionConfig } from 'motion/react';
 import { UNSAFE_PortalProvider } from 'react-aria';
 
 import { queryClient } from './query';
+import { LocaleProvider } from './locale-provider';
 
 /* Popover 这类弹出层由 React Aria 渲染到挂载容器外面。落在 `body` 上就出了 `.peach-react`
  * 的作用域：token 读到的是 `board.css` 的值，Preflight 也管不到。所有 React 根的弹出层都进
@@ -33,7 +34,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user">
-        <UNSAFE_PortalProvider getContainer={overlayContainer}>{children}</UNSAFE_PortalProvider>
+        <LocaleProvider><UNSAFE_PortalProvider getContainer={overlayContainer}>{children}</UNSAFE_PortalProvider></LocaleProvider>
       </MotionConfig>
     </QueryClientProvider>
   );

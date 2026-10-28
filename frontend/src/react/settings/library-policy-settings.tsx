@@ -1,3 +1,5 @@
+import { translate as t } from '../../i18n/index';
+import { useTranslation } from '../i18n';
 /* 媒体库一级的来源色与处理方式，由「媒体库与目录」按媒体库分组时放在每个媒体库的标题行里，
  * 随「保存配置」写进 `media.library_catalog`（ADR-0116）。三档处理方式的说明在分组上方只写一次；
  * 只有选了「自定义」的媒体库才展开五个步骤。来源色默认不上色，点开色球选一档强调色。 */
@@ -34,18 +36,19 @@ const PRESETS: readonly (readonly [Preset, string, string])[] = [
 
 /** 三档处理方式的说明，分组上方只放一份：常显一句话，三档的差别收在可展开的对比表里。 */
 export function PolicyLegend() {
+  useTranslation();
   return (
     <div data-policy-legend="" className="flex flex-col gap-1">
-      <Help>{POLICY_SUMMARY}</Help>
+      <Help>{t(POLICY_SUMMARY)}</Help>
       <Disclosure summary="三种处理方式对比">
         <table data-policy-matrix="" className="text-body-2-regular">
-          <thead><tr><th scope="col"><VisuallyHidden>步骤</VisuallyHidden></th>
-            {POLICY_COLUMNS.map(name => <th key={name} scope="col">{name}</th>)}</tr></thead>
-          <tbody>{POLICY_MATRIX.map(([step, ...cells]) => <tr key={step}><th scope="row">{step}</th>
+          <thead><tr><th scope="col"><VisuallyHidden>{t("步骤")}</VisuallyHidden></th>
+            {POLICY_COLUMNS.map(name => <th key={name} scope="col">{t(name)}</th>)}</tr></thead>
+          <tbody>{POLICY_MATRIX.map(([step, ...cells]) => <tr key={step}><th scope="row">{t(step)}</th>
             {cells.map((cell, index) => <td key={POLICY_COLUMNS[index]} data-policy-cell={cell === '✓' ? 'on' : cell === '—' ? 'off' : 'choice'}>
-              {cell === '✓' ? <span aria-label="做">✓</span> : cell === '—' ? <span aria-label="不做">—</span> : cell}</td>)}</tr>)}</tbody>
+              {cell === '✓' ? <span aria-label={t("做")}>✓</span> : cell === '—' ? <span aria-label={t("不做")}>—</span> : t(cell)}</td>)}</tr>)}</tbody>
         </table>
-        <Help>{POLICY_COVER_NOTE}</Help>
+        <Help>{t(POLICY_COVER_NOTE)}</Help>
       </Disclosure>
     </div>
   );
@@ -53,15 +56,16 @@ export function PolicyLegend() {
 
 /** 标题行里的处理方式下拉：弹层顶部写明在选什么，每档带一句话；收起时只显示档名。 */
 export function PresetSelect({ name, value, onChange }: { name: string; value: Preset; onChange(value: Preset): void }) {
+  useTranslation();
   return (
-    <Select className="w-full" aria-label={`${name} 处理方式`} selectedKey={value} prefix="处理方式"
-      renderValue={<span className="truncate">{PRESETS.find(([key]) => key === value)?.[1]}</span>}
+    <Select className="w-full" aria-label={t('{name} 处理方式', { name })} selectedKey={value} prefix={t('处理方式')}
+      renderValue={<span className="truncate">{t(PRESETS.find(([key]) => key === value)?.[1] ?? '')}</span>}
       onSelectionChange={key => onChange(String(key) as Preset)}>
       {PRESETS.map(([key, label, hint]) => (
-        <SelectItem key={key} id={key} textValue={label}>
+        <SelectItem key={key} id={key} textValue={t(label)}>
           <span className="flex min-w-0 flex-col">
-            <span>{label}</span>
-            <span className="text-body-2-regular text-text-secondary whitespace-normal">{hint}</span>
+            <span>{t(label)}</span>
+            <span className="text-body-2-regular text-text-secondary whitespace-normal">{t(hint)}</span>
           </span>
         </SelectItem>
       ))}
@@ -70,13 +74,14 @@ export function PresetSelect({ name, value, onChange }: { name: string; value: P
 }
 
 export function StageChooser({ name, value, onChange }: { name: string; value: readonly Stage[]; onChange(value: readonly Stage[]): void }) {
+  useTranslation();
   return (
-    <Disclosure defaultOpen summary={`${name} 的处理步骤（${value.length}/${STAGES.length}）`}>
-      <div className="flex flex-wrap gap-x-6 gap-y-2" role="group" aria-label={`${name} 处理步骤`}>
+    <Disclosure defaultOpen summary={t('{name} 的处理步骤（{selected}/{total}）', { name, selected: value.length, total: STAGES.length })}>
+      <div className="flex flex-wrap gap-x-6 gap-y-2" role="group" aria-label={t('{name} 处理步骤', { name })}>
         {STAGES.map(([key, label]) => (
           <Checkbox key={key} isSelected={value.includes(key)}
             onChange={(on) => onChange(on ? [...value, key] : value.filter(stage => stage !== key))}>
-            {label}
+            {t(label)}
           </Checkbox>
         ))}
       </div>
@@ -88,14 +93,15 @@ export function StageChooser({ name, value, onChange }: { name: string; value: r
 export function LibraryColorPicker({ id, name, value: color, onChange }: {
   id: string; name: string; value: string; onChange(color: string): void;
 }) {
+  useTranslation();
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const label = ACCENT_CHOICES.find(([key]) => key === color)?.[1] || '无颜色';
+  const label = t(ACCENT_CHOICES.find(([key]) => key === color)?.[1] || '无颜色');
   const choose = (next: string) => { onChange(next); previewLibraryColor(id, next); setOpen(false) };
   return <>
     <button ref={trigger} type="button" className="text-body-medium" data-glow-chip="" data-library-color-trigger="" aria-haspopup="dialog"
       aria-expanded={open} aria-label={`${name || '未命名媒体库'} 来源色：${label}`} title={label} onClick={() => setOpen(true)}>
-      <span aria-hidden className="text-text-tertiary">来源色</span>
+      <span aria-hidden className="text-text-tertiary">{t("来源色")}</span>
       {color
         ? <span data-glow-ball="" aria-hidden="true" data-accent-ball={color} />
         : <span data-glow-ball="" data-library-none="" aria-hidden="true" />}
@@ -105,14 +111,14 @@ export function LibraryColorPicker({ id, name, value: color, onChange }: {
       <Popover triggerRef={trigger} isOpen={open} onOpenChange={setOpen} placement="bottom start" offset={8}
         containerPadding={12} className={MENU_POPOVER_SURFACE}>
         <Dialog aria-label={`${name || '未命名媒体库'} 来源色`} className="outline-none">
-          <p className="px-1 pb-2 text-body-medium text-text-primary">选择来源色</p>
+          <p className="px-1 pb-2 text-body-medium text-text-primary">{t("选择来源色")}</p>
           <div data-accent-grid="" data-library-colors="" role="group">
-            <button type="button" data-glow-chip="" aria-pressed={!color} title="无颜色" aria-label="无颜色"
+            <button type="button" data-glow-chip="" aria-pressed={!color} title={t("无颜色")} aria-label={t("无颜色")}
               onClick={() => choose('')}>
               <span data-glow-ball="" data-library-none="" aria-hidden="true" />
             </button>
             {ACCENT_CHOICES.map(([key, choice]) => (
-              <button type="button" key={key} data-glow-chip="" aria-pressed={key === color} title={choice} aria-label={choice}
+              <button type="button" key={key} data-glow-chip="" aria-pressed={key === color} title={t(choice)} aria-label={t(choice)}
                 onClick={() => choose(key)}>
                 <span data-glow-ball="" aria-hidden="true" data-accent-ball={key} />
               </button>

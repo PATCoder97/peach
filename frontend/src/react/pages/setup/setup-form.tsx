@@ -1,3 +1,5 @@
+import { translate as t } from '../../../i18n/index';
+import { useTranslation } from '../../i18n';
 /* 首次设置表单。题目、默认值、显隐与随平台变化的文案来自 `GET /api/setup/questions`；
  * 分组标题、按钮与「完成设置后」那一组是页面骨架，写在这里。
  *
@@ -49,13 +51,14 @@ function folderErrors(value: SetupErrors[string], count: number): { rows: string
 }
 
 function scanLabel(paths: string[]): string {
-  if (!paths.length) return '完成设置后扫描媒体目录';
-  return `完成设置后扫描 ${paths.length} 个文件夹`;
+  if (!paths.length) return t('完成设置后扫描媒体目录');
+  return t('完成设置后扫描 {count} 个文件夹', { count: paths.length });
 }
 
 const text = (value: SetupErrors[string]) => (Array.isArray(value) ? value.filter(Boolean).join(' ') : value ?? '');
 
 export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions; onDone: (done: SetupDone) => void; onRestore?: () => void }) {
+  useTranslation();
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const stepTitle = useRef<HTMLHeadingElement>(null);
@@ -112,7 +115,7 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
   // `aria-describedby` 挂在框上，文字在页面上只有这一份。`key` 跟着提交轮次换，同一句错误
   // 再提交一次也会重新播报。
   const announce = (message: string | undefined) =>
-    message ? <span key={errorRound} role="alert">{message}</span> : undefined;
+    message ? <span key={errorRound} role="alert">{t(message)}</span> : undefined;
 
   const visible = (question: SetupQuestion) =>
     !question.visible_when || Object.entries(question.visible_when).every(([key, value]) => values[key] === value);
@@ -173,7 +176,7 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
         <ConfigurationChoice key={question.key} id={`setup-${question.key}`} label={question.label}
           value={values[question.key] ?? question.default} onChange={(value) => setValue(question.key, value)}
           options={question.options ?? []} isInvalid={Boolean(error)}>
-          {help ? <Help>{help}</Help> : null}
+          {help ? <Help>{t(help)}</Help> : null}
           {error ? <ErrorText key={errorRound}>{error}</ErrorText> : null}
         </ConfigurationChoice>
       );
@@ -217,56 +220,56 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
     <form ref={form} noValidate onSubmit={(event) => void submit(event)} aria-labelledby="auth-card-title"
       data-setup-form-panel="">
       <div data-setup-top="">
-        <div data-setup-progress="" role="img" aria-label={`首次设置，第 ${step + 1} 步，共 4 步`}>
+        <div data-setup-progress="" role="img" aria-label={t('首次设置，第 {step} 步，共 4 步', { step: step + 1 })}>
           {[0, 1, 2, 3].map(index => <span key={index} data-active={index === step || undefined} data-complete={index < step || undefined} />)}
         </div>
-        <span className="text-body-2-regular text-text-secondary">首次设置</span>
+        <span className="text-body-2-regular text-text-secondary">{t("首次设置")}</span>
       </div>
       <div data-setup-step-scroll="" ref={stepScroll}>
       <div data-setup-step-content="" style={{ '--setup-direction': `${direction * 20}px` } as CSSProperties}>
         <header data-setup-step-heading="" key={step}>
           <h1 id="auth-card-title" data-copy-key={`setup.title.${step}`} ref={stepTitle} tabIndex={-1} className="text-title-1-semibold text-text-primary">
-            {step === 0 ? '欢迎使用 Peach' : step === 1 ? '你的媒体，放在哪里？' : step === 2 ? '在哪里使用 Peach？' : '准备好开始了'}
+            {step === 0 ? t("欢迎使用 Peach") : step === 1 ? t("你的媒体，放在哪里？") : step === 2 ? t("在哪里使用 Peach？") : t("准备好开始了")}
           </h1>
           <p data-copy-key={`setup.description.${step}`} className="text-body-regular text-text-secondary">
-            {step === 0 ? '花一点时间，让 Peach 更适合你。' : step === 1 ? '连接已有文件夹，或先进入界面看看。' : step === 2 ? '选择访问范围，也可以为馆藏设置密码。' : '确认这些选择，剩下的交给 Peach。'}
+            {step === 0 ? t("花一点时间，让 Peach 更适合你。") : step === 1 ? t("连接已有文件夹，或先进入界面看看。") : step === 2 ? t("选择访问范围，也可以为馆藏设置密码。") : t("确认这些选择，剩下的交给 Peach。")}
           </p>
         </header>
       <div hidden={step !== 0}>
         <ul data-setup-welcome-points="">
-          <li><RiFolderLine /><div data-setup-welcome-copy=""><strong className="text-body-medium">连接你的媒体库</strong><p className="text-body-2-regular text-text-secondary">本地文件夹与已挂载的网盘，都可以整理。</p></div></li>
-          <li><RiSearchLine /><div data-setup-welcome-copy=""><strong className="text-body-medium">更快找到想看的</strong><p className="text-body-2-regular text-text-secondary">用搜索、标签和收藏浏览馆藏。</p></div></li>
-          <li><RiPlayCircleLine /><div data-setup-welcome-copy=""><strong className="text-body-medium">按你的习惯播放</strong><p className="text-body-2-regular text-text-secondary">播放与外观偏好，可以随时在设置里调整。</p></div></li>
+          <li><RiFolderLine /><div data-setup-welcome-copy=""><strong className="text-body-medium">{t("连接你的媒体库")}</strong><p className="text-body-2-regular text-text-secondary">{t("本地文件夹与已挂载的网盘，都可以整理。")}</p></div></li>
+          <li><RiSearchLine /><div data-setup-welcome-copy=""><strong className="text-body-medium">{t("更快找到想看的")}</strong><p className="text-body-2-regular text-text-secondary">{t("用搜索、标签和收藏浏览馆藏。")}</p></div></li>
+          <li><RiPlayCircleLine /><div data-setup-welcome-copy=""><strong className="text-body-medium">{t("按你的习惯播放")}</strong><p className="text-body-2-regular text-text-secondary">{t("播放与外观偏好，可以随时在设置里调整。")}</p></div></li>
         </ul>
       </div>
       <div hidden={step !== 1}>
       {media ? (
         <CardGroup first labelledBy="setup-media-title">
           <GroupTitle id="setup-media-title">
-            {media.label}
+            {t(media.label)}
           </GroupTitle>
-          <Checkbox isSelected={skipMedia} onChange={setSkipMedia}>稍后添加媒体库</Checkbox>
-          {skipMedia ? <Help>完成设置后，可在「媒体库与入库」添加自己的媒体目录。</Help> : <>
+          <Checkbox isSelected={skipMedia} onChange={setSkipMedia}>{t("稍后添加媒体库")}</Checkbox>
+          {skipMedia ? <Help>{t("完成设置后，可在「媒体库与入库」添加自己的媒体目录。")}</Help> : <>
           {tableError ? <ErrorText key={errorRound}>{tableError}</ErrorText> : null}
           <div role="group" aria-labelledby="setup-media-title" className="flex flex-col gap-3">
             {libraries.map(library => <div key={library.library_id} data-library-block="" data-setup-library-block="">
               <div data-library-head="">
                 <LibraryIconPicker label={`${library.library || '未命名媒体库'} 图标`} value={library.library_icon || ''} kind={library.location}
                   onChange={library_icon => editLibrary(library, { library_icon })} />
-                <Input className="w-full" aria-label={`${library.library || '未命名媒体库'} 名称`} placeholder="媒体库名称" maxLength={80}
+                <Input className="w-full" aria-label={`${library.library || '未命名媒体库'} 名称`} placeholder={t("媒体库名称")} maxLength={80}
                   value={library.library || ''} onChange={value => editLibrary(library, { library: value })} />
-                <LibraryColorPicker id={library.library_id || ''} name={library.library || '未命名媒体库'} value={library.library_color || ''}
+                <LibraryColorPicker id={library.library_id || ''} name={library.library || t("未命名媒体库")} value={library.library_color || ''}
                   onChange={library_color => editLibrary(library, { library_color })} />
-                <div data-setup-library-policy=""><PresetSelect name={library.library || '未命名媒体库'} value={library.library_policy || 'auto'}
+                <div data-setup-library-policy=""><PresetSelect name={library.library || t("未命名媒体库")} value={library.library_policy || 'auto'}
                   onChange={library_policy => editLibrary(library, { library_policy,
                     library_stages: library_policy === 'custom' ? library.library_stages || AUTO_STAGES.join(',') : '' })} /></div>
               </div>
-              {library.library_policy === 'custom' ? <StageChooser name={library.library || '未命名媒体库'}
+              {library.library_policy === 'custom' ? <StageChooser name={library.library || t("未命名媒体库")}
                 value={(library.library_stages?.split(',').filter(Boolean) ?? AUTO_STAGES) as Stage[]}
                 onChange={value => editLibrary(library, { library_stages: value.join(',') })} /> : null}
               <div data-library-folders="" role="group" aria-label={`${library.library || '未命名媒体库'} 的文件夹`}>
             {folders.rows.map((row, index) => row.library_id === library.library_id ? (
-              <FolderRow key={index} label={`${media.label} ${index + 1}`} path={row.path}
+              <FolderRow key={index} label={`${t(media.label)} ${index + 1}`} path={row.path}
                 onPath={(path) => folders.edit(index, { path })} error={announce(folders.errors[index])}
                 inputRef={folders.inputRef(index)} picking={folders.picking === index}
                 onPick={() => void folders.pick(index)}
@@ -275,17 +278,17 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
                   <SourceSelect index={index} value={row.location} options={sources}
                     onChange={(location) => folders.edit(index, { location, cost: location === 'local' ? 'free' : '' })} />
                   <MediaReadPolicy index={index} cost={row.cost ?? ''}
-                    error={requireReadPolicy && !row.cost ? '请选择媒体读取策略' : undefined}
+                    error={requireReadPolicy && !row.cost ? t("请选择媒体读取策略") : undefined}
                     onChange={(cost) => folders.edit(index, { cost })} />
-                  {libraries.length > 1 ? <FolderField label="移到媒体库" className="w-full @lg:w-60">
+                  {libraries.length > 1 ? <FolderField label={t("移到媒体库")} className="w-full @lg:w-60">
                     <Select className="w-full" aria-label={`目录所属媒体库 ${index + 1}`} selectedKey={row.library_id}
-                      renderValue={<span className="flex min-w-0 items-center gap-2"><SourceMark mark={row.library_icon || libraryAutoChoice(row.location)[0]} /><span className="truncate">{row.library || '未命名媒体库'}</span></span>}
+                      renderValue={<span className="flex min-w-0 items-center gap-2"><SourceMark mark={row.library_icon || libraryAutoChoice(row.location)[0]} /><span className="truncate">{row.library || t("未命名媒体库")}</span></span>}
                       onSelectionChange={key => {
                         const other = folders.rows.find(value => value.library_id === key);
                         if (other) folders.edit(index, libraryFields(other));
                       }}>
                       {[...new Map(folders.rows.map(value => [value.library_id, value])).values()].map(value => (
-                        <SelectItem key={value.library_id} id={value.library_id}>{value.library || '未命名媒体库'}</SelectItem>
+                        <SelectItem key={value.library_id} id={value.library_id}>{value.library || t("未命名媒体库")}</SelectItem>
                       ))}
                     </Select>
                   </FolderField> : null}
@@ -294,28 +297,26 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
             ) : null)}
               <div className="flex"><Button variant="secondary" data-copy-interact aria-label={`给 ${library.library || '未命名媒体库'} 添加文件夹`}
                 onClick={() => { folders.add(); folders.edit(folders.rows.length,
-                  { ...libraryFields(library), location: library.location, cost: library.cost }); }}>添加文件夹</Button></div>
+                  { ...libraryFields(library), location: library.location, cost: library.cost }); }}>{t("添加文件夹")}</Button></div>
               </div>
             </div>)}
           </div>
           <Button ref={addButton} variant="secondary" className="self-start" data-copy-interact onClick={() => {
             folders.add(); folders.edit(folders.rows.length, { library_id: randomId(), library: `媒体库 ${libraries.length + 1}`,
               library_icon: '', library_color: '', library_policy: 'auto', library_stages: undefined });
-          }}>
-            添加媒体库
-          </Button>
+          }}>{t("添加媒体库")}</Button>
           {cloud ? (
             <>
               <MediaReadPolicyHelp />
-              <Help>{setup.cloud.help}<ExternalLink href={setup.cloud.link.url}>{setup.cloud.link.label}</ExternalLink></Help>
+              <Help>{t(setup.cloud.help)}<ExternalLink href={setup.cloud.link.url}>{t(setup.cloud.link.label)}</ExternalLink></Help>
               {setup.cloud.dependencies.map((dependency) => (
                 <Help key={dependency.name}>
-                  {dependency.message}<ExternalLink href={dependency.download_url}>{dependency.download_label}</ExternalLink>
+                  {t(dependency.message)}<ExternalLink href={dependency.download_url}>{t(dependency.download_label)}</ExternalLink>
                 </Help>
               ))}
             </>
           ) : null}
-          {media.help.map((line) => <Help key={line}>{line}</Help>)}
+          {media.help.map((line) => <Help key={line}>{t(line)}</Help>)}
           </>}
         </CardGroup>
       ) : null}
@@ -323,17 +324,17 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
       {dataRoot ? (
         <CardGroup labelledBy="setup-data-title">
           <GroupTitle id="setup-data-title">
-            {dataRoot.label}<span aria-hidden className="ml-0.5 text-text-error-primary">*</span>
+            {t(dataRoot.label)}<span aria-hidden className="ml-0.5 text-text-error-primary">*</span>
           </GroupTitle>
           <div className="flex items-start gap-2">
-            <Input className="min-w-0 flex-1" id={`f-${dataRoot.key}`} aria-label={dataRoot.label} isRequired
+            <Input className="min-w-0 flex-1" id={`f-${dataRoot.key}`} aria-label={t(dataRoot.label)} isRequired
               autoComplete="off" spellCheck="false" value={values[dataRoot.key] ?? ''}
               onChange={(value) => setValue(dataRoot.key, value)}
               validationBehavior="aria" isInvalid={Boolean(dataRootError)} hint={announce(dataRootError)} />
-            <IconButton icon={FolderSearchIcon} aria-label="选择数据目录" onClick={() => void pickDataRoot()}
+            <IconButton icon={FolderSearchIcon} aria-label={t("选择数据目录")} onClick={() => void pickDataRoot()}
               {...busyProps(pickingData)} />
           </div>
-          {dataRoot.help.map((line) => <Help key={line}>{line}</Help>)}
+          {dataRoot.help.map((line) => <Help key={line}>{t(line)}</Help>)}
         </CardGroup>
       ) : null}
 
@@ -343,16 +344,16 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
         {host ? field(host) : null}
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-0.5">
-            <Label id="setup-password-title" elementType="span">访问密码</Label>
-            <p id="setup-access-description" className="text-body-2-regular text-text-secondary">开启后，访问 Peach 需要先登录。</p>
+            <Label id="setup-password-title" elementType="span">{t("访问密码")}</Label>
+            <p id="setup-access-description" className="text-body-2-regular text-text-secondary">{t("开启后，访问 Peach 需要先登录。")}</p>
           </div>
           <Switch aria-labelledby="setup-password-title" aria-describedby="setup-access-description"
             isSelected={accessOn} onChange={setAccessOn} />
         </div>
-        <Help>{lan ? '局域网访问推荐设置密码。未设置时，同一网络中能连接 Peach 的设备可直接进入。'
-          : '只有这台电脑可以访问；设置密码后，打开 Peach 仍需登录。'}</Help>
+        <Help>{lan ? t("局域网访问推荐设置密码。未设置时，同一网络中能连接 Peach 的设备可直接进入。")
+          : t("只有这台电脑可以访问；设置密码后，打开 Peach 仍需登录。")}</Help>
         {accessOn
-          ? <PasswordPair label="访问密码" password={password} confirmation={confirmation}
+          ? <PasswordPair label={t("访问密码")} password={password} confirmation={confirmation}
               onPassword={setPassword} onConfirmation={setConfirmation}
               passwordError={announce(text(errors.access_password))} passwordHint="请输入 8–256 个字符。"
               confirmationInvalid={Boolean(errors.access_password)} />
@@ -360,10 +361,10 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
       </CardGroup>
 
       <CardGroup labelledBy="setup-proxy-title">
-        <GroupTitle id="setup-proxy-title">Peach 代理</GroupTitle>
-        <Help>用于资料采集、封面和工具下载，可在配置页修改。</Help>
+        <GroupTitle id="setup-proxy-title">{t("Peach 代理")}</GroupTitle>
+        <Help>{t("用于资料采集、封面和工具下载，可在配置页修改。")}</Help>
         <div className="flex flex-col items-start gap-1.5">
-          <Label elementType="span" id="setup-proxy-mode-label">连接方式</Label>
+          <Label elementType="span" id="setup-proxy-mode-label">{t("连接方式")}</Label>
           <ProxyModeSelect mode={proxyMode} onChange={setProxyMode} labelledBy="setup-proxy-mode-label" />
         </div>
         {proxyMode === 'proxy'
@@ -371,10 +372,10 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
               saved={setup.peach_proxy?.proxy_saved} error={announce(text(errors.peach_proxy))} />
           : errors.peach_proxy ? <ErrorText key={errorRound}>{text(errors.peach_proxy)}</ErrorText> : null}
         {setup.docker && proxyMode === 'proxy' && isLoopbackProxy(proxyAddress)
-          ? <Note tone="warning" title="请填写容器可访问的代理地址">回环地址指向容器自身；宿主机代理需使用容器可访问的宿主机地址。</Note>
+          ? <Note tone="warning" title={t("请填写容器可访问的代理地址")}>{t("回环地址指向容器自身；宿主机代理需使用容器可访问的宿主机地址。")}</Note>
           : null}
         {setup.peach_proxy?.needs_selection
-          ? <Note tone="warning" title="需要选择连接方式">已有来源的代理地址不同，请选择公共连接方式。</Note>
+          ? <Note tone="warning" title={t("需要选择连接方式")}>{t("已有来源的代理地址不同，请选择公共连接方式。")}</Note>
           : null}
       </CardGroup>
 
@@ -382,48 +383,48 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
         <Disclosure key={advancedOpenings} summary="高级设置" defaultOpen={advancedOpenings > 0}>
           <div className="flex flex-col gap-4">{others.filter(visible).map(field)}</div>
         </Disclosure>
-        <Help><span className="break-all">访问地址：{address}</span></Help>
+        <Help><span className="break-all">{t("访问地址：")}{address}</span></Help>
       </CardGroup>
 
       </div>
       <div hidden={step !== 3}>
       <CardGroup first labelledBy="setup-options-title">
-        <GroupTitle id="setup-options-title">首次扫描</GroupTitle>
-        {skipMedia ? <Help>添加媒体目录后，再选择处理方式并开始扫描。</Help> : <>
+        <GroupTitle id="setup-options-title">{t("首次扫描")}</GroupTitle>
+        {skipMedia ? <Help>{t("添加媒体目录后，再选择处理方式并开始扫描。")}</Help> : <>
         <div className="flex flex-col gap-1.5">
           <Checkbox isSelected={scanNow} onChange={setScanNow}>{scanLabel(filled)}</Checkbox>
-          <Help>{scanNow ? '扫描会在后台开始，期间可以进入 Peach。' : '先保存处理方式，稍后在「媒体库与入库」开始扫描。'}</Help>
+          <Help>{scanNow ? t("扫描会在后台开始，期间可以进入 Peach。") : t("先保存处理方式，稍后在「媒体库与入库」开始扫描。")}</Help>
         </div>
         {folders.rows.some(row => row.cost === 'metered')
-          ? <Help>开启代理保护的目录不会自动读取视频信息或生成预览；播放时会读取视频。</Help>
+          ? <Help>{t("开启代理保护的目录不会自动读取视频信息或生成预览；播放时会读取视频。")}</Help>
           : null}
         </>}
       </CardGroup>
 
       {failure ? <ErrorText>{failure}</ErrorText> : null}
       {reporting ? <CardGroup>
-        <GroupTitle>版本统计与错误诊断</GroupTitle>
+        <GroupTitle>{t("版本统计与错误诊断")}</GroupTitle>
         <ReportingChoices value={reporting} onChange={setReporting} />
-        <Help>馆藏与口味明细上传默认关闭，可在「应用与维护」查看并选择。</Help>
+        <Help>{t("馆藏与口味明细上传默认关闭，可在「应用与维护」查看并选择。")}</Help>
       </CardGroup> : null}
       <CardGroup labelledBy="setup-summary-title">
-        <GroupTitle id="setup-summary-title">确认设置</GroupTitle>
+        <GroupTitle id="setup-summary-title">{t("确认设置")}</GroupTitle>
         <FactList>
-          <Fact term="媒体目录">{skipMedia ? '稍后添加' : filled.length ? `${filled.length} 个文件夹 · ${libraries.length} 个媒体库` : '尚未填写'}</Fact>
-          <Fact term="数据目录"><span className="break-all">{dataRoot ? values[dataRoot.key] || '尚未填写' : '未取得'}</span></Fact>
-          <Fact term="访问范围">{lan ? '同一局域网的设备' : '只有这台电脑'} · {accessOn ? '使用访问密码' : '未设置访问密码'}</Fact>
-          <Fact term="首次扫描">{!skipMedia && scanNow ? '完成设置后开始' : '稍后手动开始'}</Fact>
-          {reporting ? <Fact term="诊断反馈">{reporting.usage || reporting.errors ? '已开启，可在上方调整' : '已关闭'}</Fact> : null}
-          {!skipMedia ? libraries.map(row => <Fact key={row.library_id} term={row.library || '未命名媒体库'}>{processingSummary(row)}</Fact>) : null}
+          <Fact term={t('媒体目录')}>{skipMedia ? t("稍后添加") : filled.length ? t('{folders} 个文件夹 · {libraries} 个媒体库', { folders: filled.length, libraries: libraries.length }) : t("尚未填写")}</Fact>
+          <Fact term={t('数据目录')}><span className="break-all">{dataRoot ? values[dataRoot.key] || t("尚未填写") : t("未取得")}</span></Fact>
+          <Fact term={t('访问范围')}>{lan ? t("同一局域网的设备") : t("只有这台电脑")} · {accessOn ? t("使用访问密码") : t("未设置访问密码")}</Fact>
+          <Fact term={t('首次扫描')}>{!skipMedia && scanNow ? t("完成设置后开始") : t("稍后手动开始")}</Fact>
+          {reporting ? <Fact term={t('诊断反馈')}>{reporting.usage || reporting.errors ? t("已开启，可在上方调整") : t("已关闭")}</Fact> : null}
+          {!skipMedia ? libraries.map(row => <Fact key={row.library_id} term={row.library || t("未命名媒体库")}>{processingSummary(row)}</Fact>) : null}
         </FactList>
       </CardGroup>
       </div>
       </div>
       </div>
       <footer data-setup-footer="" key={step} data-copy-interact>
-        {step > 0 ? <Button variant="ghost" onClick={() => { if (!busy) move(step - 1); }} aria-disabled={busy || undefined}>返回</Button>
-          : <Button variant="ghost" onClick={onRestore}>使用已有数据</Button>}
-        <Button type="submit" {...busyProps(busy)}>{step === 0 ? '开始设置' : step === 3 ? '完成设置' : '继续'}</Button>
+        {step > 0 ? <Button variant="ghost" onClick={() => { if (!busy) move(step - 1); }} aria-disabled={busy || undefined}>{t("返回")}</Button>
+          : <Button variant="ghost" onClick={onRestore}>{t("使用已有数据")}</Button>}
+        <Button type="submit" {...busyProps(busy)}>{step === 0 ? t("开始设置") : step === 3 ? t("完成设置") : t("继续")}</Button>
       </footer>
     </form>
     </SetupShell>

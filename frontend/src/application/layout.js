@@ -3,6 +3,7 @@ import { DIRECT_MANAGE_NAV, MANAGE_MENU_SECTIONS, MANAGE_SECTIONS, NAV_CATALOG, 
 import { FOLLOW_INITIAL_RANGE_OPTIONS } from './initial-follow-ranges';
 import { noteHtml, revealTexts } from '../ui-kit';
 import { $, ROUTE_ENTITIES, STATE_LABELS, STATE_ROUTES, api, isCatalogPath } from '../core';
+import { setShellAttribute, setShellText } from '../i18n/shell';
 import { buildBars, catalogLayoutProp, catalogState, clearCatalogGrid, commitContextFilter, emptyTrash, goHome, homePath, loadCatalog, paintCatalogFilter, repaintCatalogGrid, syncCatalogFilterScreen } from './catalog.js';
 import { navigationState, openRoutedPage, paintSidebar, syncNavigation } from './navigation.js';
 import { paintManagementPlaceholder } from './../management-placeholder';
@@ -88,7 +89,7 @@ export function openDrawer(v){const drawer=$('#drawer'),restore=!v&&drawer.conta
   drawer.inert=!v&&narrowShell();
   drawer.classList.toggle('open',v);$('#scrim').classList.toggle('on',v);
   document.body.classList.toggle('drawer-open',!!v);document.dispatchEvent(new Event('board:sidebar'));
-  $('#filterBtn').setAttribute('aria-expanded',String(!!v));$('#filterBtn').setAttribute('aria-controls','drawer');$('#filterBtn').setAttribute('aria-label',v?'收起侧栏':'展开侧栏');
+  $('#filterBtn').setAttribute('aria-expanded',String(!!v));$('#filterBtn').setAttribute('aria-controls','drawer');setShellAttribute($('#filterBtn'),'aria-label',v?'收起侧栏':'展开侧栏');
   if(restore)$('#filterBtn').focus();sessionStorage.setItem('board.sidebar',v?'open':'closed')}
 
 export function closeDrawerAfterNav(){if(narrowShell())openDrawer(false)}
@@ -222,7 +223,7 @@ export function paintListTitle(){
   const el=$('#listTitle');if(!el)return;
   const path=decodeURIComponent(location.pathname);
   const label=!manageSection()&&isCatalogPath(path)?STATE_LABELS[state.state]||'':'';
-  el.hidden=!label;if(label)el.textContent=label;
+  el.hidden=!label;if(label)setShellText(el,label);
   $('#catalogPageHeading').hidden=!!manageSection()||!isCatalogPath(path)||!!label||state.jav==='1';
 }
 

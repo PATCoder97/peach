@@ -1,3 +1,5 @@
+import { translate as t } from '../../i18n/index';
+import { useTranslation } from '../i18n';
 /* 顶栏搜索的下拉栏与键盘（`search` 岛）。
  *
  * 状态放在一个随组件活着的可变仓里，输入框上的原生事件改它再重画：`#q` 是壳的节点，事件只能用
@@ -62,6 +64,7 @@ const Sprite = ({ name }: { name: string }) => (
 );
 
 export function SearchPage(props: SearchProps) {
+  useTranslation();
   const latest = useRef(props);
   latest.current = props;
   const store = useRef<Store | null>(null);
@@ -123,7 +126,7 @@ export function SearchPage(props: SearchProps) {
         <a href={group.href} onMouseDown={keep} onClick={event => {
           if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
           event.preventDefault(); op.openPath(group.href!);
-        }}>{group.action || '查看全部'}</a>
+        }}>{group.action || t("查看全部")}</a>
       ) : null}</h3>
       {group.kind ? <div data-search-items="">{group.options.map(option)}</div> : group.options.map(option)}
       {group.more ? option(group.more) : null}
@@ -141,7 +144,7 @@ export function SearchPage(props: SearchProps) {
       {s.query && model.recent ? section(model.recent) : null}
       {columns(model.left, model.right)}
       {!s.query && model.recent ? section(model.recent) : null}
-      {model.empty ? <p data-search-empty="" role="status">没有找到</p> : null}
+      {model.empty ? <p data-search-empty="" role="status">{t("没有找到")}</p> : null}
     </div>
   );
 }
@@ -366,6 +369,7 @@ function createOps(props: () => SearchProps, s: Store, menu: () => HTMLElement |
 function Tabs({ tabs, kind, onPick, wire }: {
   tabs: SuggestTab[]; kind: string; onPick(kind: string): void; wire(row: Element | null): void;
 }) {
+  useTranslation();
   const row = useRef<HTMLDivElement>(null);
   // 窄屏页签排不下时右缘渐隐，看得出还能往右拨。
   useLayoutEffect(() => { wire(row.current) }, [wire, tabs]);
@@ -374,11 +378,11 @@ function Tabs({ tabs, kind, onPick, wire }: {
       data-pill-selected={kind === k ? '' : undefined} data-pill-variant="gray"
       // 页签选择保留输入焦点，便于继续输入与使用方向键。
       onMouseDown={(event) => event.preventDefault()} onClick={() => onPick(k)}>
-      {label}{total ? <TabCount value={total} /> : null}
+      {t(label)}{total ? <TabCount value={total} /> : null}
     </button>
   );
   return (
-    <PillTabList ref={row} data-search-tabs="" data-pill-nav="" role="tablist" aria-label="按种类看补全">
+    <PillTabList ref={row} data-search-tabs="" data-pill-nav="" role="tablist" aria-label={t("按种类看补全")}>
       {tab('', '全部')}
       {tabs.map((t) => tab(t.kind, t.label, t.total))}
     </PillTabList>
@@ -391,6 +395,7 @@ function Row({ entry, active, helpers, onPick, onPeek, onRemove }: {
   entry: SearchOption; active: boolean; helpers: SearchProps['helpers'];
   onPick(entry: SearchOption): void; onPeek(card: SuggestCard): void; onRemove(value: string): Promise<void>;
 }) {
+  useTranslation();
   const shared = {
     'data-search-value': entry.value, 'data-active': active ? '' : undefined,
     onClick: (event: MouseEvent) => {
@@ -400,9 +405,7 @@ function Row({ entry, active, helpers, onPick, onPeek, onRemove }: {
   };
   if (entry.type === 'more') {
     return (
-      <button type="button" data-search-option="more" {...shared} onMouseDown={keep}>
-        查看全部 {entry.total.toLocaleString()} 个视频
-        <Sprite name="chevron-right" />
+      <button type="button" data-search-option="more" {...shared} onMouseDown={keep}>{t("查看全部")}{entry.total.toLocaleString()}{t("个视频")}<Sprite name="chevron-right" />
       </button>
     );
   }

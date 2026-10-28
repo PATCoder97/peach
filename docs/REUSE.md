@@ -1,5 +1,9 @@
 # 复用清单
 
+## 界面语言
+
+语言选择复用现有 BoardUI Select、React 的 `useSyncExternalStore` 与 React Aria `I18nProvider`。词表按显示边界翻译，浏览器存储保存设备偏好，`storage` 事件同步标签页；缺少译文时保留原文，不推断或改写馆藏字段。无新增依赖，契约与覆盖见 [界面语言](LOCALIZATION.md)。
+
 ## 首页筛选聚合与缓存
 
 采用 bbingz 的 [PR #205](https://github.com/peach-mitao/peach/pull/205)，固定来源提交 `bbf5aac8e9562211c324c2019bff35888266df84`，许可证沿用本项目 AGPL-3.0-or-later。作品筛选集合先在独立子查询中求出，创作者、标签和演员按既有关系聚合，保留去重计数与标签可见性。没有选中标签时移除无效 `tag_match`，复用既有修订缓存、同键锁与跨连接写入失效机制，不在线改写 SQLite 统计或增加索引迁移。

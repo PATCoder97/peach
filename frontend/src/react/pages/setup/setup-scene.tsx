@@ -1,8 +1,11 @@
+import { translate as t } from '../../../i18n/index';
+import { useTranslation } from '../../i18n';
 import type { ReactNode } from 'react';
 import { RiFolderLine, RiPlayFill, RiSearchLine } from '@remixicon/react';
 import macbook from '../../../../../resources/setup/macbook.png';
 import iphone from '../../../../../resources/setup/iphone.png';
 import { PeachSilhouette } from './peach-silhouette';
+import { LanguageSetting } from '../../components/language-setting';
 
 type SceneStep = number | 'restore' | 'done';
 
@@ -16,6 +19,7 @@ function LibraryPreview() {
 
 /** 首次设置的场景说明；使用 Peach 图标与布局，不包含真实馆藏。 */
 export function SetupScene({ step }: { step: SceneStep }) {
+  useTranslation();
   const title = step === 0 ? '你的私人媒体空间。' : step === 1 ? '让文件成为馆藏。'
     : step === 2 ? '从书桌，到手边。' : step === 3 ? '全都准备好了。'
     : step === 'restore' ? '从熟悉的地方继续。' : '馆藏，准备开启。';
@@ -34,18 +38,18 @@ export function SetupScene({ step }: { step: SceneStep }) {
         <div data-setup-iphone=""><img src={iphone} alt="" /><div data-setup-device-screen=""><LibraryPreview /></div></div>
       </div> : <div data-setup-library-scene="">
         <LibraryPreview />
-        <div data-setup-scene-badge=""><RiFolderLine /><span>你的媒体库</span></div>
+        <div data-setup-scene-badge=""><RiFolderLine /><span>{t("你的媒体库")}</span></div>
       </div>}
     </div>
     <div data-setup-scene-caption="" key={`caption-${step}`}>
-      <p className="text-title-2-medium" data-copy-key={`setup.scene.title.${step}`}>{title}</p>
-      <p className="text-body-2-regular" data-copy-key={`setup.scene.description.${step}`}>{description}</p>
+      <p className="text-title-2-medium" data-copy-key={`setup.scene.title.${step}`}>{t(title)}</p>
+      <p className="text-body-2-regular" data-copy-key={`setup.scene.description.${step}`}>{t(description)}</p>
     </div>
   </aside>;
 }
 
 export function SetupShell({ step, children }: { step: SceneStep; children: ReactNode }) {
-  return <main data-setup-page=""><div data-setup-window="" data-setup-step={step}>
+  return <main data-setup-page=""><div data-setup-language=""><LanguageSetting compact /></div><div data-setup-window="" data-setup-step={step}>
     <SetupScene step={step} />{children}
   </div></main>;
 }

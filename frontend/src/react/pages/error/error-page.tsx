@@ -1,3 +1,5 @@
+import { translate as t } from '../../../i18n/index';
+import { useTranslation } from '../../i18n';
 /* 错误页：浏览器直接打开的地址撞上 HTTP 错误时给人看的那一页。
  *
  * 服务端只给状态码（`data-status`）与已换成中文的说明（`data-detail`）；标题按状态码取，404 不显示
@@ -20,13 +22,14 @@ export function errorTitle(status: string | undefined): string {
 }
 
 export function ErrorPage({ data }: { data: PageData }) {
-  const title = errorTitle(data.status);
+  useTranslation();
+  const title = t(errorTitle(data.status));
   useEffect(() => {
     document.title = `Peach · ${title}`;
   }, [title]);
   return (
-    <AuthCard title={title} lede={data.status === '404' ? undefined : data.detail}>
-      <ButtonLink href="/" className="self-start">返回首页</ButtonLink>
+    <AuthCard title={title} lede={data.status === '404' ? undefined : data.detail ? t(data.detail) : undefined}>
+      <ButtonLink href="/" className="self-start">{t("返回首页")}</ButtonLink>
     </AuthCard>
   );
 }

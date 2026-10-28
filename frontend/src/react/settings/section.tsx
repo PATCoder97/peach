@@ -1,3 +1,5 @@
+import { translate as t } from '../../i18n/index';
+import { useTranslation } from '../i18n';
 /* 配置页各分区共用的组合件。
  *
  * 外框取 BoardUI 设置弹层的 `SettingsSectionLabel` + `SettingsCard`，开关行直接用 `SettingsRow`。
@@ -26,6 +28,8 @@ interface SectionProps {
 /* 分区里的说明、报错与读数常带长 URL、堆栈和无空格路径：整个分区按 `overflow-wrap:anywhere`
    就地折断（属性会继承，行内说明、Help 与读数都跟着走），不把卡片撑出横向滚动。 */
 export function Section({ title, icon, id, aside, onSubmit, children }: SectionProps) {
+  useTranslation();
+  title = t(title);
   const label = icon ? <span className="inline-flex items-center gap-1.5">{icon}{title}</span> : title;
   const body = (
     <>
@@ -106,10 +110,9 @@ export function ExternalLink({ href, children, leadingIcon }: {
 
 /** 后台任务的进度在任务中心看：说明句后面跟这一颗，点了站内跳过去。 */
 export function TaskCenterLink() {
+  useTranslation();
   return (
-    <LinkButton href="/tasks" size="small" trailingIcon={RiArrowRightLine} className="self-start">
-      在任务中心查看进度
-    </LinkButton>
+    <LinkButton href="/tasks" size="small" trailingIcon={RiArrowRightLine} className="self-start">{t("在任务中心查看进度")}</LinkButton>
   );
 }
 
@@ -135,6 +138,7 @@ export function Disclosure(
   { summary, defaultOpen = false, isOpen, children, trailing = false, onOpenChange, contentClassName }:
   { summary: ReactNode; defaultOpen?: boolean; isOpen?: boolean; children: ReactNode; trailing?: boolean; onOpenChange?(open: boolean): void; contentClassName?: string },
 ) {
+  useTranslation();
   const id = useId();
   const details = useRef<HTMLDetailsElement>(null);
   const body = useRef<HTMLDivElement>(null);
@@ -166,7 +170,7 @@ export function Disclosure(
       <summary aria-expanded={open} aria-controls={id} onClick={toggle}
         className={`${trailing ? 'w-full' : 'w-fit'} flex cursor-pointer list-none items-center gap-1 rounded-sm text-body-2-medium text-text-secondary outline-none select-none hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring`}>
         {!trailing ? <RiArrowRightSLine aria-hidden className={open ? 'size-(--icon-inline) shrink-0 rotate-90 transition-transform' : 'size-(--icon-inline) shrink-0 transition-transform'} /> : null}
-        {summary}
+        {typeof summary === 'string' ? t(summary) : summary}
         {trailing ? <RiArrowRightSLine aria-hidden className={open ? 'ml-auto size-(--icon-inline) shrink-0 -rotate-90 transition-transform' : 'ml-auto size-(--icon-inline) shrink-0 rotate-90 transition-transform'} /> : null}
       </summary>
       <div ref={body} id={id} inert={!open}>

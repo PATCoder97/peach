@@ -10,7 +10,7 @@ description: 新增、修改或验收 Peach 页面、控件、页面文案、布
 
 ## 开工
 
-1. 完整读取用户级 `peach-ui-consistency`，统一生产应用、官网与演示站的维护源、同步和预览交付。
+1. 完整读取同仓库的 [peach-ui-consistency](../peach-ui-consistency/SKILL.md)，统一应用、官网与演示站的维护源、同步和预览交付。
 2. 核对相关路由、已有控件与调用方。React 复用 BoardUI 与 Peach 组合件，遗留 DOM 复用 ui-kit；不要把遗留颜色、组件名称或 CSS 规则套到 BoardUI。
 3. 检索项目记忆「界面预览与真实样本」，读取已登记入口；样本、来源核验、编辑保存按 `docs/UI_PREVIEW.md`。用户验收只用真实小样本与缓存，合成夹具用于隔离自动化测试。
 4. 按下表只读相关章节。外部产品被点名参考时执行 `peach-reference-evidence`；未取得当前证据就明确未取得，不猜动画、间距或行为。

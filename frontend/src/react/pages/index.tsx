@@ -9,13 +9,17 @@
 import './pages.css';
 import { installErrorReporting } from '../../error-reporting';
 
-import type { ComponentType } from 'react';
+import { useEffect, type ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { ErrorPage } from './error/error-page';
 import { LoginPage } from './login/login-page';
 import type { PageData } from './page-data';
 import { SetupPage } from './setup/setup-page';
+import { applyDocumentLocale } from '../../i18n';
+import { LocaleProvider } from '../locale-provider';
+import { useTranslation } from '../i18n';
+applyDocumentLocale();
 
 const PAGES: Readonly<Record<string, ComponentType<{ data: PageData }>>> = {
   setup: SetupPage,
@@ -23,7 +27,14 @@ const PAGES: Readonly<Record<string, ComponentType<{ data: PageData }>>> = {
   error: ErrorPage,
 };
 
+function LocalizedPage({ Page, data }: { Page: ComponentType<{ data: PageData }>; data: PageData }) {
+  const t = useTranslation();
+  const title = data.page === 'setup' ? t('Peach · 首次运行') : data.page === 'login' ? t('Peach · 登录') : null;
+  useEffect(() => { if (title) document.title = title }, [title]);
+  return <Page data={data} />;
+}
+
 installErrorReporting();
 const mount = document.getElementById('peach-page');
 const Page = mount ? PAGES[mount.dataset.page ?? ''] : undefined;
-if (mount && Page) createRoot(mount).render(<Page data={{ ...mount.dataset }} />);
+if (mount && Page) createRoot(mount).render(<LocaleProvider><LocalizedPage Page={Page} data={{ ...mount.dataset }} /></LocaleProvider>);
