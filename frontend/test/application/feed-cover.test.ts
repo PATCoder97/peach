@@ -1,7 +1,24 @@
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 
 import { advanceImageFallback } from '../../src/card-art/image-fallback';
-import { feedNewCoverHtml } from '../../src/application/feed.js';
+import { feedNewCardHtml, feedNewCoverHtml, feedNetworkNote } from '../../src/application/feed.js';
+import { setLocale } from '../../src/i18n';
+
+afterEach(() => setLocale('zh-CN'));
+
+it('新作操作与网络提示使用所选语言，标题姓名与作品键保留原文', () => {
+  for (const [locale, open, retry] of [['en','Open title details: 中文-123','next run'],['vi','Mở chi tiết tác phẩm: 中文-123','lượt tiếp theo']] as const) {
+    setLocale(locale);
+    const host = document.createElement('div');
+    host.innerHTML = feedNewCardHtml({id:1,code:'中文-123',title:'标题原文',performers:'姓名原文'});
+    expect(host.querySelector('.feednewopen')?.getAttribute('aria-label')).toBe(open);
+    expect(host.querySelector('.feednewopen')?.getAttribute('href')).toBe('/works/%E4%B8%AD%E6%96%87-123');
+    expect(host.querySelector('[data-feed-action="want"]')).not.toBeNull();
+    expect(host.textContent).toContain('标题原文');
+    expect(host.textContent).toContain('姓名原文');
+    expect(feedNetworkNote(2,[{has_cover:false}])).toContain(retry);
+  }
+});
 
 // 封面片段只读条目字段，其余域控制器换成空壳，免得装载整套应用。
 vi.mock('../../src/application/catalog.js', () => ({ catalogState: {} }));

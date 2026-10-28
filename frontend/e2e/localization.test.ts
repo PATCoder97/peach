@@ -55,7 +55,31 @@ it('从语言选择器切换后保留设置值、控件节点和持久偏好', a
 });
 for (const language of ['en', 'vi']) {
   for (const viewport of VIEWPORTS) {
+  it(`${language}/${viewport.name} 作品详情与播放器设置使用所选语言`, async () => {
+    const view = await visit(browser, `/assets/${requiredEnv('PEACH_E2E_ITEM')}`, viewport, async page => {
+      await page.addInitScript(locale => localStorage.setItem('peach.locale.v1', locale), language);
+    });
+    try {
+      await view.page.locator('#stage[open] [data-item-side]').waitFor({ state: 'visible' });
+      const toggle = view.page.locator('#stage [data-player-quality] > button');
+      await toggle.waitFor({ state:'visible' });
+      assert.equal(await toggle.getAttribute('aria-label'), language === 'en' ? 'Player settings' : 'Cài đặt trình phát');
+      await toggle.click();
+      const menu = view.page.locator('#stage .vjs-peach-settings-menu');
+      await menu.waitFor({ state:'visible' });
+      assert.doesNotMatch(await menu.innerText(), /\p{Script=Han}/u);
+      await view.page.locator('[data-player-quality-view]').click();
+      assert.doesNotMatch(await menu.innerText(), /\p{Script=Han}/u);
+      assert.ok(await menu.locator('[data-player-quality-option]').count() > 0);
+      const geometry = await layout(view.page);
+      assert.ok(geometry.scrollWidth <= geometry.viewportWidth + 1, JSON.stringify(geometry));
+      mkdirSync('../build/agent-verification/localization', { recursive: true });
+      await view.page.screenshot({path:`../build/agent-verification/localization/${language}-${viewport.name}-player.png`});
+      assert.deepEqual(view.problems, []);
+    } finally { await view.close() }
+  });
   it(`${language}/${viewport.name} 路由可渲染并保留所选语言`, async () => {
+    mkdirSync('../build/agent-verification/localization', { recursive: true });
     const report: Record<string, string[]> = {};
     const untranslatedReport: Record<string, string[]> = {};
     for (const route of routes) {
@@ -95,6 +119,9 @@ for (const language of ['en', 'vi']) {
           return /\p{Script=Han}/u.test(text);
         });
         if (untranslated.length) untranslatedReport[route] = untranslated;
+        if (['/settings/appearance', '/data-cleanup', '/performers', '/tags'].includes(route)) {
+          await view.page.screenshot({ path: `../build/agent-verification/localization/${language}-${viewport.name}-${route.slice(1).replaceAll('/', '-')}.png` });
+        }
         assert.deepEqual(view.problems, [], `${route}: ${view.problems.join('\n')}`);
       } finally { await view.close() }
     }

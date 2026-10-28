@@ -8,6 +8,8 @@ import { Select, SelectItem } from '../components/select';
 import { apiSend } from '../../api';
 import { queryClient } from '../query';
 import { showToast } from '../toaster';
+import { translate as t } from '../../i18n';
+import { esc } from '../../core';
 
 export type TagId = number | string;
 export type TagScope = 'local' | 'online';
@@ -37,7 +39,7 @@ export async function confirmTagOperation(command: Command, plan: Plan, signal?:
     confirmLabel: TAG_ACTION_LABELS[command.operation], onConfirm: () => apiSend('/api/tag-management', { ...command, token: plan.token }, 'POST', signal) });
   if (!done.confirmed || signal?.aborted) return false;
   await queryClient.invalidateQueries();
-  showToast(`tag-management-${Date.now()}`, { html: `已${TAG_ACTION_LABELS[command.operation]}`, alert: false, timeout: 6000, action: null });
+  showToast(`tag-management-${Date.now()}`, { html: esc(t('已完成：{action}', {action:t(TAG_ACTION_LABELS[command.operation])})), alert: false, timeout: 6000, action: null });
   return true;
 }
 

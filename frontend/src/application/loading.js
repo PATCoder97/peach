@@ -29,7 +29,7 @@ export function renderCatalogLoading(label='正在读取作品'){
   count.classList.toggle('manage-static',junk);
   count.classList.toggle('junkcount',junk);
   if(junk){
-    count.setAttribute('aria-busy','true');count.setAttribute('aria-label',label);
+    count.setAttribute('aria-busy','true');count.setAttribute('aria-label',t(label));
     count.innerHTML=junkCountSkeletonHtml(junkRoute(location.search));
     fitSkeleton(count);
   }else{

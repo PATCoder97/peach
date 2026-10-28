@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "d5e305cf-c7fa-48ab-a1ef-05f0a0a9cdb1", e._sentryDebugIdIdentifier = "sentry-dbid-d5e305cf-c7fa-48ab-a1ef-05f0a0a9cdb1");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "45abd3a0-70a1-4e68-ad0b-5d11d4390d0d", e._sentryDebugIdIdentifier = "sentry-dbid-45abd3a0-70a1-4e68-ad0b-5d11d4390d0d");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -10722,6 +10722,17 @@ var D = /* @__PURE__ */ o(((e) => {
 	"最近 30 天": ["Last 30 days", "30 ngày gần đây"],
 	全部时间: ["All time", "Mọi thời điểm"]
 }, ge = {
+	"合并 {count} 个标签，涉及 {assets} 个资源，重叠关联 {overlap} 个。旧名称保留为别名。此操作无法直接撤销。": ["Merge {count} tags affecting {assets} assets, with {overlap} overlapping associations. Old names remain as aliases. This operation cannot be directly undone.", "Gộp {count} thẻ, ảnh hưởng {assets} tài nguyên và {overlap} liên kết trùng nhau. Tên cũ được giữ làm bí danh. Không thể hoàn tác trực tiếp thao tác này."],
+	"{names}将更名为「{name}」，涉及 {assets} 个资源。旧名称保留为别名。": ["Rename {names} to “{name}”, affecting {assets} assets. Old names remain as aliases.", "Đổi tên {names} thành “{name}”, ảnh hưởng {assets} tài nguyên. Tên cũ được giữ làm bí danh."],
+	"屏蔽带有{names}任一标签的内容及其其它版本，涉及 {assets} 个资源。可在「已屏蔽内容」中恢复。": ["Block content carrying any of {names} and its other editions, affecting {assets} assets. Restore it under Blocked content.", "Chặn nội dung có bất kỳ thẻ nào trong {names} và các phiên bản khác, ảnh hưởng {assets} tài nguyên. Có thể khôi phục trong Nội dung đã chặn."],
+	"解除{names}的内容屏蔽，涉及 {assets} 个资源。": ["Unblock content tagged {names}, affecting {assets} assets.", "Bỏ chặn nội dung có thẻ {names}, ảnh hưởng {assets} tài nguyên."],
+	"隐藏 {count} 个标签，涉及 {assets} 个资源。可在“已隐藏”中恢复。": ["Hide {count} tags affecting {assets} assets. Restore them under Hidden.", "Ẩn {count} thẻ, ảnh hưởng {assets} tài nguyên. Có thể khôi phục trong Đã ẩn."],
+	"恢复 {count} 个标签，涉及 {assets} 个资源。": ["Restore {count} tags affecting {assets} assets.", "Khôi phục {count} thẻ, ảnh hưởng {assets} tài nguyên."],
+	"将处理选中的 {count} 项。": ["Process the {count} selected items.", "Xử lý {count} mục đã chọn."],
+	"将处理选中的 {count} 项。文件和馆藏记录会永久删除，无法恢复。": ["Process the {count} selected items. Files and library records will be permanently deleted and cannot be recovered.", "Xử lý {count} mục đã chọn. Tệp và bản ghi thư viện sẽ bị xóa vĩnh viễn, không thể khôi phục."],
+	"将处理选中的 {count} 项。馆藏记录可在回收站还原。": ["Process the {count} selected items. Library records can be restored from Trash.", "Xử lý {count} mục đã chọn. Có thể khôi phục bản ghi thư viện từ thùng rác."],
+	"将处理选中的 {count} 项关注作品。": ["Process the {count} selected followed titles.", "Xử lý {count} tác phẩm theo dõi đã chọn."],
+	"将处理选中的 {count} 个文件。": ["Process the {count} selected files.", "Xử lý {count} tệp đã chọn."],
 	"分布在 {count} 个女优、厂牌与系列": ["Across {count} performers, studios and series", "Phân bố trong {count} diễn viên, hãng phim và loạt phim"],
 	"{count} 组": ["{count} groups", "{count} nhóm"],
 	"{files} 个文件 · 可回收 {size}": ["{files} files · {size} reclaimable", "{files} tệp · Có thể giải phóng {size}"],
@@ -11119,6 +11130,64 @@ var D = /* @__PURE__ */ o(((e) => {
 	"寻找高清、无水印或完整版": ["Find HD, watermark-free or complete editions", "Tìm bản HD, không hình mờ hoặc đầy đủ"],
 	展开完整标题: ["Expand full title", "Mở rộng tiêu đề đầy đủ"]
 }, Te = {
+	抓取历史: ["Fetch history", "Thu thập lịch sử"],
+	"已完成：{action}": ["Completed: {action}", "Đã hoàn tất: {action}"],
+	"按{label}{direction}排序": ["Sort by {label} {direction}", "Sắp xếp theo {label} {direction}"],
+	"正在核对目录…": ["Checking folder…", "Đang kiểm tra thư mục…"],
+	"{result}（核对 {count} 项{unreadable}）": ["{result} (checked {count} items{unreadable})", "{result} (đã kiểm tra {count} mục{unreadable})"],
+	"，{count} 项未能读取": [", {count} unreadable items", ", {count} mục không đọc được"],
+	"目录有 {count} 项暂时无法读取，本次未改动": ["{count} folder items are temporarily unreadable; no changes made", "Tạm thời không đọc được {count} mục trong thư mục; chưa thay đổi gì"],
+	"目录内 {count} 项都还在，无需改动": ["All {count} folder items still exist; no changes needed", "Cả {count} mục trong thư mục vẫn còn; không cần thay đổi"],
+	"返回{type}列表": ["Back to {type} list", "Về danh sách {type}"],
+	"找不到这个{type}": ["{type} not found", "Không tìm thấy {type}"],
+	"已把 {count} 项移入回收站": ["Moved {count} items to Trash", "Đã chuyển {count} mục vào thùng rác"],
+	"{count} 项带个人记录，已标为已消失": ["Marked {count} items with personal records as missing", "Đã đánh dấu biến mất cho {count} mục có bản ghi cá nhân"],
+	"{count} 项的记录已接到库里的另一个版本": ["Linked records for {count} items to another library edition", "Đã nối bản ghi của {count} mục với phiên bản khác trong thư viện"],
+	"{days} 天 {hours} 小时": ["{days} days {hours} hours", "{days} ngày {hours} giờ"],
+	"{days} 天": ["{days} days", "{days} ngày"],
+	"已喜欢 {count} 项": ["Liked {count} items", "Đã thích {count} mục"],
+	"已标为看过 {count} 项": ["Marked {count} items as watched", "Đã đánh dấu đã xem {count} mục"],
+	"已加入稍后看 {count} 项": ["Added {count} items to watch later", "Đã thêm {count} mục vào xem sau"],
+	"已移入回收站 {count} 项": ["Moved {count} items to Trash", "Đã chuyển {count} mục vào thùng rác"],
+	"已还原 {count} 项": ["Restored {count} items", "Đã khôi phục {count} mục"],
+	"已彻底删除 {count} 项": ["Permanently deleted {count} items", "Đã xóa vĩnh viễn {count} mục"],
+	"已保存到数据库 {count} 项": ["Saved {count} items to the database", "Đã lưu {count} mục vào cơ sở dữ liệu"],
+	"已标记已看 {count} 项": ["Marked {count} items as watched", "Đã đánh dấu đã xem {count} mục"],
+	"已忽略 {count} 项": ["Ignored {count} items", "Đã bỏ qua {count} mục"],
+	"已批量标记为非垃圾：{count} 项": ["Marked {count} items as not junk", "Đã đánh dấu {count} mục không phải rác"],
+	"已批量重新判断：{count} 项": ["Reassessed {count} items", "Đã đánh giá lại {count} mục"],
+	"已批量移入回收站：{count} 项": ["Moved {count} items to Trash", "Đã chuyển {count} mục vào thùng rác"],
+	"已永久删除 {purged} 项；{blocked} 项未能删除，仍在回收站：": ["Permanently deleted {purged} items; {blocked} items could not be deleted and remain in Trash:", "Đã xóa vĩnh viễn {purged} mục; {blocked} mục không xóa được vẫn nằm trong thùng rác:"],
+	"选中的 {count} 项归为同一个产地。判定之后，刮削和自动推断不再改写产地。": ["Assign the same origin to the {count} selected items. Scraping and automatic inference will no longer overwrite their origin.", "Gán cùng xuất xứ cho {count} mục đã chọn. Thu thập và suy luận tự động sẽ không ghi đè xuất xứ sau đó."],
+	先选一个产地: ["Select an origin first", "Hãy chọn xuất xứ trước"],
+	"已撤回 {count} 项的产地判定": ["Removed origin decisions from {count} items", "Đã gỡ quyết định xuất xứ của {count} mục"],
+	"已判为{region}：{count} 项": ["Assigned {region} to {count} items", "Đã gán {region} cho {count} mục"],
+	卖家: ["Sellers", "Người bán"],
+	"大图 · 竖幅头像": ["Large · portrait avatars", "Lớn · ảnh đại diện dọc"],
+	"紧凑 · 圆形头像": ["Compact · round avatars", "Gọn · ảnh đại diện tròn"],
+	"大图 · 完整标识": ["Large · full logos", "Lớn · logo đầy đủ"],
+	"紧凑 · 圆形标识": ["Compact · round logos", "Gọn · logo tròn"],
+	"大图 · 系列图片": ["Large · series images", "Lớn · ảnh loạt phim"],
+	"紧凑 · 系列图片": ["Compact · series images", "Gọn · ảnh loạt phim"],
+	标签云: ["Tag cloud", "Đám mây thẻ"],
+	字母表: ["Alphabet", "Bảng chữ cái"],
+	个标签: ["tags", "thẻ"],
+	"打开女优页：{name}": ["Open performer: {name}", "Mở diễn viên: {name}"],
+	"打开 {name} 的作品详情": ["Open title details: {name}", "Mở chi tiết tác phẩm: {name}"],
+	"想要 {name}": ["Add to wishlist: {name}", "Thêm vào muốn xem: {name}"],
+	"不想看 {name}": ["Ignore: {name}", "Bỏ qua: {name}"],
+	"标为已看过 {name}": ["Mark as watched: {name}", "Đánh dấu đã xem: {name}"],
+	未命名新作: ["Untitled new release", "Tác phẩm mới chưa có tên"],
+	资料还没取到: ["Metadata not retrieved yet", "Chưa lấy được thông tin"],
+	"{count} 部新作的封面连不上 DMM 图片主机，中国移动宽带常见。把 DMM / FANZA 的连接方式设成 Peach 代理，下一轮会自动重取。": ["Covers for {count} new releases cannot reach the DMM image host, which is common on China Mobile broadband. Set the DMM / FANZA connection to Peach proxy; the next run will retry automatically.", "Không kết nối được máy chủ ảnh DMM để lấy bìa cho {count} tác phẩm mới, thường gặp với mạng China Mobile. Chọn proxy Peach cho kết nối DMM / FANZA; lượt tiếp theo sẽ tự thử lại."],
+	"已处理 {done} / {total}": ["Processed {done} / {total}", "Đã xử lý {done} / {total}"],
+	" · 第 {attempt}/{max} 次尝试": [" · Attempt {attempt}/{max}", " · Lần thử {attempt}/{max}"],
+	"，{seconds} 秒后重试": [", retrying in {seconds} seconds", ", thử lại sau {seconds} giây"],
+	"{title}：已完成 {done}/{total}": ["{title}: completed {done}/{total}", "{title}: hoàn tất {done}/{total}"],
+	"{title}：已完成 {done}/{total} 个来源": ["{title}: completed {done}/{total} sources", "{title}: hoàn tất {done}/{total} nguồn"],
+	正在准备检查任务: ["Preparing check task", "Đang chuẩn bị tác vụ kiểm tra"],
+	"任务状态已失效，请重新发起任务": ["Task state expired. Start the task again.", "Trạng thái tác vụ đã hết hạn. Hãy chạy lại tác vụ."],
+	"暂时无法读取进度，正在重新连接…": ["Progress temporarily unavailable. Reconnecting…", "Tạm thời không đọc được tiến độ. Đang kết nối lại…"],
 	没有重复内容: ["No duplicates", "Không có nội dung trùng lặp"],
 	"发现新文件，补全新增及未完成影片的资料和预览。需要检查全部影片时，使用全库维护。": ["Find new files and complete metadata and previews for new or unfinished titles. Use full library maintenance to check every title.", "Tìm tệp mới, bổ sung thông tin và bản xem trước cho tác phẩm mới hoặc chưa hoàn tất. Dùng bảo trì toàn bộ thư viện để kiểm tra tất cả tác phẩm."],
 	同步新增文件: ["Sync new files", "Đồng bộ tệp mới"],
@@ -25877,4 +25946,4 @@ ay && oy && (0, M.createRoot)(ay).render(/* @__PURE__ */ (0, B.jsx)(ny, { childr
 	data: { ...ay.dataset }
 }) }));
 
-//# debugId=d5e305cf-c7fa-48ab-a1ef-05f0a0a9cdb1
+//# debugId=45abd3a0-70a1-4e68-ad0b-5d11d4390d0d

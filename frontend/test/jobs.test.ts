@@ -1,9 +1,28 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { watchJob, followJobProgress, jobActivityHtml } from '../src/jobs';
+import { setLocale } from '../src/i18n';
 
-afterEach(() => { vi.useRealTimers(); sessionStorage.clear(); document.body.innerHTML = ''; });
+afterEach(() => { vi.useRealTimers(); sessionStorage.clear(); document.body.innerHTML = ''; setLocale('zh-CN'); });
 
 describe('后台任务状态恢复', () => {
+  it('轮询按当前语言显示重试进度并保留来源名称', async () => {
+    vi.useFakeTimers();
+    const host = document.createElement('div'); document.body.append(host);
+    const state = {status:'running',job_id:'localized',checked:2,total:5,
+      current:{label:'来源原名 <test>',attempt:2,max_attempts:3,retry_in:4}};
+    setLocale('en');
+    followJobProgress({host,active:()=>true,read:async()=>state,busy:()=>{},complete:()=>{}});
+    await vi.advanceTimersByTimeAsync(0);
+    expect(host.textContent).toContain('completed 2/5 sources');
+    expect(host.textContent).toContain('Attempt 2/3, retrying in 4 seconds');
+    expect(host.textContent).toContain('来源原名 <test>');
+    expect(host.querySelector('test')).toBeNull();
+    setLocale('vi');
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(host.textContent).toContain('hoàn tất 2/5 nguồn');
+    expect(host.textContent).toContain('Lần thử 2/3, thử lại sau 4 giây');
+    expect(host.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow')).toBe('2');
+  });
   it('默认任务面板展示真实进度，失败原因持续可见', async () => {
     vi.useFakeTimers();const host=document.createElement('div');document.body.append(host);const complete=vi.fn();
     let state={status:'running',job_id:'default',checked:2,total:5,error:''};

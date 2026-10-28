@@ -1,5 +1,16 @@
 /** 服务端生成的系统消息模板；占位内容保留原始路径、名称与计数。 */
 export const systemMessages: Readonly<Record<string, readonly [string, string]>> = {
+  '合并 {count} 个标签，涉及 {assets} 个资源，重叠关联 {overlap} 个。旧名称保留为别名。此操作无法直接撤销。': ['Merge {count} tags affecting {assets} assets, with {overlap} overlapping associations. Old names remain as aliases. This operation cannot be directly undone.', 'Gộp {count} thẻ, ảnh hưởng {assets} tài nguyên và {overlap} liên kết trùng nhau. Tên cũ được giữ làm bí danh. Không thể hoàn tác trực tiếp thao tác này.'],
+  '{names}将更名为「{name}」，涉及 {assets} 个资源。旧名称保留为别名。': ['Rename {names} to “{name}”, affecting {assets} assets. Old names remain as aliases.', 'Đổi tên {names} thành “{name}”, ảnh hưởng {assets} tài nguyên. Tên cũ được giữ làm bí danh.'],
+  '屏蔽带有{names}任一标签的内容及其其它版本，涉及 {assets} 个资源。可在「已屏蔽内容」中恢复。': ['Block content carrying any of {names} and its other editions, affecting {assets} assets. Restore it under Blocked content.', 'Chặn nội dung có bất kỳ thẻ nào trong {names} và các phiên bản khác, ảnh hưởng {assets} tài nguyên. Có thể khôi phục trong Nội dung đã chặn.'],
+  '解除{names}的内容屏蔽，涉及 {assets} 个资源。': ['Unblock content tagged {names}, affecting {assets} assets.', 'Bỏ chặn nội dung có thẻ {names}, ảnh hưởng {assets} tài nguyên.'],
+  '隐藏 {count} 个标签，涉及 {assets} 个资源。可在“已隐藏”中恢复。': ['Hide {count} tags affecting {assets} assets. Restore them under Hidden.', 'Ẩn {count} thẻ, ảnh hưởng {assets} tài nguyên. Có thể khôi phục trong Đã ẩn.'],
+  '恢复 {count} 个标签，涉及 {assets} 个资源。': ['Restore {count} tags affecting {assets} assets.', 'Khôi phục {count} thẻ, ảnh hưởng {assets} tài nguyên.'],
+  '将处理选中的 {count} 项。': ['Process the {count} selected items.', 'Xử lý {count} mục đã chọn.'],
+  '将处理选中的 {count} 项。文件和馆藏记录会永久删除，无法恢复。': ['Process the {count} selected items. Files and library records will be permanently deleted and cannot be recovered.', 'Xử lý {count} mục đã chọn. Tệp và bản ghi thư viện sẽ bị xóa vĩnh viễn, không thể khôi phục.'],
+  '将处理选中的 {count} 项。馆藏记录可在回收站还原。': ['Process the {count} selected items. Library records can be restored from Trash.', 'Xử lý {count} mục đã chọn. Có thể khôi phục bản ghi thư viện từ thùng rác.'],
+  '将处理选中的 {count} 项关注作品。': ['Process the {count} selected followed titles.', 'Xử lý {count} tác phẩm theo dõi đã chọn.'],
+  '将处理选中的 {count} 个文件。': ['Process the {count} selected files.', 'Xử lý {count} tệp đã chọn.'],
   '分布在 {count} 个女优、厂牌与系列': ['Across {count} performers, studios and series', 'Phân bố trong {count} diễn viên, hãng phim và loạt phim'],
   '{count} 组': ['{count} groups', '{count} nhóm'],
   '{files} 个文件 · 可回收 {size}': ['{files} files · {size} reclaimable', '{files} tệp · Có thể giải phóng {size}'],

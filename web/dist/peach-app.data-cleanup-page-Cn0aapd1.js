@@ -1,7 +1,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "12a86817-0adb-420b-b073-0b546b93a627", e._sentryDebugIdIdentifier = "sentry-dbid-12a86817-0adb-420b-b073-0b546b93a627");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "5451632b-aea3-4844-a8eb-1969f429c7cf", e._sentryDebugIdIdentifier = "sentry-dbid-5451632b-aea3-4844-a8eb-1969f429c7cf");
 	} catch {}
 })();
 import { Button as e, Chip as t, DIRECTORY_TEMPLATE_ERROR as n, DUPLICATES_KEY as r, Fieldset as i, FieldsetTitle as a, IDLE_REPAIR as o, IconButton as s, Input as c, JUNK_KEY as l, LINKS_KEY as u, LINK_CHECK_KEY as d, LINK_KINDS as f, LINK_PRUNE_KEY as p, LOC as m, LibraryProcessingCard as h, MEDIA_REPAIR_KEY as g, MEDIA_REPAIR_URL as _, MEDIA_SOURCES_KEY as v, MEDIA_SOURCE_ICONS as y, Note as b, ORGANIZE_KEY as x, ORPHAN_RECORDS_KEY as S, Progress as C, QUALITY_GOALS_KEY as w, REPAIR_CARD_TEXT as T, REPAIR_LIBRARIES_KEY as E, RESOURCE_APPLY_KEY as D, RESOURCE_SCAN_KEY as O, RESULT_PANEL as k, RESULT_SECTION as A, REVIEW_COUNTS_KEY as j, SOURCE_LABELS as M, Select as N, SelectItem as ee, SourceMark as te, StatusLabel as P, TRASH_KEY as F, TaskProgress as ne, Wt as re, __toESM as I, apiSend as ie, applyConfirmText as ae, applyLeftovers as L, applyPlanText as R, applyText as z, attachOrphan as oe, baseName as se, busyProps as B, candidateText as V, checkLine as ce, confirmModal as H, entityFaceImg as le, entityPath as ue, errorMessage as U, esc as de, fetchDuplicates as fe, fetchJunkSummary as pe, fetchLinkCheck as me, fetchLinkPrune as W, fetchLinkStats as he, fetchMediaRepair as G, fetchMediaSources as ge, fetchOrganize as _e, fetchOrganizeExample as ve, fetchOrphanRecords as ye, fetchQualityGoals as be, fetchRepairLibraries as xe, fetchResourceApply as Se, fetchResourceScan as Ce, fetchReviewCounts as we, fetchTrashSummary as Te, firstGrapheme as Ee, fmtSize as De, getLocale as Oe, hasChanges as ke, hasResourceRoots as Ae, junkBreakdown as je, missingToolText as Me, organizeOutcome as Ne, pickOrganizeFolder as Pe, planSummary as Fe, previewOrganize as Ie, pruneText as Le, purgeCount as Re, purgeOrphan as ze, queryClient as K, recordsText as Be, rememberTemplates as Ve, require_jsx_runtime as He, require_react as Ue, reviewSummary as We, scanLine as Ge, sourceMeta as Ke, spriteGlyph as q, startLinkCheck as qe, startLinkPrune as Je, startOrganize as Ye, startResourceApply as Xe, startResourceScan as Ze, statusLine as Qe, useAction as $e, useBackgroundJob as J, useMutation as et, useQuery as Y, useSystemTranslation as tt, useTranslation as X, withOrganizeJob as nt } from "./peach-app.js";
@@ -1256,7 +1256,7 @@ function Ht({ toast: t }) {
 				onClick: () => {
 					c || o.start.mutate();
 				},
-				children: d
+				children: n(d)
 			}),
 			children: [
 				/* @__PURE__ */ (0, Q.jsx)(a, {
@@ -1408,4 +1408,4 @@ function Qt({ toast: e, failure: t, open: n }) {
 }
 export { Qt as DataCleanupPage };
 
-//# debugId=12a86817-0adb-420b-b073-0b546b93a627
+//# debugId=5451632b-aea3-4844-a8eb-1969f429c7cf

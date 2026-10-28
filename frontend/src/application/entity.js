@@ -51,7 +51,7 @@ export function sortKeys(current,dir,jav=javActive()){
   return sortOptions(jav).map(([key,label])=>{
     const pressed=current===key,next=nextSortState(key,current,dir);
     return {key,label,pressed,dir:pressed&&sortDirWord(key,dir)?(dir==='asc'?'asc':'desc'):'',
-      ariaLabel:next?`按${label}${next.dir?sortDirWord(next.sort,next.dir):''}排序`:''}});
+      ariaLabel:next?t('按{label}{direction}排序',{label:t(label),direction:next.dir?t(sortDirWord(next.sort,next.dir)):''}):''}});
 }
 
 export function routeEntityPage(kind,name,filters,media=entityState.EMPTY_ENTITY_MEDIA,options={}){
@@ -90,15 +90,15 @@ export async function syncForIsland(id){
 }
 
 export async function syncMissing(id,status,done){
-  status.textContent='正在核对目录…';
+  status.textContent=t('正在核对目录…');
   try{
     const r=await api('/api/purge-missing',{method:'POST',body:JSON.stringify({id})});
     if(r.ok===false){status.textContent=entityState.sourceHint(r.error);return}
     status.textContent=r.removed
-      ? `${entityState.syncedText(r)}（核对 ${r.checked} 项${r.unreadable?`，${r.unreadable} 项未能读取`:''}）`
+      ? t('{result}（核对 {count} 项{unreadable}）',{result:entityState.syncedText(r),count:r.checked,unreadable:r.unreadable?t('，{count} 项未能读取',{count:r.unreadable}):''})
       : r.unreadable
-        ? `目录有 ${r.unreadable} 项暂时无法读取，本次未改动`
-        : `目录内 ${r.checked} 项都还在，无需改动`;
+        ? t('目录有 {count} 项暂时无法读取，本次未改动',{count:r.unreadable})
+        : t('目录内 {count} 项都还在，无需改动',{count:r.checked});
     if(r.removed){
       const ids=(r.items||[]).filter(item=>item.disposal!=='reattached').map(item=>item.id);
       if(done)done(r);
@@ -183,8 +183,8 @@ export function syncEntitySkeletonParts(kind,name){
 
 export function showEntityMissing(kind){
   const index=ENTITY_ROUTES[kind]||kind,title=INDEX_TITLES[index]||'条目';
-  const actions=INDEX_TITLES[index]?`<a class="geist-button primary" href="/${index}">${uiTextHtml("返回")}${title}列表</a>`:'';
-  $('#index').innerHTML=preferencesState.emptyState('search-x',`找不到这个${title}`,'名字可能拼错了，或者已经合并到别的名字下；回列表里重新找。',{actions});
+  const actions=INDEX_TITLES[index]?`<a class="geist-button primary" href="/${index}">${esc(t('返回{type}列表',{type:t(title)}))}</a>`:'';
+  $('#index').innerHTML=preferencesState.emptyState('search-x',t('找不到这个{type}',{type:t(title)}),'名字可能拼错了，或者已经合并到别的名字下；回列表里重新找。',{actions});
 }
 
 export function openEntity(kind,name){openRoutedPage(entityState.application.fresh(kind,name))}
@@ -235,10 +235,10 @@ entityState.SOURCE_HINTS = {
   'unsupported platform':'当前服务端系统不支持直接定位文件',
   'reveal failed':'打开文件管理器失败，请重试',
 };
-entityState.sourceHint = message=>entityState.SOURCE_HINTS[message]||message;
-entityState.syncedText = r=>[r.trashed?`已把 ${r.trashed} 项移入回收站`:'',
-  r.vanished?`${r.vanished} 项带个人记录，已标为已消失`:'',
-  r.reattached?`${r.reattached} 项的记录已接到库里的另一个版本`:''].filter(Boolean).join('，');
+entityState.sourceHint = message=>t(entityState.SOURCE_HINTS[message]||message);
+entityState.syncedText = r=>[r.trashed?t('已把 {count} 项移入回收站',{count:r.trashed}):'',
+  r.vanished?t('{count} 项带个人记录，已标为已消失',{count:r.vanished}):'',
+  r.reattached?t('{count} 项的记录已接到库里的另一个版本',{count:r.reattached}):''].filter(Boolean).join(t('，'));
 entityState.sourceToolButtons = id=>`
     <button type="button" data-reveal="${id}" title="${escapeUi(t("在文件管理器里打开源文件所在目录"))}" data-i18n-title="在文件管理器里打开源文件所在目录"
       aria-label="${escapeUi(t("定位源文件"))}" data-i18n-aria-label="定位源文件">${icon('folder-open')}</button>

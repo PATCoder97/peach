@@ -3,6 +3,36 @@ import { confirmModal, formModal } from '../src/ui-kit';
 import { setLocale } from '../src/i18n';
 
 afterEach(() => document.body.replaceChildren());
+it('批量删除确认切换语言时保留数量和不可恢复提示', async () => {
+  setLocale('en');
+  const write = vi.fn();
+  const pending = confirmModal({title:'永久删除所选项目',body:'将处理选中的 3 项。文件和馆藏记录会永久删除，无法恢复。',
+    confirmLabel:'永久删除所选项目',danger:true,onConfirm:write});
+  const dialog = document.querySelector('dialog')!;
+  try {
+    expect(dialog.textContent).toContain('3 selected items');
+    expect(dialog.textContent).toContain('cannot be recovered');
+    setLocale('vi');
+    expect(dialog.textContent).toContain('3 mục đã chọn');
+    expect(dialog.textContent).toContain('không thể khôi phục');
+    dialog.querySelector<HTMLButtonElement>('[data-modal-cancel]')!.click();
+    expect((await pending).confirmed).toBe(false);
+    expect(write).not.toHaveBeenCalled();
+  } finally { if(dialog.open)dialog.close(); setLocale('zh-CN') }
+});
+it('标签改名确认翻译影响范围并按纯文本保留原始名称', async () => {
+  setLocale('en');
+  const pending = confirmModal({title:'重命名标签',body:'「旧标签」将更名为「<新名字>」，涉及 2 个资源。旧名称保留为别名。',confirmLabel:'重命名标签'});
+  const dialog = document.querySelector('dialog')!;
+  try {
+    expect(dialog.textContent).toContain('Rename 「旧标签」 to “<新名字>”, affecting 2 assets');
+    setLocale('vi');
+    expect(dialog.textContent).toContain('Đổi tên 「旧标签」 thành “<新名字>”, ảnh hưởng 2 tài nguyên');
+    expect(dialog.querySelector('新名字')).toBeNull();
+    dialog.querySelector<HTMLButtonElement>('[data-modal-cancel]')!.click();
+    expect((await pending).confirmed).toBe(false);
+  } finally { if(dialog.open)dialog.close(); setLocale('zh-CN') }
+});
 it('表单弹层换语言时保留输入、焦点和提交操作', async () => {
   setLocale('en');
   const write = vi.fn();
