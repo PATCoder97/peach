@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "60ae31aa-e252-499d-aa0e-b7e44929fc7d", e._sentryDebugIdIdentifier = "sentry-dbid-60ae31aa-e252-499d-aa0e-b7e44929fc7d");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "5f9afe05-29d5-4ae6-a9a4-e4892f56a544", e._sentryDebugIdIdentifier = "sentry-dbid-5f9afe05-29d5-4ae6-a9a4-e4892f56a544");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -11132,6 +11132,18 @@ var D = /* @__PURE__ */ o(((e) => {
 	"寻找高清、无水印或完整版": ["Find HD, watermark-free or complete editions", "Tìm bản HD, không hình mờ hoặc đầy đủ"],
 	展开完整标题: ["Expand full title", "Mở rộng tiêu đề đầy đủ"]
 }, Te = {
+	从高到低: ["highest first", "cao nhất trước"],
+	从低到高: ["lowest first", "thấp nhất trước"],
+	从多到少: ["most first", "nhiều nhất trước"],
+	从少到多: ["fewest first", "ít nhất trước"],
+	从长到短: ["longest first", "dài nhất trước"],
+	从短到长: ["shortest first", "ngắn nhất trước"],
+	从大到小: ["largest first", "lớn nhất trước"],
+	从小到大: ["smallest first", "nhỏ nhất trước"],
+	从新到旧: ["newest first", "mới nhất trước"],
+	从旧到新: ["oldest first", "cũ nhất trước"],
+	从近到远: ["most recent first", "gần nhất trước"],
+	从远到近: ["least recent first", "lâu nhất trước"],
 	提交: ["Submit", "Gửi"],
 	提交中: ["Submitting", "Đang gửi"],
 	正在提交喜爱理由: ["Submitting reason for liking", "Đang gửi lý do yêu thích"],
@@ -25955,4 +25967,4 @@ ay && oy && (0, M.createRoot)(ay).render(/* @__PURE__ */ (0, B.jsx)(ny, { childr
 	data: { ...ay.dataset }
 }) }));
 
-//# debugId=60ae31aa-e252-499d-aa0e-b7e44929fc7d
+//# debugId=5f9afe05-29d5-4ae6-a9a4-e4892f56a544

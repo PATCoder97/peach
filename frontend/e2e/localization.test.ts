@@ -63,7 +63,7 @@ for (const language of ['en', 'vi']) {
       await view.page.locator('#stage[open] [data-item-side]').waitFor({ state: 'visible' });
       const toggle = view.page.locator('#stage [data-player-quality] > button');
       await toggle.waitFor({ state:'visible' });
-      assert.equal(await toggle.getAttribute('aria-label'), language === 'en' ? 'Player settings' : 'Cài đặt trình phát');
+      assert.equal(await toggle.getAttribute('aria-label'), language === 'en' ? 'Settings' : 'Cài đặt');
       await toggle.click();
       const menu = view.page.locator('#stage .vjs-peach-settings-menu');
       await menu.waitFor({ state:'visible' });

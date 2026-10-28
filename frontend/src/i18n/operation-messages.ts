@@ -1,5 +1,17 @@
 /** 操作进度、配置和资料复核的动态界面文案。 */
 export const operationMessages: Readonly<Record<string, readonly [string, string]>> = {
+  '从高到低': ['highest first', 'cao nhất trước'],
+  '从低到高': ['lowest first', 'thấp nhất trước'],
+  '从多到少': ['most first', 'nhiều nhất trước'],
+  '从少到多': ['fewest first', 'ít nhất trước'],
+  '从长到短': ['longest first', 'dài nhất trước'],
+  '从短到长': ['shortest first', 'ngắn nhất trước'],
+  '从大到小': ['largest first', 'lớn nhất trước'],
+  '从小到大': ['smallest first', 'nhỏ nhất trước'],
+  '从新到旧': ['newest first', 'mới nhất trước'],
+  '从旧到新': ['oldest first', 'cũ nhất trước'],
+  '从近到远': ['most recent first', 'gần nhất trước'],
+  '从远到近': ['least recent first', 'lâu nhất trước'],
   '提交': ['Submit', 'Gửi'],
   '提交中': ['Submitting', 'Đang gửi'],
   '正在提交喜爱理由': ['Submitting reason for liking', 'Đang gửi lý do yêu thích'],
