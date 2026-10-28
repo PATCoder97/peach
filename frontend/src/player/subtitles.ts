@@ -7,7 +7,7 @@ import { SubtitleSession } from './subtitle-memory';
 import { playerMemory } from './memory';
 import { translate as t } from '../i18n';
 import { installShellLocale } from '../i18n/shell';
-import { uiTextHtml } from '../i18n/html';
+import { uiTextHtml, systemTextHtml } from '../i18n/html';
 
 interface Panels {
   render(html: string, direction: number): HTMLElement;
@@ -140,7 +140,7 @@ export class SubtitleControls {
 
   private status(message: string, error = false, busy = false) {
     const target = this.player.el().querySelector<HTMLElement>('.vjs-peach-panel:not(.vjs-peach-panel-leaving) [data-subtitle-status]');
-    if (target) { target.hidden = false; target.innerHTML = `${busy ? spinnerHtml('') : ''}${uiTextHtml(message)}`; target.toggleAttribute('data-error', error) }
+    if (target) { target.hidden = false; target.innerHTML = `${busy ? spinnerHtml('') : ''}${systemTextHtml(message)}`; target.toggleAttribute('data-error', error) }
   }
   private busy() { this.request?.abort(); this.request = new AbortController(); return this.request.signal }
   private async text(response: Response) {
@@ -160,7 +160,7 @@ export class SubtitleControls {
       const text = await this.text(await fetch(`/api/subtitles/convert?name=${encodeURIComponent(file.name)}`, { method: 'POST', body: file, signal }));
       const key = `file:${file.name}:${file.size}:${file.lastModified}`;
       await this.session.import(text, file.name, key, signal);
-      if (!signal.aborted) { this.show(0); this.status(t('已加载 {name}', { name: file.name })) }
+      if (!signal.aborted) { this.show(0); this.status(t('已加载 {name}', { name: file.name }, 'zh-CN')) }
     } catch (error) { if (!signal.aborted) this.status(error instanceof Error ? error.message : '字幕加载失败', true) }
   }
 
@@ -182,7 +182,7 @@ export class SubtitleControls {
       (this.more ? `<button type="button" class="vjs-peach-caption-action" data-subtitle-more>${uiTextHtml('更多字幕')}</button>` : '');
     list.querySelectorAll<HTMLButtonElement>('[data-subtitle-result]').forEach(button => { button.onclick = () => { void this.showFiles(this.results[Number(button.dataset.subtitleResult)]!) } });
     list.querySelector<HTMLButtonElement>('[data-subtitle-more]')?.addEventListener('click', () => { void this.runSearch(panel, this.offset + 6) });
-    this.status(this.results.length ? t('找到 {count} 条中文字幕', { count: this.results.length }) : this.more ? '这批结果没有中文，可查看更多字幕' : '没有找到当前作品的中文字幕');
+    this.status(this.results.length ? t('找到 {count} 条中文字幕', { count: this.results.length }, 'zh-CN') : this.more ? '这批结果没有中文，可查看更多字幕' : '没有找到当前作品的中文字幕');
   }
 
   private async runSearch(panel: HTMLElement, offset = this.offset) {
@@ -234,7 +234,7 @@ export class SubtitleControls {
         const text = await this.text(await fetch(`/api/subtitles/subtitlecat/${id}/${file.index}`, { signal }));
         await this.session.import(text, file.name, key, signal);
       }
-      if (!signal.aborted) { this.show(0); this.status(t('已加载 {name}', { name: file.name })) }
+      if (!signal.aborted) { this.show(0); this.status(t('已加载 {name}', { name: file.name }, 'zh-CN')) }
     } catch (error) { if (!signal.aborted) this.status(error instanceof Error ? error.message : '字幕加载失败', true) }
   }
 

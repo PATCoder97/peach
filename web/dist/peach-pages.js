@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "45abd3a0-70a1-4e68-ad0b-5d11d4390d0d", e._sentryDebugIdIdentifier = "sentry-dbid-45abd3a0-70a1-4e68-ad0b-5d11d4390d0d");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "60ae31aa-e252-499d-aa0e-b7e44929fc7d", e._sentryDebugIdIdentifier = "sentry-dbid-60ae31aa-e252-499d-aa0e-b7e44929fc7d");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -10722,6 +10722,8 @@ var D = /* @__PURE__ */ o(((e) => {
 	"最近 30 天": ["Last 30 days", "30 ngày gần đây"],
 	全部时间: ["All time", "Mọi thời điểm"]
 }, ge = {
+	"已加载 {name}": ["Loaded {name}", "Đã tải {name}"],
+	"找到 {count} 条中文字幕": ["Found {count} Chinese subtitles", "Tìm thấy {count} phụ đề tiếng Trung"],
 	"合并 {count} 个标签，涉及 {assets} 个资源，重叠关联 {overlap} 个。旧名称保留为别名。此操作无法直接撤销。": ["Merge {count} tags affecting {assets} assets, with {overlap} overlapping associations. Old names remain as aliases. This operation cannot be directly undone.", "Gộp {count} thẻ, ảnh hưởng {assets} tài nguyên và {overlap} liên kết trùng nhau. Tên cũ được giữ làm bí danh. Không thể hoàn tác trực tiếp thao tác này."],
 	"{names}将更名为「{name}」，涉及 {assets} 个资源。旧名称保留为别名。": ["Rename {names} to “{name}”, affecting {assets} assets. Old names remain as aliases.", "Đổi tên {names} thành “{name}”, ảnh hưởng {assets} tài nguyên. Tên cũ được giữ làm bí danh."],
 	"屏蔽带有{names}任一标签的内容及其其它版本，涉及 {assets} 个资源。可在「已屏蔽内容」中恢复。": ["Block content carrying any of {names} and its other editions, affecting {assets} assets. Restore it under Blocked content.", "Chặn nội dung có bất kỳ thẻ nào trong {names} và các phiên bản khác, ảnh hưởng {assets} tài nguyên. Có thể khôi phục trong Nội dung đã chặn."],
@@ -11130,6 +11132,13 @@ var D = /* @__PURE__ */ o(((e) => {
 	"寻找高清、无水印或完整版": ["Find HD, watermark-free or complete editions", "Tìm bản HD, không hình mờ hoặc đầy đủ"],
 	展开完整标题: ["Expand full title", "Mở rộng tiêu đề đầy đủ"]
 }, Te = {
+	提交: ["Submit", "Gửi"],
+	提交中: ["Submitting", "Đang gửi"],
+	正在提交喜爱理由: ["Submitting reason for liking", "Đang gửi lý do yêu thích"],
+	"保存中…": ["Saving…", "Đang lưu…"],
+	"保存失败 · 请重试": ["Save failed · Try again", "Lưu thất bại · Hãy thử lại"],
+	已保存: ["Saved", "Đã lưu"],
+	"读取接着看失败：{error}": ["Could not load continue watching: {error}", "Không tải được mục xem tiếp: {error}"],
 	抓取历史: ["Fetch history", "Thu thập lịch sử"],
 	"已完成：{action}": ["Completed: {action}", "Đã hoàn tất: {action}"],
 	"按{label}{direction}排序": ["Sort by {label} {direction}", "Sắp xếp theo {label} {direction}"],
@@ -25946,4 +25955,4 @@ ay && oy && (0, M.createRoot)(ay).render(/* @__PURE__ */ (0, B.jsx)(ny, { childr
 	data: { ...ay.dataset }
 }) }));
 
-//# debugId=45abd3a0-70a1-4e68-ad0b-5d11d4390d0d
+//# debugId=60ae31aa-e252-499d-aa0e-b7e44929fc7d

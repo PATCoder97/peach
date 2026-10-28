@@ -1,5 +1,12 @@
 /** 操作进度、配置和资料复核的动态界面文案。 */
 export const operationMessages: Readonly<Record<string, readonly [string, string]>> = {
+  '提交': ['Submit', 'Gửi'],
+  '提交中': ['Submitting', 'Đang gửi'],
+  '正在提交喜爱理由': ['Submitting reason for liking', 'Đang gửi lý do yêu thích'],
+  '保存中…': ['Saving…', 'Đang lưu…'],
+  '保存失败 · 请重试': ['Save failed · Try again', 'Lưu thất bại · Hãy thử lại'],
+  '已保存': ['Saved', 'Đã lưu'],
+  '读取接着看失败：{error}': ['Could not load continue watching: {error}', 'Không tải được mục xem tiếp: {error}'],
   '抓取历史': ['Fetch history', 'Thu thập lịch sử'],
   '已完成：{action}': ['Completed: {action}', 'Đã hoàn tất: {action}'],
   '按{label}{direction}排序': ['Sort by {label} {direction}', 'Sắp xếp theo {label} {direction}'],

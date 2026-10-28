@@ -1,4 +1,5 @@
 import { uiTextHtml } from '../i18n/html';
+import { translate as t } from '../i18n';
 /* loading 域控制器：本域状态与动作，启动由 Application 的生命周期统一安装。 */
 import { followState } from './follow.js';
 import { managementSkeletonHtml, pageSkeletonHtml, skeletonKeyOf } from './../management-placeholder';

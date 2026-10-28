@@ -611,10 +611,12 @@ function Preference({ item, open, write }: { item: DetailItem; open: boolean; wr
       <textarea ref={field} id="likeReason" maxLength={2000} placeholder={uiText("为什么喜欢？")} value={reason}
         onChange={(event) => setReason(event.target.value)} />
       <div data-preference-foot="">
-        <span id="preferenceState" aria-live="polite">{write.preferenceState}</span>
+        <span id="preferenceState" aria-live="polite">{uiText(write.preferenceState)}</span>
         <button type="button" className="geist-button primary" id="savePreference" data-save-preference="" title={uiText("提交喜爱理由")} aria-label={uiText("提交喜爱理由")}
-          {...write.busyAttrs('preference')} onClick={() => write.preference({ reason })}
-          dangerouslySetInnerHTML={{ __html: saving ? `${spinnerHtml('正在提交喜爱理由')}<span>提交中</span>` : '<span>提交</span>' }} />
+          {...write.busyAttrs('preference')} onClick={() => write.preference({ reason })}>
+          {saving ? <span dangerouslySetInnerHTML={{ __html: spinnerHtml('正在提交喜爱理由') }} /> : null}
+          <span>{uiText(saving ? '提交中' : '提交')}</span>
+        </button>
       </div>
     </div>
   );
@@ -624,6 +626,7 @@ function Preference({ item, open, write }: { item: DetailItem; open: boolean; wr
    这一排的卡是目录网格的 items 模式：取数在这里，卡只画。空结果与失败留在推荐区，
    拖动与滚轮都靠壳的 `wireDrag`。 */
 function Related(props: ItemDetailProps & { item: DetailItem }) {
+  const uiText = useUiTranslation();
   const { item, relatedLimit, helpers, grid } = props;
   const result = useQuery({
     queryKey: relatedKey(item.id, relatedLimit),
@@ -635,7 +638,7 @@ function Related(props: ItemDetailProps & { item: DetailItem }) {
   const [skeleton] = useState(() => helpers.relatedSkeletonHtml());
   return (
     <RelatedSection wireDrag={helpers.wireDrag} busy={result.isPending} empty={result.data?.length === 0}
-      error={result.isError ? `读取接着看失败：${requestErrorMessage(result.error)}` : undefined}
+      error={result.isError ? uiText('读取接着看失败：{error}',{error:requestErrorMessage(result.error)}) : undefined}
       onRetry={() => { void result.refetch() }}>
         {result.data ? (
           <CatalogGridPage mode="items" variant="next" items={result.data} helpers={grid.helpers} actions={grid.actions}
