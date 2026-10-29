@@ -19,6 +19,12 @@ Peach 使用 [seiso](https://github.com/scarletkc/seiso) 检查 Markdown 的职�
 
 README 保留开始使用所需的信息。字段定义放参考文档，操作步骤放 howto，设计理由放 ADR。保留现有章节锚点；移动内容时同步修复引用。
 
+## Git 与自动化输出
+
+提交主题和正文、PR 标题和正文，以及 GitHub Actions 的 workflow、job、step 显示名称、项目自有进度与结果摘要使用越南语。技术标识保留英文，包括 Conventional Commits 的 type、scope、Git trailer 键、工作流文件名、job ID、环境变量与 API 字段。例如 `fix(player): Bật hoặc ẩn nút điều khiển khi chạm vùng trống`。
+
+工具和测试的原始诊断保留原文；需要解释时补充越南语说明，保留可定位的错误证据。仓库文档与技能正文仍按各自语言约定维护。
+
 ## 公开与私有记录
 
 - 项目介绍使用「影片刮削与媒体管理」定位，说明实际功能、访问条件与限制。来源名称、协议标识、依赖署名与许可证保持准确；通用介绍不以内容题材宣传产品。

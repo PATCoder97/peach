@@ -141,7 +141,7 @@ def append(root: Path, *, scope: str, files: list[str], rows: list[dict],
                 stream.write("\n".join(lines) + "\n")
         return path
     except (OSError, ValueError, Timeout, subprocess.CalledProcessError) as error:
-        print(f"测试结果历史没有写入（不影响本次判定）：{error}", file=sys.stderr, flush=True)
+        print(f"Chưa ghi được lịch sử kiểm thử (không ảnh hưởng kết luận lượt này): {error}", file=sys.stderr, flush=True)
         return None
 
 

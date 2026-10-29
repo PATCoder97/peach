@@ -55,7 +55,7 @@ def run(runner, args) -> int:
     except ValueError as error:
         print(error, file=sys.stderr)
         return 2
-    print("定向调试：只运行指定用例，不签发正式记录；提交前仍需 auto。", flush=True)
+    print("Kiểm tra có mục tiêu: chỉ chạy các ca đã chọn, không cấp bản ghi chính thức; vẫn cần auto trước khi commit.", flush=True)
     external = {}
     if browsers:
         external['test_web_e2e.py'] = ['frontend/' + name for name in browsers]

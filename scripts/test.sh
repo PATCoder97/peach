@@ -8,7 +8,7 @@ SCOPE="${1:-auto}"
 case "$SCOPE" in
     full|auto|follow|catalog|media|sync|metadata|tooling|web|checks|core|packaging) ;;
     *)
-        echo "未知测试域：$SCOPE（可选 full、auto、follow、catalog、media、sync、metadata、tooling、web）" >&2
+        echo "Phạm vi kiểm thử không hợp lệ: $SCOPE (chọn full, auto, follow, catalog, media, sync, metadata, tooling, web)" >&2
         exit 2
         ;;
 esac
@@ -26,7 +26,7 @@ WORKTREE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 GIT_COMMON_RAW="$(git -C "$WORKTREE_ROOT" rev-parse --git-common-dir)"
 if [[ -z "$GIT_COMMON_RAW" ]]; then
-    echo "无法定位 Peach 主工作树。" >&2
+    echo "Không xác định được worktree chính của Peach." >&2
     exit 1
 fi
 if [[ "$GIT_COMMON_RAW" = /* ]]; then
@@ -42,7 +42,7 @@ if [[ -x "$WORKTREE_ROOT/.venv/bin/python" ]]; then
     PYTHON="$WORKTREE_ROOT/.venv/bin/python"
 fi
 if [[ ! -x "$PYTHON" ]]; then
-    echo "Peach 测试 venv 不存在：$PYTHON" >&2
+    echo "Không tìm thấy venv kiểm thử Peach: $PYTHON" >&2
     exit 1
 fi
 
@@ -55,9 +55,9 @@ cd "$WORKTREE_ROOT"
 PYTHON="$WORKTREE_ROOT/.venv/bin/python"
 LOADED_MODULE="$("$PYTHON" -c 'import peach; print(peach.__file__)')"
 if [[ "$LOADED_MODULE" != "$SOURCE_ROOT/"* ]]; then
-    echo "测试加载了错误源码：$LOADED_MODULE；预期位于 $SOURCE_ROOT" >&2
+    echo "Kiểm thử đã nạp sai mã nguồn: $LOADED_MODULE; cần nằm trong $SOURCE_ROOT" >&2
     exit 1
 fi
 
-echo "Peach source: $LOADED_MODULE"
+echo "Mã nguồn Peach: $LOADED_MODULE"
 exec "$PYTHON" scripts/test_runner.py --scope "$SCOPE" ${JOBS[@]+"${JOBS[@]}"} ${EXTRA[@]+"${EXTRA[@]}"}

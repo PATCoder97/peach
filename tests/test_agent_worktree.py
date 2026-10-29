@@ -644,7 +644,7 @@ class IntegrationVersionTests(_WorktreeCase):
         self.assertEqual(report["version"], "0.7.14")
         self.assertEqual(read_version(self.repo), "0.7.14")
         self.assertEqual(_git(self.repo, "log", "-1", "--format=%s").stdout.strip(),
-                         f"Merge branch '{branch}'")
+                         f"Hợp nhất nhánh '{branch}'")
         touched = _lines(_git(self.repo, "show", "--name-only", "--format=", "HEAD"))
         self.assertNotIn("src/peach/__init__.py", touched)
 

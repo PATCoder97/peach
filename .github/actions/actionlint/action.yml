@@ -1,5 +1,5 @@
-name: Actions 工作流静态检查
-description: 使用固定版本 actionlint 校验工作流
+name: Kiểm tra cú pháp workflow Actions
+description: Kiểm tra workflow bằng phiên bản actionlint cố định
 runs:
   using: docker
   image: Dockerfile

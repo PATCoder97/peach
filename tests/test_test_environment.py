@@ -58,14 +58,14 @@ class TestEnvironmentTests(unittest.TestCase):
     def test_outdated_main_environment_stops_before_any_sync(self):
         run = mock.Mock(return_value=subprocess.CompletedProcess(
             [], 1, "The environment is outdated", ""))
-        with self.assertRaisesRegex(RuntimeError, "重启流程"):
+        with self.assertRaisesRegex(RuntimeError, "Luồng khởi động lại"):
             self.prepare(self.main, run)
         self.assertEqual(run.call_count, 1)
         self.assertIn("--check", run.call_args.args[0])
 
     def test_failed_sync_does_not_report_ready(self):
         run = mock.Mock(return_value=subprocess.CompletedProcess([], 2))
-        with self.assertRaisesRegex(RuntimeError, "依赖同步失败"):
+        with self.assertRaisesRegex(RuntimeError, "Đồng bộ phụ thuộc kiểm thử thất bại"):
             self.prepare(self.worker, run)
 
     def test_missing_lock_or_uv_stops_before_starting_tests(self):
@@ -134,6 +134,6 @@ class TestEnvironmentTests(unittest.TestCase):
             return shared if path == self.worker / ".venv" else resolve(path, *args, **kwargs)
         run = mock.Mock()
         with mock.patch.object(Path, "resolve", resolved):
-            with self.assertRaisesRegex(RuntimeError, "主检出"):
+            with self.assertRaisesRegex(RuntimeError, "checkout chính"):
                 self.prepare(self.worker, run)
         run.assert_not_called()

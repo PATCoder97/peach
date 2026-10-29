@@ -20,7 +20,7 @@ def browser_matrix(root: Path = ROOT, count: int = 6) -> dict:
     timings = json.loads(timing_file.read_text(encoding="utf-8"))["seconds"] if timing_file.is_file() else {}
     files = [path.relative_to(root).as_posix() for path in (root / "frontend/e2e").rglob("*.test.ts")]
     if not files or count < 1:
-        raise ValueError("浏览器矩阵须包含用例且分片数为正整数")
+        raise ValueError("Ma trận trình duyệt phải có ca kiểm thử và số phân mảnh phải là số nguyên dương")
     groups = [[] for _ in range(min(count, len(files)))]
     totals = [0.0 for _ in groups]
     for name in sorted(files, key=lambda name: (-timings.get(name, 30.0), name)):
@@ -42,15 +42,15 @@ def validate_results(results: dict, required: list[str], *, phase: str = "comple
     elif phase == "desktop":
         mandatory = {"plan"}
     else:
-        raise ValueError(f"未知验证阶段：{phase}")
+        raise ValueError(f"Giai đoạn kiểm tra không hợp lệ: {phase}")
     if not mandatory.issubset(required):
-        raise ValueError("验证计划缺少必需任务")
+        raise ValueError("Kế hoạch kiểm tra thiếu tác vụ bắt buộc")
     bad = {name: results.get(name, {}).get("result", "missing")
            for name in required if results.get(name, {}).get("result") != "success"}
     bad.update({name: item["result"] for name, item in results.items()
                 if item["result"] not in {"success", "skipped"}})
     if bad:
-        raise ValueError(f"验证任务未通过：{bad}")
+        raise ValueError(f"Tác vụ kiểm tra thất bại: {bad}")
 
 
 def runtime_paths(paths: list[str], contents: dict | None) -> list[str]:
@@ -188,14 +188,14 @@ def main() -> None:
             try:
                 base = github_verified_base(root, "desktop.yml")
             except (OSError, KeyError, ValueError, subprocess.CalledProcessError) as error:
-                print(f"桌面已验证基线未取得，比较本次推送基线：{error}", file=sys.stderr)
+                print(f"Chưa lấy được mốc desktop đã kiểm tra; so sánh với mốc của lần đẩy này: {error}", file=sys.stderr)
         paths = runner.changed_files(root, base)
         result = plan(args.event, paths, runner.changed_contents(root, base, paths), target=args.target)
     except (OSError, KeyError, ValueError, subprocess.CalledProcessError) as error:
         if args.target == "desktop" and args.event != "workflow_dispatch":
             raise ValueError("桌面改动范围未取得，不能判为无需验证") from error
         # 首次推送、浅克隆或已删除基线：扩大验证，不能把无 diff 当成无需测试。
-        print(f'已验证基线未取得，使用全量：{error}', file=sys.stderr)
+        print(f'Chưa lấy được mốc đã kiểm tra; chạy đầy đủ: {error}', file=sys.stderr)
         result = plan("workflow_dispatch", [], target=args.target)
     result['base'] = base
     print(json.dumps(result, ensure_ascii=False, indent=2))

@@ -1,50 +1,50 @@
-## 改动内容
+## Nội dung thay đổi
 
-一句话说清这个 PR 做了什么。
+Mô tả mục tiêu của PR trong một câu.
 
-## 性质与行为边界
+## Loại thay đổi và phạm vi hành vi
 
-<!-- 按实际变更填写；混合变更分别说明，单纯使用 fix 标题不能代替判断。 -->
+<!-- Điền theo thay đổi thực tế; mô tả riêng từng loại nếu có nhiều loại thay đổi. Tiêu đề fix không thay thế việc xác định hành vi. -->
 
-- 变更性质（修复 / 新功能 / 设计调整 / 维护）：
-- 修复的触发、错误及既有预期依据；或功能的场景与取舍：
-- 默认行为、资源归属和处理范围的影响：
-- 新功能或设计方向的确认依据（不适用时写明）：
+- Loại thay đổi (sửa lỗi / tính năng mới / điều chỉnh thiết kế / bảo trì):
+- Điều kiện gây lỗi, hành vi sai và căn cứ về hành vi mong đợi; hoặc tình huống sử dụng và đánh đổi của tính năng:
+- Ảnh hưởng đến hành vi mặc định, quyền quản lý tài nguyên và phạm vi xử lý:
+- Căn cứ xác nhận tính năng mới hoặc hướng thiết kế (ghi rõ nếu không áp dụng):
 
-## 关联 issue
+## Issue liên quan
 
-<!-- 无关联 issue 时删除此行。issue 由维护者在发布并验证后关闭。 / Remove if unrelated. Maintainers close the issue after release and verification. -->
+<!-- Xóa dòng dưới nếu không có issue liên quan. Người bảo trì đóng issue sau khi phát hành và xác minh. -->
 Refs #
 
-## 检查项
+## Danh sách kiểm tra
 
-- [ ] 大改动已先开 issue 讨论（小修不需要）
-- [ ] 跑过测试，写明测试域：`& .\scripts\test.ps1 -Scope <域>` 或 `./scripts/test.sh <域>`，
-      结果贴在下面
-- [ ] 按 `.claude/skills/peach-surfaces/SKILL.md` 逐项说明影响面（数据层、API、页面、契约、
-      测试、文档），不适用的也写出来
+- [ ] Đã thảo luận qua issue trước khi thực hiện thay đổi lớn (không bắt buộc với sửa đổi nhỏ)
+- [ ] Đã chạy kiểm thử và ghi rõ phạm vi: `& .\scripts\test.ps1 -Scope <phạm_vi>` hoặc `./scripts/test.sh <phạm_vi>`;
+      ghi kết quả bên dưới
+- [ ] Đã mô tả từng mặt ảnh hưởng theo `.claude/skills/peach-surfaces/SKILL.md`
+      (dữ liệu, API, trang, hợp đồng, kiểm thử, tài liệu), kể cả các mục không áp dụng
 
-## 测试结果
+## Kết quả kiểm thử
 
-<!-- 写明环境、测试范围、结果或正式记录。未运行、skip、样本未取得和原环境待验收分别说明；通过数量不能代替覆盖范围。 -->
+<!-- Ghi rõ môi trường, phạm vi kiểm thử, kết quả hoặc bản ghi chính thức. Phân biệt chưa chạy, skip, chưa có mẫu và còn chờ xác minh tại môi trường gốc; số lượng ca qua kiểm tra không thay thế phạm vi bao phủ. -->
 ```text
 
 ```
 
-## AI 参与
+## Sự tham gia của AI
 
-<!-- 未使用时写「未使用」；使用时说明方案、代码、测试、文档或 PR 文字的参与范围，以及提交者实际检查的内容。无需提示词或模型名称，提交里也不需要加 AI 署名。 -->
+<!-- Ghi “Không sử dụng” nếu không dùng AI. Nếu có, nêu phạm vi tham gia vào phương án, mã nguồn, kiểm thử, tài liệu hoặc nội dung PR và phần người gửi đã tự kiểm tra. Không cần ghi prompt hoặc tên mô hình; người đóng góp cũng không bắt buộc thêm chữ ký AI vào commit. -->
 
-- 参与范围：
-- 提交者实际检查的内容：
+- Phạm vi tham gia:
+- Nội dung người gửi đã kiểm tra:
 
-## 影响面
+## Các mặt ảnh hưởng
 
-| 影响面 | 适用与说明 |
+| Mặt ảnh hưởng | Áp dụng và giải thích |
 | --- | --- |
-| 数据层 |  |
+| Dữ liệu |  |
 | API |  |
-| 页面 |  |
-| 契约 |  |
-| 测试 |  |
-| 文档 |  |
+| Trang |  |
+| Hợp đồng |  |
+| Kiểm thử |  |
+| Tài liệu |  |

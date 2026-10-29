@@ -43,7 +43,7 @@ def audit(project: Path, *, runner=subprocess.run, sleep=time.sleep) -> int:
                               "decision": decision, "audit": payload}, ensure_ascii=False), flush=True)
         except subprocess.TimeoutExpired:
             decision = "retry"
-            print(f"npm audit 第 {attempt + 1} 次超时", flush=True)
+            print(f"npm audit hết thời gian chờ ở lần {attempt + 1}", flush=True)
         if decision == "clean":
             return 0
         if decision != "retry" or attempt == 2:

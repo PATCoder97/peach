@@ -16,7 +16,7 @@ $ErrorActionPreference = 'Stop'
 $WorktreeRoot = (Resolve-Path -LiteralPath (Split-Path -Parent $PSScriptRoot)).Path
 $GitCommonRaw = (& git -C $WorktreeRoot rev-parse --git-common-dir).Trim()
 if ($LASTEXITCODE -ne 0 -or -not $GitCommonRaw) {
-    throw '无法定位 Peach 主工作树。'
+    throw 'Không xác định được worktree chính của Peach.'
 }
 
 if ([IO.Path]::IsPathRooted($GitCommonRaw)) {
@@ -30,7 +30,7 @@ $Python = Join-Path $MainRoot '.venv\Scripts\python.exe'
 $LocalPython = Join-Path $WorktreeRoot '.venv\Scripts\python.exe'
 if (Test-Path -LiteralPath $LocalPython -PathType Leaf) { $Python = $LocalPython }
 if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) {
-    throw "Peach 主项目 venv 不存在：$Python"
+    throw "Không tìm thấy venv của dự án Peach chính: $Python"
 }
 
 $SourceRoot = (Resolve-Path -LiteralPath (Join-Path $WorktreeRoot 'src')).Path
@@ -56,15 +56,15 @@ try {
     $Python = $LocalPython
     $LoadedModule = (& $Python -c 'import peach; print(peach.__file__)').Trim()
     if ($LASTEXITCODE -ne 0 -or -not $LoadedModule) {
-        throw '无法导入当前工作树中的 peach。'
+        throw 'Không nhập được peach từ worktree hiện tại.'
     }
     $LoadedPath = (Resolve-Path -LiteralPath $LoadedModule).Path
     $ExpectedPrefix = $SourceRoot.TrimEnd('\') + '\'
     if (-not $LoadedPath.StartsWith($ExpectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "测试加载了错误源码：$LoadedPath；预期位于 $SourceRoot"
+        throw "Kiểm thử đã nạp sai mã nguồn: $LoadedPath; cần nằm trong $SourceRoot"
     }
 
-    Write-Host "Peach source: $LoadedPath"
+    Write-Host "Mã nguồn Peach: $LoadedPath"
     $PeachTestExtra = @()
     if ($Fresh) { $PeachTestExtra += '--fresh' }
     if ($Resume) { $PeachTestExtra += '--resume' }

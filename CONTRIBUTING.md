@@ -105,7 +105,7 @@ GitHub 的字段与模板机制见 [Issue types](https://docs.github.com/en/issu
 
 ## 提交说明与变更日志
 
-- 提交主题使用 `type(scope): 中文描述`，例如 `fix(web): 修正列表滚动`；类型与范围按项目提交检查器核对。
+- 提交主题使用 `type(scope): 描述`，例如 `fix(web): Sửa cuộn danh sách`；类型与范围按项目提交检查器核对，语言按[交付与自动化输出约定](docs/WRITING.md#git-与自动化输出)。
 - 破坏性变化在主题里加 `!`，或写 `BREAKING CHANGE:` 脚注。
 - PR 不用改 [`CHANGELOG.md`](CHANGELOG.md)。版本、变更日志与发布统一由 `scripts/release_tag.py` 处理，流程见 [运行与配置](docs/OPERATIONS.md)。
 

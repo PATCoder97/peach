@@ -582,19 +582,19 @@ def scopes_for_changes(paths: Iterable[str], *, contents: dict | None = None,
                          for scope in scopes_of_test_file(name)}
             scopes = tuple(scope for scope in SCOPES if scope in {*scopes, *consumers})
         if not scopes:
-            full_reasons.append(f"{path} 映射不到任何域")
+            full_reasons.append(f"{path} chưa được ánh xạ vào phạm vi nào")
         elif "full" in scopes:
-            full_reasons.append(f"{path} 属于必须 full 的面")
+            full_reasons.append(f"{path} thuộc nhóm bắt buộc chạy full")
         else:
             for scope in scopes:
                 picked.setdefault(scope, []).append(path)
     if full_reasons:
-        return ("full",), "Peach auto scope: full <- " + "; ".join(full_reasons)
+        return ("full",), "Phạm vi tự động Peach: full <- " + "; ".join(full_reasons)
     if not picked:
-        return ("checks",), "Peach auto scope: checks <- 没有改动文件，检查公共门槛"
+        return ("checks",), "Phạm vi tự động Peach: checks <- không có tệp thay đổi; kiểm tra các điều kiện chung"
     ordered = tuple(scope for scope in SCOPES if scope in picked)
     detail = "; ".join(f"{scope}: {', '.join(picked[scope])}" for scope in ordered)
-    return ordered, f"Peach auto scope: {', '.join(ordered)} <- {detail}"
+    return ordered, f"Phạm vi tự động Peach: {', '.join(ordered)} <- {detail}"
 
 
 def changed_files(root: Path = ROOT, base: str = "master") -> list[str]:
@@ -617,7 +617,7 @@ def resolve_auto_scope() -> tuple[tuple[str, ...], str]:
     try:
         paths = changed_files()
     except (OSError, subprocess.CalledProcessError) as error:
-        return ("full",), f"Peach auto scope: full <- git 不可用（{error}）"
+        return ("full",), f"Phạm vi tự động Peach: full <- không dùng được git ({error})"
     return scopes_for_changes(paths, contents=changed_contents(ROOT, "master", paths))
 
 
@@ -636,7 +636,7 @@ CI_BROWSER_TESTS = frozenset({
 def ci_frontend_delegated() -> bool:
     """Linux Test 承担前端工具和浏览器检查，桌面保留 Python 契约。"""
     return (os.environ.get("GITHUB_ACTIONS") == "true"
-            and os.environ.get("GITHUB_WORKFLOW") in {"Test", "Desktop", "Release"}
+            and os.environ.get("GITHUB_WORKFLOW") in {"Kiểm thử", "Ứng dụng desktop", "Phát hành"}
             and os.environ.get("GITHUB_JOB") in {"python", "web-e2e"})
 
 
@@ -916,8 +916,8 @@ def run_shards(scopes: tuple[str, ...], *, jobs: int, shard_count: int,
                     measured.update(report.get("files", {}))
                 if outcomes is not None:
                     outcomes.extend(report.get("results", []))
-                print(f"分片 {index + 1}/{shard_count} {'通过' if ok else '失败'}"
-                      f"（{report.get('count', 0)} 个用例）", flush=True)
+                print(f"Phân mảnh {index + 1}/{shard_count}: {'thành công' if ok else 'thất bại'}"
+                      f" ({report.get('count', 0)} ca kiểm thử)", flush=True)
     finally:
         for process, log in running.values():
             if process.poll() is None:
@@ -965,19 +965,19 @@ def environment_preflight(scopes: tuple[str, ...], timings: Path | None = None,
     if not blocked:
         return
     if os.environ.get("PEACH_SKIP_PREFLIGHT") == "1":
-        print(f"跳过外部工具预检（PEACH_SKIP_PREFLIGHT=1）：{'、'.join(blocked)}", flush=True)
+        print(f"Bỏ qua kiểm tra công cụ bên ngoài (PEACH_SKIP_PREFLIGHT=1): {', '.join(blocked)}", flush=True)
         return
     needed = tools_needed_by(scopes)
     fatal = tuple(name for name in blocked if name in needed)
     spared = tuple(name for name in blocked if name not in needed)
     if spared:
-        print(f"本次范围不需要这些启动受限的工具，只作提示：{'、'.join(spared)}", flush=True)
+        print(f"Phạm vi này không cần các công cụ đang bị hạn chế khởi chạy; chỉ thông báo: {', '.join(spared)}", flush=True)
     if not fatal:
         return
-    print(f"Peach 测试环境无法启动 PATH 中的工具：{'、'.join(fatal)}。"
-          "Windows Codex 任务请让 scripts/test.ps1 通过受控提权在正常 PowerShell 权限下运行；"
-          "其他环境请先修复这些工具的执行权限。不要改单测或跳过用例。"
-          "确认本次无关时用 PEACH_SKIP_PREFLIGHT=1 跳过预检。", flush=True)
+    print(f"Môi trường kiểm thử Peach không khởi chạy được công cụ trong PATH: {', '.join(fatal)}. "
+          "Với tác vụ Codex trên Windows, chạy scripts/test.ps1 bằng cơ chế cấp quyền có kiểm soát trong PowerShell; "
+          "với môi trường khác, sửa quyền thực thi của công cụ. Giữ nguyên các ca kiểm thử. "
+          "Chỉ đặt PEACH_SKIP_PREFLIGHT=1 khi đã xác nhận các công cụ đó không liên quan.", flush=True)
     if timings is not None:
         timings.write_text(json.dumps({"success": False, "count": 0, "timings": []}),
                            encoding="utf-8")
@@ -1034,14 +1034,14 @@ def rerun_failures(rows: list[dict], spawn=subprocess.run) -> bool:
     selectors = rerun_selectors(rows)
     if not selectors:
         return False
-    print(f"单独重跑失败的 {len(selectors)} 项，排除负载造成的偶发：{', '.join(selectors)}", flush=True)
+    print(f"Chạy lại riêng {len(selectors)} mục thất bại để kiểm tra lỗi ngẫu nhiên do tải: {', '.join(selectors)}", flush=True)
     command = [sys.executable, str(ROOT / "scripts" / "test_runner.py"),
                *(item for selector in selectors for item in ("--focus", selector))]
     if spawn(command, cwd=str(ROOT), check=False).returncode != 0:
-        print("单独重跑仍失败：按真实失败处理。", flush=True)
+        print("Chạy lại riêng vẫn thất bại: xử lý như lỗi thực tế.", flush=True)
         return False
     FLAKY[:] = selectors
-    print(f"偶发通过（全量失败、单独重跑通过，已写入测试记录）：{', '.join(selectors)}", flush=True)
+    print(f"Lỗi ngẫu nhiên: thất bại khi chạy đầy đủ nhưng chạy lại riêng thành công; đã lưu vào bản ghi: {', '.join(selectors)}", flush=True)
     return True
 
 
@@ -1072,7 +1072,8 @@ def run_local_suite(scopes: tuple[str, ...], jobs: int, label: str | None = None
         rows: list[dict] = []
         passed, count, timings = True, 0, []
         for stage, plan, concurrency in local_batches([path.name for path in chosen], jobs):
-            print(f'{stage}：{len(plan)} 片、同时 {min(concurrency, len(plan))} 个子进程', flush=True)
+            stage_label = {'快速门槛': 'Kiểm tra nhanh', '普通测试': 'Kiểm thử thông thường'}.get(stage, stage)
+            print(f'{stage_label}: {len(plan)} phân mảnh, {min(concurrency, len(plan))} tiến trình con đồng thời', flush=True)
             with test_run_progress.phase(progress.phases if progress is not None else {}, stage):
                 if jobs == 1 and 'full' not in scopes:
                     assigned = {path for path in chosen if path.name in {name for group in plan for name in group}}
@@ -1082,7 +1083,7 @@ def run_local_suite(scopes: tuple[str, ...], jobs: int, label: str | None = None
                                                 plan=plan, outcomes=rows, **progress_args)
             passed, count, timings = passed and ok, count + more, [*timings, *slow]
             if not ok and stage == '快速门槛':
-                print("快速门槛未通过，其余测试本轮不跑。", flush=True)
+                print("Kiểm tra nhanh thất bại; dừng các kiểm thử còn lại của lượt này.", flush=True)
                 save_file_seconds(measured)
                 test_history.append(ROOT, scope=label or " ".join(scopes), rows=rows,
                                     files=[name.removesuffix(".py") for name in plan[0]])
@@ -1210,12 +1211,12 @@ def main(argv: list[str] | None = None) -> int:
         print(explanation, flush=True)
     environment_preflight(scopes, args.timings, shard_count=args.shard_count)
     files = {path for scope in scopes for path in selected_files(scope)}
-    print(f"Peach test scope: {' '.join(scopes)} ({len(files)} files)", flush=True)
+    print(f"Phạm vi kiểm thử Peach: {' '.join(scopes)} ({len(files)} tệp)", flush=True)
     if args.shard_count > 1 or args.shard_plan is not None:
         # CI 的每片独立 runner，或父进程派出的分片（含只有一片的快速门槛）；分片绝不签发本机记录。
         return run_shard_child(args, requested, scopes, files)
     if ci_frontend_delegated():
-        print("CI 前端工具检查由 web-bundle 验证；本次不签发本机测试记录。", flush=True)
+        print("CI giao kiểm tra công cụ frontend cho web-bundle; lượt này không cấp bản ghi kiểm thử cục bộ.", flush=True)
         success, count, _ = run_local_suite(scopes, args.jobs, f"{' '.join(requested)}:{' '.join(scopes)}")
         return 0 if success and count > 0 else 1
     try:
@@ -1243,9 +1244,9 @@ HEAVY_FILES = frozenset({"test_web_e2e", "test_frontend_build"})
 
 def busy(error) -> int:
     lock = Path(error.lock_file)
-    what = {"full-suite.lock": "本仓库全量测试"}.get(
-        lock.name, "相同状态的验证")
-    print(f"{what}正在运行（{test_evidence.describe_holder(lock)}），请等待该次结果。", flush=True)
+    what = {"full-suite.lock": "Kiểm thử đầy đủ của kho mã"}.get(
+        lock.name, "Kiểm tra cùng trạng thái")
+    print(f"{what} đang chạy ({test_evidence.describe_holder(lock)}); hãy chờ kết quả của lượt đó.", flush=True)
     return 2
 
 
@@ -1260,7 +1261,7 @@ def verified_run(args, requested, scopes, files) -> int:
     with test_evidence.run_lock(ROOT, state, scope=" ".join(scopes), root=str(ROOT)):
         if not force and test_evidence.covers(
                 test_evidence.read(ROOT, state), scopes):
-            print("复用本机测试记录：代码、依赖环境和范围匹配（24 小时内）。", flush=True)
+            print("Dùng lại bản ghi kiểm thử cục bộ: mã nguồn, môi trường phụ thuộc và phạm vi khớp nhau trong 24 giờ.", flush=True)
             return 0
         with test_run_progress.phase(phases, '历史记录'):
             previous = test_evidence.read(ROOT, state)
@@ -1274,9 +1275,9 @@ def verified_run(args, requested, scopes, files) -> int:
                 scopes = test_resume.choose_scopes(progress.pending, progress.requirements, choices)
         progress.phases = phases
         actual = len(progress.modules)
-        print(f"实际运行：{' '.join(scopes) or '无需补测'}（{actual} 个测试文件）", flush=True)
+        print(f"Thực chạy: {' '.join(scopes) or 'không cần kiểm thử bổ sung'} ({actual} tệp kiểm thử)", flush=True)
         if records and not force:
-            print(f'单项覆盖：复用 {len(progress.required) - len(progress.pending)} 项，待验证 {len(progress.pending)} 项。', flush=True)
+            print(f'Độ phủ từng mục: dùng lại {len(progress.required) - len(progress.pending)} mục, còn {len(progress.pending)} mục cần kiểm tra.', flush=True)
         progress.start()
         FLAKY.clear()
         with test_run_progress.phase(phases, '测试执行'):
@@ -1290,13 +1291,16 @@ def verified_run(args, requested, scopes, files) -> int:
         slowest = sorted(timings, reverse=True)[:20]
         progress.persist(final=True, success=success, elapsed=time.monotonic() - started,
                          slowest=slowest, count=count, flaky=FLAKY if success else None)
-        print('分阶段耗时（测试执行包含各测试阶段）：' + '；'.join(
-            f'{name} {seconds:.2f}s' for name, seconds in phases.items()), flush=True)
+        phase_labels = {'输入快照': 'Chụp trạng thái đầu vào', '历史记录': 'Đọc lịch sử',
+                        '恢复规划': 'Lập kế hoạch tiếp tục', '快速门槛': 'Kiểm tra nhanh',
+                        '普通测试': 'Kiểm thử thông thường', '测试执行': 'Thực thi kiểm thử', '结束核验': 'Xác minh cuối'}
+        print('Thời gian từng giai đoạn (thực thi kiểm thử gồm các giai đoạn kiểm thử): ' + '; '.join(
+            f'{phase_labels.get(name, name)} {seconds:.2f}s' for name, seconds in phases.items()), flush=True)
         for seconds, name in slowest[:5]:
-            print(f"慢测试 {seconds:.3f}s：{name}", flush=True)
+            print(f"Kiểm thử chậm {seconds:.3f}s: {name}", flush=True)
         if not stable:
             kept = progress.retain_current()
-            print(f'验证期间输入改变；保留 {kept} 项未受影响的结果，请运行 auto 补齐。', flush=True)
+            print(f'Đầu vào thay đổi trong lúc kiểm tra; giữ lại {kept} kết quả không bị ảnh hưởng. Hãy chạy auto để bổ sung.', flush=True)
             return 4
         return 0 if success else 1
 

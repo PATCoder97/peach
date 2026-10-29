@@ -18,9 +18,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from peach.user_agent import USER_AGENT
 
 REQUIRED_ARTIFACTS = {"desktop-candidate", "macos-candidate-arm64", "macos-candidate-x86_64"}
-REQUIRED_JOBS = {"Windows x64 独立测试包", "仅下载制品验收",
-    "macOS arm64 独立测试包", "macOS x86_64 独立测试包",
-    "macOS arm64 仅下载制品验收", "macOS x86_64 仅下载制品验收"}
+REQUIRED_JOBS = {"Gói kiểm thử độc lập cho Windows x64", "Kiểm tra chỉ từ gói đã tải xuống",
+    "macOS arm64 gói kiểm thử độc lập", "macOS x86_64 gói kiểm thử độc lập",
+    "macOS arm64 Kiểm tra chỉ từ gói đã tải xuống", "macOS x86_64 Kiểm tra chỉ từ gói đã tải xuống"}
 
 
 class ArtifactRedirect(HTTPRedirectHandler):

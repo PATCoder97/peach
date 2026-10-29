@@ -19,26 +19,26 @@ def prepare(root: Path, main: Path, *, run=subprocess.run, which=shutil.which,
     """准备完成才允许加载测试运行器；主检出依赖只读检查。"""
     root, main = root.resolve(), main.resolve()
     if not (root / "uv.lock").is_file():
-        raise RuntimeError(f"未取得测试依赖锁文件：{root / 'uv.lock'}")
+        raise RuntimeError(f"Chưa tìm thấy tệp khóa phụ thuộc kiểm thử: {root / 'uv.lock'}")
     environment = dict(os.environ if environ is None else environ)
     for name in ("VIRTUAL_ENV", "UV_PROJECT_ENVIRONMENT"):
         environment.pop(name, None)
     if root == main:
         step = Dependencies(root, run=run, which=which, environ=environment, frozen=False).check()
         if step.state != "current":
-            raise RuntimeError(f"主检出依赖未就绪：{step.message}；请在隔离工作树测试，主检出依赖由重启流程同步。")
-        print(step.message, flush=True)
+            raise RuntimeError(f"Phụ thuộc của checkout chính chưa sẵn sàng: {step.message}; hãy kiểm thử trong worktree riêng. Luồng khởi động lại sẽ đồng bộ phụ thuộc của checkout chính.")
+        print("Môi trường phụ thuộc của checkout chính đã sẵn sàng.", flush=True)
         return
     if (root / ".venv").resolve() != root / ".venv":
-        raise RuntimeError("工作树 .venv 指向外部目录；不能同步主检出或其他工作树的环境。")
+        raise RuntimeError(".venv của worktree trỏ ra thư mục ngoài; không thể đồng bộ môi trường của checkout chính hoặc worktree khác.")
     uv = find_uv(which=which, environ=environment)
     if uv is None:
-        raise RuntimeError("未取得 uv：PATH 与 WinGet 安装目录里都没有。")
-    print(f"按 uv.lock 同步测试环境：{root / '.venv'}", flush=True)
+        raise RuntimeError("Chưa tìm thấy uv trong PATH hoặc thư mục cài đặt WinGet.")
+    print(f"Đồng bộ môi trường kiểm thử theo uv.lock: {root / '.venv'}", flush=True)
     result = run([str(uv), "sync", "--locked", "--all-extras", "--python", sys.executable,
                   "--project", str(root)], cwd=str(root), env=environment, check=False)
     if result.returncode:
-        raise RuntimeError(f"测试依赖同步失败（退出码 {result.returncode}）；未启动测试。")
+        raise RuntimeError(f"Đồng bộ phụ thuộc kiểm thử thất bại (mã thoát {result.returncode}); kiểm thử chưa khởi chạy.")
 
 
 def main(argv=None) -> int:

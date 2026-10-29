@@ -213,7 +213,7 @@ def _integrate_locked(repo: Path, worker_branch: str,
         raise WorkspaceError("验证检查期间集成工作树改变，请重试")
     _install_hooks(main)
     _git(main, "-c", f"{MASTER_WRITER}=integrate", "merge", "--no-ff", "--no-edit",
-         "-m", f"Merge branch '{worker_branch}'", worker_head)
+         "-m", f"Hợp nhất nhánh '{worker_branch}'", worker_head)
     _git(main, "worktree", "unlock", str(workers[0]), check=False)
     return {
         "ok": True,

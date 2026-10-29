@@ -1971,20 +1971,20 @@ class OperationalScriptTests(unittest.TestCase):
         self.assertEqual(pick(["tests/test_certs.py"])[0], ("sync", "tooling"))
         self.assertEqual(pick(["tests/test_context_budget.py"])[0], ("tooling",))
         scopes, why = pick(["src/peach/follow.py", "web/app.js"])
-        self.assertTrue(why.startswith("Peach auto scope: follow, web <- "), why)
+        self.assertTrue(why.startswith("Phạm vi tự động Peach: follow, web <- "), why)
         self.assertIn("web: web/app.js", why)
         self.assertEqual(pick([])[0], ("checks",))
         # full 覆盖公共设施和未知影响面。
-        for paths, fragment in ((["migrations/0099_next.sql"], "必须 full"),
-                                (["tests/support/ledger.py"], "必须 full"),
-                                (["tests/conftest.py"], "必须 full"),
-                                (["package-lock.json"], "必须 full"),
-                                (["frontend/package.json"], "必须 full"),
-                                (["LICENSE"], "映射不到"),
-                                (["src/peach/not_a_module.py", "web/app.js"], "映射不到")):
+        for paths, fragment in ((["migrations/0099_next.sql"], "bắt buộc chạy full"),
+                                (["tests/support/ledger.py"], "bắt buộc chạy full"),
+                                (["tests/conftest.py"], "bắt buộc chạy full"),
+                                (["package-lock.json"], "bắt buộc chạy full"),
+                                (["frontend/package.json"], "bắt buộc chạy full"),
+                                (["LICENSE"], "chưa được ánh xạ"),
+                                (["src/peach/not_a_module.py", "web/app.js"], "chưa được ánh xạ")):
             scopes, why = pick(paths)
             self.assertEqual(scopes, ("full",), paths)
-            self.assertTrue(why.startswith("Peach auto scope: full <- "), why)
+            self.assertTrue(why.startswith("Phạm vi tự động Peach: full <- "), why)
             self.assertIn(fragment, why)
 
     def test_the_full_runner_can_import_repository_scripts(self):
@@ -5776,7 +5776,7 @@ class PinnedReleaseTests(unittest.TestCase):
                 "--repo", "owner/repo", "--release-sha", self.SHA, "--apply"]), 0)
         self.assertEqual(plan.call_args_list, [mock.call("owner/repo", self.SHA)] * 2)
         self.assertEqual(ShipTests._writes(command), [
-            ("git", "tag", "-a", "v0.37.0", self.SHA, "-m", "Peach v0.37.0 Windows 测试版"),
+            ("git", "tag", "-a", "v0.37.0", self.SHA, "-m", "Peach v0.37.0 bản thử nghiệm Windows"),
             ("git", "push", "https://github.com/owner/repo.git", "refs/tags/v0.37.0"),
         ])
 
@@ -5895,7 +5895,7 @@ class ShipTests(unittest.TestCase):
             with self.subTest(changed=changed), \
                     self._api(runs=({**self.SUCCESS, **changed},)), \
                     mock.patch.object(self.release, "GITLAB", None), \
-                    self.assertRaisesRegex(ValueError, "没有 abc 的 Test 演练记录"):
+                    self.assertRaisesRegex(ValueError, "没有 abc 的 Kiểm thử 演练记录"):
                 self.release.require_rehearsal("owner/repo", "abc", self.SUCCESS,
                                              clock=iter([0, 301]).__next__, sleep=lambda _: None)
 
@@ -5952,9 +5952,9 @@ class ShipTests(unittest.TestCase):
             result = self.release.ship("owner/repo", apply=True)
         self.assertEqual(self._writes(command), [
             ("git", "add", "src/peach/__init__.py", "CHANGELOG.md"),
-            ("git", "-c", "peach.masterWriter=release", "commit", "-m", "chore(release): 版本 0.8.0"),
+            ("git", "-c", "peach.masterWriter=release", "commit", "-m", "chore(release): Phát hành phiên bản 0.8.0"),
             ("git", "push", "https://github.com/owner/repo.git", "refs/heads/master"),
-            ("git", "tag", "-a", "v0.8.0", "abc", "-m", "Peach v0.8.0 Windows 测试版"),
+            ("git", "tag", "-a", "v0.8.0", "abc", "-m", "Peach v0.8.0 bản thử nghiệm Windows"),
             ("git", "push", "https://github.com/owner/repo.git", "refs/tags/v0.8.0"),
         ])
         self.assertEqual(result["test"], "test-url")
@@ -5966,7 +5966,7 @@ class ShipTests(unittest.TestCase):
             self.release.ship("owner/repo", apply=True)
         issued = self._writes(command)
         self.assertIn(("git", "-c", "peach.masterWriter=release", "commit",
-                       "-m", "chore(release): 版本 0.8.0"), issued)
+                       "-m", "chore(release): Phát hành phiên bản 0.8.0"), issued)
         self.assertFalse([args for args in issued if "refs/tags/v0.8.0" in args], issued)
 
     def test_running_it_again_skips_what_is_already_done(self):
@@ -5976,7 +5976,7 @@ class ShipTests(unittest.TestCase):
             result = self.release.ship("owner/repo", apply=True)
         self.assertEqual((result["commit"], result["push"]), (False, False))
         self.assertEqual(self._writes(command), [
-            ("git", "tag", "-a", "v0.8.0", "abc", "-m", "Peach v0.8.0 Windows 测试版"),
+            ("git", "tag", "-a", "v0.8.0", "abc", "-m", "Peach v0.8.0 bản thử nghiệm Windows"),
             ("git", "push", "https://github.com/owner/repo.git", "refs/tags/v0.8.0"),
         ])
 
