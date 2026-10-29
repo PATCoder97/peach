@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
@@ -47,6 +48,7 @@ jobs:
       frontend: ${{ steps.plan.outputs.frontend }}
       vendor: ${{ steps.plan.outputs.vendor }}
       wheel: ${{ steps.plan.outputs.wheel }}
+      docker: ${{ steps.plan.outputs.docker }}
       required_jobs: ${{ steps.plan.outputs.required_jobs }}
     steps:
       - uses: actions/checkout@v7
@@ -79,8 +81,8 @@ jobs:
         run: python scripts/ci_plan.py --verify-results --phase frontend
 
   wheel-build:
-    needs: [plan, frontend-ready]
-    if: ${{ !cancelled() && needs.frontend-ready.result == 'success' && needs.plan.outputs.wheel == 'true' }}
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.wheel == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -129,8 +131,8 @@ jobs:
           python "$GITHUB_WORKSPACE/scripts/smoke_wheel.py"
   python:
     name: ${{ matrix.os }} / Python ${{ matrix.python }} / ${{ matrix.scope }} / ${{ matrix.shard_index }}
-    needs: [plan, frontend-ready]
-    if: ${{ !cancelled() && needs.frontend-ready.result == 'success' }}
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
@@ -171,46 +173,14 @@ jobs:
       - name: 安装前端依赖
         if: matrix.runtime_tools
         run: npm --prefix frontend ci
-      # 抽帧与 AV1 软件解码回归在两端执行；浏览器冒烟的 Chrome 仅在 Windows 装配。
-      - name: 安装固定版本 FFmpeg
-        uses: FedericoCarboni/setup-ffmpeg@v3
-        if: runner.os == 'Windows' && matrix.runtime_tools
-        with:
-          ffmpeg-version: "9.0.1"
-          github-token: ${{ github.token }}
-      - name: 安装 macOS FFmpeg
-        if: runner.os == 'macOS' && matrix.runtime_tools
-        run: brew install ffmpeg
-      - name: 指定 e2e 用的 Chrome
-        if: runner.os == 'Windows' && matrix.runtime_tools
-        shell: pwsh
-        run: |
-          $peachChrome = Join-Path $env:ProgramFiles 'Google\Chrome\Application\chrome.exe'
-          if (-not (Test-Path -LiteralPath $peachChrome)) { throw "runner 上没有 Chrome：$peachChrome" }
-          "PEACH_E2E_CHROME=$peachChrome" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-      - name: 安装 Windows 依赖
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          uv sync --locked --all-extras --python python
-          if ($LASTEXITCODE -ne 0) { throw 'uv 锁定安装失败' }
-          uv pip check --python .venv/Scripts/python.exe
-          if ($LASTEXITCODE -ne 0) { throw 'uv 依赖检查失败' }
-      - name: 运行 Windows 正式测试
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Path build -Force | Out-Null
-          & .\scripts\test.ps1 -Scope ${{ matrix.scope }} -Fresh -Base $env:BASE_SHA -ShardIndex ${{ matrix.shard_index }} -ShardCount ${{ matrix.shard_count }} *>&1 | Tee-Object -FilePath build/ci-tests.log
-          if ($LASTEXITCODE -ne 0) { throw 'Python 分片未通过，详见 ci-tests.log' }
-      - name: 安装 macOS 依赖
-        if: runner.os == 'macOS'
-        shell: bash
+      - name: 安装 Linux FFmpeg
+        if: matrix.runtime_tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: 安装 Linux 依赖
         run: |
           uv sync --locked --all-extras --python python
           uv pip check --python .venv/bin/python
-      - name: 运行 macOS 正式测试
-        if: runner.os == 'macOS'
+      - name: 运行 Linux 正式测试
         shell: bash
         run: |
           mkdir -p build
@@ -263,9 +233,9 @@ jobs:
   # 每片拥有独立服务与演示库；文件内的浏览器交互保持串行。
   web-e2e:
     name: 浏览器回归 / ${{ matrix.index }}
-    needs: [plan, frontend-ready]
-    if: ${{ !cancelled() && needs.frontend-ready.result == 'success' && needs.plan.outputs.browser == 'true' }}
-    runs-on: windows-latest
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.browser == 'true' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
       fail-fast: false
@@ -293,22 +263,14 @@ jobs:
           ffmpeg-version: "9.0.1"
           github-token: ${{ github.token }}
       - name: 指定 e2e 用的 Chrome
-        shell: pwsh
-        run: |
-          $peachChrome = Join-Path $env:ProgramFiles 'Google\Chrome\Application\chrome.exe'
-          if (-not (Test-Path -LiteralPath $peachChrome)) { throw "runner 上没有 Chrome：$peachChrome" }
-          "PEACH_E2E_CHROME=$peachChrome" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+        run: echo "PEACH_E2E_CHROME=$(command -v google-chrome)" >> "$GITHUB_ENV"
       - name: 安装 Python 依赖
-        shell: pwsh
-        run: |
-          uv sync --locked --all-extras --python python
-          if ($LASTEXITCODE -ne 0) { throw 'uv 锁定安装失败' }
+        run: uv sync --locked --all-extras --python python
       - name: 运行本片浏览器用例
-        shell: pwsh
+        shell: bash
         run: |
-          $peachBrowserFiles = @($env:BROWSER_FILES | ConvertFrom-Json)
-          & .\scripts\test.ps1 -Scope web -Focus $peachBrowserFiles
-          if ($LASTEXITCODE -ne 0) { throw '浏览器分片未通过' }
+          mapfile -t peach_browser_args < <(python -c 'import json, os; print("\n".join(part for name in json.loads(os.environ["BROWSER_FILES"]) for part in ("--focus", name)))')
+          ./scripts/test.sh web "${peach_browser_args[@]}"
       - name: 保存浏览器测试日志
         if: always()
         uses: actions/upload-artifact@v7
@@ -339,10 +301,16 @@ jobs:
       - name: npm audit
         run: python scripts/npm_audit.py
 
+  docker:
+    name: Docker 构建与冒烟
+    needs: plan
+    if: needs.plan.outputs.docker == 'true'
+    uses: ./.github/workflows/docker.yml
+
   verified:
     name: 完整验证结果
     if: always()
-    needs: [plan, workflow-lint, frontend-ready, python, wheel-build, wheel-smoke, web-bundle, web-e2e, web-vendor]
+    needs: [plan, workflow-lint, frontend-ready, python, wheel-build, wheel-smoke, web-bundle, web-e2e, web-vendor, docker]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

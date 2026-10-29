@@ -1,14 +1,11 @@
 name: Docker
 
 # 分叉仓库推送版本标签时自动验收并发布个人镜像；手动入口可发布指定分支。
-# 官方版本号与 edge 仍由 release.yml 发布（ADR-0121）。
+# 普通 push/PR 由 Test 调用；标签独立构建、验收和发布镜像。
 on:
-  pull_request:
-    paths: [Dockerfile, .dockerignore, compose.yaml, 'src/**', 'migrations/**', 'web/**', 'resources/**', pyproject.toml, uv.lock, setup.py, MANIFEST.in, scripts/smoke_docker.py, scripts/release_tag.py, .github/workflows/docker.yml, .github/workflows/release.yml]
   push:
-    branches: [master]
     tags: ['v[0-9]*.[0-9]*.[0-9]*']
-    paths: [Dockerfile, .dockerignore, compose.yaml, 'src/**', 'migrations/**', 'web/**', 'resources/**', pyproject.toml, uv.lock, setup.py, MANIFEST.in, scripts/smoke_docker.py, scripts/release_tag.py, .github/workflows/docker.yml, .github/workflows/release.yml]
+  workflow_call:
   workflow_dispatch:
     inputs:
       source_ref:
@@ -30,13 +27,12 @@ permissions:
   actions: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: docker-image-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   image:
     name: Linux amd64 镜像验收
-    if: github.event_name != 'push' || github.ref_type != 'tag' || github.repository != 'peach-mitao/peach'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -72,6 +68,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
+      - name: 读取构建提交
+        id: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@v4
       - name: 构建候选镜像
         uses: docker/build-push-action@v7
@@ -79,8 +78,9 @@ jobs:
           context: .
           load: true
           tags: peach:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          labels: org.opencontainers.image.revision=${{ steps.source.outputs.sha }}
+          cache-from: type=gha,scope=peach-linux-amd64
+          cache-to: type=gha,mode=max,scope=peach-linux-amd64
       - name: 验收临时容器
         run: python3 scripts/smoke_docker.py peach:ci
       - name: 登录个人 Docker Hub
@@ -93,10 +93,15 @@ jobs:
         if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
         env:
           IMAGE: ${{ steps.target.outputs.image }}
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
         shell: bash
         run: |
           docker tag peach:ci "$IMAGE"
           docker push "$IMAGE"
+          if [[ "$GITHUB_REPOSITORY" == peach-mitao/peach && "$GITHUB_REF_TYPE" == tag ]]; then
+            docker tag peach:ci "$DOCKERHUB_USERNAME/peach:edge"
+            docker push "$DOCKERHUB_USERNAME/peach:edge"
+          fi
           {
             echo '### Docker Hub 镜像'
             echo "镜像：\`$IMAGE\`"

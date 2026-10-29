@@ -8,7 +8,7 @@ Release 工作流还在干净的 Windows runner 上运行 `smoke_update_tasks.py
 
 ## 环境与锁文件
 
-纯文档 CI 仍在 Windows 和 macOS 执行 checks，但不安装前端依赖、FFmpeg 或配置 Chrome；混合运行时改动与未知输入保留完整工具。集成按同一选测边界识别文档，显式映射到运行时验收的 Markdown 不豁免全量锁。代码集成先等待全量锁，再取得集成锁，避免等待中的代码任务阻挡文档交付。
+纯文档 CI 在 Linux 执行 checks，但不安装前端依赖、FFmpeg 或配置 Chrome；混合运行时改动与未知输入保留完整工具。集成按同一选测边界识别文档，显式映射到运行时验收的 Markdown 不豁免全量锁。代码集成先等待全量锁，再取得集成锁，避免等待中的代码任务阻挡文档交付。
 
 依赖由 uv 按锁文件精确复现。源码安装用 `uv sync --locked`。开发、测试和构建在隔离工作树里建自己的 `.venv`，工作树不碰正在服务的环境；主检出的依赖同步与迁移由重启流程负责，见 [运行与配置](OPERATIONS.md) 的「刷新源码运行态」一节（ADR-0091）。
 
@@ -36,7 +36,7 @@ uv sync --locked --extra build
 
 Dependabot 的 PR 一律在本地接管，不在网页上合：
 
-依赖升级须同时提交派生产物。只改 npm 清单与锁文件时，vendor 版本记录或构建结果可能与 Git 中的文件不一致，相关门槛会拒绝；这本身不代表依赖存在兼容性问题。Test 工作流先完成所选前端检查，通过后才启动 Python、浏览器与 wheel 回归。缺少产物时先本地接管重算，不能跳过一致性检查后直接合并。
+依赖升级须同时提交派生产物。只改 npm 清单与锁文件时，vendor 版本记录或构建结果可能与 Git 中的文件不一致，相关门槛会拒绝；这本身不代表依赖存在兼容性问题。Test 工作流并行执行所选前端、Python、浏览器、wheel 与 Docker 检查，由完整验证结果统一汇总。缺少产物时先本地接管重算，不能跳过一致性检查后直接合并。
 
 - npm 的两份清单各有一层派生产物：根 `package.json` 对应 `web/vendor/**` 与 `web/index.html` 的版本注释，`frontend/package.json` 对应 `web/dist/` 的主界面与独立页面包。Dependabot 算不出这些，它的 workflow 拿到的 token 又是只读的，推不回 `dependabot/**`，所以 `npm run check:vendor` 或前端产物检查会失败。
 - uv 与 github-actions 没有派生产物，但 master 在本机集成、通常领先 origin。在网页上合会让两边分叉，回并要在主检出 master 上 merge，被 `scripts/githooks/` 拒收。
@@ -83,20 +83,28 @@ Python 静态检查使用开发依赖 Ruff，随每个正式测试域扫描全�
 | 场景 | 验证 |
 | --- | --- |
 | 本机修改 | 正式入口默认 `auto`，按影响域取并集；同代码、环境与范围的有效记录可复用 |
-| 普通 PR | Python 3.14：macOS 与 Windows 均按影响域验证 |
-| 普通主线提交 | Python 3.14：相对最近成功且属于当前祖先的主线 Test，选择 macOS、Windows 的影响域及适用前端、浏览器与 wheel |
-| 实际依赖、迁移、共享测试设施、未知影响面 | Windows 与 macOS 的 Python 3.14 全量 |
-| 手动 CI | 完整系统矩阵 |
-| wheel | Windows 与 macOS 各一次 Python 3.14 独立最小安装 |
-| Release | 复用同 SHA 主线成功 CI；Windows 独立 EXE 与 Apple Silicon、Intel DMG 分别构建和验收 |
+| 普通 PR | Linux Python 3.14 按影响域验证；适用前端、浏览器、wheel、镜像构建与容器冒烟并行执行 |
+| 普通主线提交 | 相对最近成功且属于当前祖先的主线 Test 选择 Linux 影响域；首次运行或无有效基线时 Linux 全量 |
+| 实际依赖、迁移、共享测试设施、未知影响面 | Linux Python 3.14 全量及全部适用任务 |
+| 手动 Test | Linux 全量，包含前端、浏览器、wheel 与 Docker 冒烟，不发布镜像 |
+| Desktop | 手动运行两桌面平台全量；push/PR 按 `ci_plan.desktop_systems` 的平台路径选择对应系统，普通应用与依赖改动不自动启动桌面 runner |
+| wheel | Test 在 Linux 独立最小安装；Desktop 在所选 Windows/macOS 系统独立最小安装 |
+| Release | 仅手动：在 master 构建并验收 Windows EXE、Apple Silicon/Intel DMG；在同提交版本标签上晋级桌面产物 |
+| Docker | Test 按镜像输入路径调用一次 build/smoke；版本标签或手动入口独立验收，可选推送，不依赖 Desktop/Release |
 
-Python 全量按文件稳定分片，Windows 四片、macOS 两片，每片使用独立 runner；汇总任务要求所有分片和计划选择的任务成功。分片子进程不签发记录。
+Python 全量按文件稳定分片，Linux 两片；手动桌面验证使用 Windows 四片、macOS 两片，每片使用独立 runner；汇总任务要求所有分片和计划选择的任务成功。分片子进程不签发记录。
 
 Test 工作流的 `web-bundle` 在 Ubuntu 上统一执行 tsc、lint、Vitest、构建及产物差异检查；lint 同时检查无诊断且扫描文件数大于零。CI 的 Python 任务把这三个工具用例交给前端任务，把两个真实浏览器用例交给浏览器矩阵；同模块的契约测试仍执行。任务身份由固定工作流与 job 名识别，未知任务和本机保留完整测试。承担部分 CI 职责的运行不签发本机测试记录。
 
-浏览器用例由 `web-e2e` 的六个 Windows runner 分担，每片有自己的服务、演示库与日志。`ci_plan.py` 按 `ci-browser-timings.json` 的实测秒数分配文件，新文件使用默认权重；每个文件恰好执行一次。每片经项目入口的 `-Focus` 运行分配的浏览器文件，首启文件始终归首次设置服务。它装 Node 24、前端依赖、ffmpeg，并经 `PEACH_E2E_CHROME` 指定 Chrome。本机浏览器入口与并发语义保持完整。
+浏览器用例由 `web-e2e` 的六个 Linux runner 分担，每片有自己的服务、演示库与日志。`ci_plan.py` 按 `ci-browser-timings.json` 的实测秒数分配文件，新文件使用默认权重；每个文件恰好执行一次。每片经项目入口的 `--focus` 运行分配的浏览器文件，首启文件始终归首次设置服务。它装 Node 24、前端依赖、ffmpeg，并经 `PEACH_E2E_CHROME` 指定 Chrome。本机浏览器入口与并发语义保持完整。
 
-PR 与普通主线计划按改动选择前端、vendor、wheel 与浏览器任务，文档只执行适用检查；实际依赖、未知影响、无已验证基线与手动验证包含全部任务。`frontend-ready` 汇总所选前端检查，失败时不启动后续完整回归；未选择前端任务的计划可正常执行。产物差异以文件统计显示。`verified` 根据计划核对必需任务，缺失、失败、取消及必需任务跳过均判失败。Actions 工作流本身由固定版 actionlint 检查语法、表达式、依赖与脚本。PR 更新取消同 PR 的过期运行，主线 Test 按提交各自保留结果。GitHub 的计划任务与 Python 任务使用同一个已验证基线，不以最近一次失败的推送提交代替。
+PR 与普通主线计划按改动选择前端、vendor、wheel 与浏览器任务，文档只执行适用检查；实际依赖、未知影响、无已验证基线与手动验证包含全部任务。`frontend-ready` 汇总所选前端检查，未选择的任务可以跳过；后端、浏览器、wheel 与镜像由同一计划独立启动。产物差异以文件统计显示。`verified` 保持「完整验证结果」这个固定 check 名，根据计划核对必需任务（包括所选 Docker build/smoke），缺失、失败、取消及必需任务跳过均判失败。Actions 工作流本身由固定版 actionlint 检查语法、表达式、依赖与脚本。PR 更新取消同 PR 的过期运行，主线 Test 按提交各自保留结果。GitHub 的计划任务与 Python 任务使用同一个已验证基线，不以最近一次失败的推送提交代替。
+
+GitHub 的 Test 和 Desktop 不使用顶层 `paths` 跳过整个 workflow，路径过滤由计划脚本在 job 层执行，保证汇总 check 始终产生结果。仓库保护规则应要求 Test 的「完整验证结果」，不要求动态矩阵行、可选前端或独立 Docker workflow 的 check。Desktop 的「桌面验证结果」独立反映平台改动验证，不是 Docker 发布依赖。维护者启用或修改保护规则前，应在 PR 的 Checks 中核对实际 check 名。
+
+uv、npm 沿用锁文件缓存；Docker 使用 `peach-linux-amd64` 的 GHA BuildKit 缓存。PR 新提交取消同 PR 的旧 Test、Desktop 与其中的镜像构建，发布和主线运行保留。Docker 工作流通过 `workflow_call` 接收 Test 调用，PR 不另起第二次镜像构建；版本标签由 Docker 自身触发，build/smoke 成功后才登录并推送。手动 `publish=false` 只验收，`source_ref` 可选择源码，缓存不代替容器冒烟。
+
+桌面发布先手动选择 Release 的 master 分支，完整桌面回归与制品冒烟通过后，再手动选择同一提交的版本标签发布。产物下载仅接受同 SHA、master 上成功的手动演练及有效 SHA-256，Docker 产物不参与桌面候选判定。GitHub `release_tag.py --ship` 只等待包含 Docker 冒烟的 Linux Test；GitLab 沿用三平台发布演练。
 
 独立 Star 图工作流只生成图表并写入专用分支，改动选择 `tooling` 与工作流检查；混合提交仍按其他文件补齐影响域，未知工作流保留全量判断。
 
@@ -104,7 +112,7 @@ Python 分片上传完整测试输出；浏览器分片上传 TAP、服务日志
 
 GitGud 流水线（`.gitlab-ci.yml`）的 `verify-linux`、`verify-windows`、`verify-macos` 在分支与合并请求上跑改动域加本平台的平台敏感用例：基线是最近一条成功的主线流水线里、作为本提交祖先的那个提交，由 `scripts/ci_scope.py` 判定；先用正式入口跑 `auto --base <基线>`，选域与退回全量的规则同本机 `auto`，再用 `-Focus` 跑 `PLATFORM_TESTS` 里本平台的用例。取不到基线（首次推送、强推、接口不可达）、改了 `.gitlab-ci.yml` 本身，或改动落到必须全量的面时只跑一次全量。版本提交（`chore(release): 版本 X`）的主线流水线是发布演练：三平台全量、媒体构建、桌面安装升级与镜像验收都成功后登记候选；`--ship` 等演练成功才打标签。标签核对同一提交、验证任务和产物 SHA-256，发布已验收的相同文件与镜像，不重新构建。候选身份、保留与回收见 [ADR-0127](adr/0127-verified-release-artifact-promotion.md)，全量范围见 [ADR-0119](adr/0119-mainline-changed-scope-release-full-suite.md)。
 
-演练先读取发布桶真实占用，媒体编译可与正式回归并行；构建清单齐备后在安装冒烟前核对包含暂存与公开副本的精确峰值，候选登记与正式上传仍复查。媒体缓存身份绑定固定源码、构建脚本、工具链、平台与架构，二进制和对应源码均逐文件校验；缓存不代替独立制品验收。Docker 发布核对演练记录的 image ID、提交与版本，在桌面包和 Release 就绪后推送。版本发布与覆盖升级验收不取消进行中的同目标运行；覆盖升级需明确选择目标版本及完整构建提交。
+演练先读取发布桶真实占用，媒体编译可与正式回归并行；构建清单齐备后在安装冒烟前核对包含暂存与公开副本的精确峰值，候选登记与正式上传仍复查。媒体缓存身份绑定固定源码、构建脚本、工具链、平台与架构，二进制和对应源码均逐文件校验；缓存不代替独立制品验收。GitLab Docker 发布核对演练记录的 image ID、提交与版本，在桌面包和 Release 就绪后推送。GitHub 的独立 Docker 发布见 [ADR-0129](adr/0129-linux-docker-ci-and-independent-desktop.md)。版本发布与覆盖升级验收不取消进行中的同目标运行；覆盖升级需明确选择目标版本及完整构建提交。
 
 浏览器用例覆盖 `frontend/e2e` 下全部 `*.test.ts`，包括子目录。`setup.test.ts` 由 `SetupE2ETests` 在首次设置服务上执行，其余文件在已配置的演示库服务上按文件并发、文件内串行。并发数取 `PEACH_E2E_CONCURRENCY`；未设时本机取逻辑核数的四分之一、上限 4，CI（`GITHUB_ACTIONS=true`）为 1。每个文件单独起一次 Node，限时 600 秒，取得自己的完整 TAP；空出的通道马上领下一个文件，没有批与批之间的等待。并发时文件按 `scripts/ci-browser-timings.json` 的实测秒数先长后短排队（没测过的按 30 秒算），测量动画、密度切换与等待态替换的文件（`tests/test_web_e2e.py` 的 `TIMING_SENSITIVE_SUITES`）在并发文件全部结束后逐个串行；并发为 1 时按设计决定、交互回归和路由冒烟的顺序逐个执行。任一文件失败或超时，整轮验证失败。并发的文件共用一个服务和演示库：用例触发的写请求只能落在别的用例不断言的状态上，否则用 `page.route` 拦下或归进时序敏感的串行文件。控制台在每个文件结束时输出成败与耗时；每个文件的 TAP 日志 `e2e-<文件名>.tap`、首启的 `setup.tap` 与服务访问日志 `serve.log` 保存在 `build/agent-verification/browser/`，CI 在测试结束后上传其中的 TAP 日志。
 
