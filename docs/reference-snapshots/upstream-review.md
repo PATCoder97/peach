@@ -4,6 +4,14 @@
 
 ## amane 桥
 
+### 设置语言版本的依赖复核
+
+2026-10-30 复核 [Pydantic 2.14.2](https://github.com/pydantic/pydantic/releases/tag/v2.14.2) 的两项安全修复，主应用与桥锁同步采用该版本及 `pydantic-core 2.50.2`。JSON 字段别名、额外字段与递归校验的行为由正式全量覆盖。两份锁的 `opentelemetry-api` 更新到 `1.45.2`，桥锁的 `genai-prices` 更新到 `0.2.0`；桥仍只使用爬虫，不调用模型服务。
+
+[Motion 14.8.0](https://github.com/motiondivision/motion/blob/main/CHANGELOG.md) 修复组件重新挂载后动画停在初始值的问题，公开入口与 Peach 使用的调用方式保持一致。[Lucide 1.64.0](https://github.com/lucide-icons/lucide/releases/tag/1.64.0) 增加字母与数字图标并调整部分货币图标，Peach 继续通过固定清单生成 SVG 资源与来源记录。
+
+amane 稳定版仍为 `v0.23.0 / 4230de458c3197e1e17b6c5b42cc385fc6961d15`；重新读取与固定提交的差集后，桥实际消费的站点、模型和网络接口没有变化，沿用下文的暂不采用结论。`main` 的未发布网络后端不进入本批发行依赖。
+
 ### 播放器镜像的依赖复核
 
 2026-10-29 将桥锁的 `openai` 从 `3.40.0` 更新到 `3.41.0`，amane 的固定提交与爬虫消费范围保持不变。前端构建使用的 `@sentry/vite-plugin` 从 `11.9.0` 更新到 `11.10.0`，其 Node 要求包含项目使用的 Node 24。两份 npm 审计未发现漏洞；桥类加载、前端构建与正式全量按更新后的锁文件验证。
