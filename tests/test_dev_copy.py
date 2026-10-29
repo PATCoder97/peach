@@ -98,10 +98,20 @@ class DevCopyTests(unittest.TestCase):
                 tray = SimpleNamespace(_action_lock=threading.Lock(), manager=Mock(),
                                        _readiness=lambda: Step('readiness', 'current', '服务已就绪'))
                 gate = TaskGate(blocking=(ActiveRun(1, 'test', 'manual', 'running', os.getpid(), None),)) if blocked else TaskGate()
-                with patch('peach.runtime_prepare.task_gate', return_value=gate):
+                write_status = runtime._write
+                terminal_locks = []
+
+                def record_status(root, data, tray=tray, write_status=write_status, terminal_locks=terminal_locks):
+                    if data['state'] in {'ready', 'error'}:
+                        terminal_locks.append(tray._action_lock.locked())
+                    return write_status(root, data)
+
+                with patch('peach.runtime_prepare.task_gate', return_value=gate), \
+                        patch.object(runtime, '_write', side_effect=record_status):
                     runtime.poll(tray, root)
                     self._wait_for_state(runtime, root, 'error' if blocked else 'ready')
                 self.assertEqual(tray.manager.restart.call_count, 0 if blocked else 1)
+                self.assertEqual(terminal_locks, [False])
                 self.assertFalse(tray._action_lock.locked())
 
     @staticmethod
