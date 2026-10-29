@@ -418,10 +418,9 @@ class BrowserSuiteWorkflowTests(unittest.TestCase):
 
     def test_the_browser_job_installs_every_prerequisite_and_runs_the_web_scope(self):
         job = self.job("web-e2e")
-        for step in ("runs-on: windows-latest", "actions/setup-node", 'node-version: "24"',
-                     "npm --prefix frontend ci", "FedericoCarboni/setup-ffmpeg",
-                     'ffmpeg-version: "9.0.1"',
-                     "PEACH_E2E_CHROME=", "& .\\scripts\\test.ps1 -Scope web"):
+        for step in ("runs-on: ubuntu-latest", "actions/setup-node", 'node-version: "24"',
+                     "npm --prefix frontend ci",
+                     "PEACH_E2E_CHROME=", "./scripts/test.sh web"):
             self.assertIn(step, job, f"web-e2e job 缺了 {step}")
 
     def test_the_summary_requires_browser_and_frontend_jobs(self):
@@ -430,12 +429,6 @@ class BrowserSuiteWorkflowTests(unittest.TestCase):
         for required in ("web-e2e", "web-bundle"):
             self.assertIn(required, [name.strip() for name in needs.group(1).split(",")])
 
-    def test_matrix_rows_beyond_core_install_what_the_node_suites_need(self):
-        job = self.job("python")
-        for step in ("actions/setup-node", "npm --prefix frontend ci",
-                     "FedericoCarboni/setup-ffmpeg", 'ffmpeg-version: "9.0.1"',
-                     "PEACH_E2E_CHROME="):
-            self.assertIn(step, job, f"python 矩阵缺了 {step}，全量行上的用例会判失败")
 
 
 if __name__ == "__main__":

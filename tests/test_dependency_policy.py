@@ -307,7 +307,6 @@ class DependencyPolicyTests(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" / "test.yml").read_text(
             encoding="utf-8")
         self.assertIn("npm run check:vendor", workflow)
-        self.assertIn("& .\\scripts\\test.ps1", workflow)
         self.assertIn("./scripts/test.sh", workflow)
 
     def test_every_npm_manifest_under_dependabot_has_a_takeover_recipe(self):
@@ -510,8 +509,6 @@ class DependencyPolicyTests(unittest.TestCase):
             self.assertIn("astral-sh/setup-uv@", source)
             self.assertIn("cache-dependency-glob: uv.lock", source)
             self.assertIn("uv sync --locked", source)
-            self.assertIn("uv pip check --python .venv/Scripts/python.exe", source)
-            self.assertIn("if ($LASTEXITCODE -ne 0)", source)
         self.assertIn("uv pip check --python .venv/bin/python", workflow)
         self.assertIn("uv build --wheel --out-dir wheelhouse", workflow)
         self.assertIn("python -m pip install --no-cache-dir wheelhouse/*.whl", workflow)

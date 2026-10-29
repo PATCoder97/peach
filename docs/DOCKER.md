@@ -12,9 +12,9 @@ Docker 不使用桌面托盘。在网页配置中添加媒体目录时，只需�
 
 在自己的分叉仓库中，将 `vX.Y.Z` 格式的 Git 标签推送到 GitHub，即自动构建标签指向的源码、验收临时容器，并推送 `<DOCKERHUB_USERNAME>/peach:X.Y.Z`。例如 `v0.51.1` 对应 `peach:0.51.1`。GitHub 网页创建并发布指向该提交的新版本标签也可触发，无需手动运行 Actions。
 
-标签指向的提交须已包含此工作流和要发布的界面改动；发布英语与越南语界面时，两部分改动都须先纳入该提交。工作流使用标签实际源码，不会自动改用另一条分支。普通 PR 和主线推送只做验收。
+标签指向的提交须属于 master 历史，且同一提交的主线 Test 已成功；工作流在构建前核对这两项。该提交须包含此工作流和要发布的界面改动；发布英语与越南语界面时，两部分改动都须先纳入该提交。工作流使用标签实际源码，不会自动改用另一条分支。普通 PR 和主线推送按路径选择镜像验收，由 Test 调用 Docker，不推送镜像。
 
-分叉仓库使用 `release_tag.py --ship --apply` 时，先等待同一主线提交的 Test 和 Docker 验收通过，再推送版本标签。版本提交和标签均不自动启动完整桌面发行流程；主仓库的版本号与 `edge` 继续通过完整 Release 验收并发布。手动运行 Release 仍会构建桌面制品。
+GitHub 使用 `release_tag.py --ship --apply` 时，先等待包含 Docker 冒烟的同提交主线 Test 成功，再推送版本标签。主仓库和分叉仓库的镜像发布都不等待 Windows/macOS 或桌面 Release；主仓库版本镜像同时更新 `edge`。桌面 Release 仅手动执行：选择 master 时构建并验收桌面制品，选择同提交的版本标签时晋级原制品。工作流条件与 required check 说明见 [测试与依赖](TESTING.md#验证频率)。
 
 ### 手动发布分支
 
@@ -188,7 +188,7 @@ Linux 容器不读取用户电脑上的浏览历史，也不包含交互式浏�
 
 ## 镜像发布
 
-构建使用官方 Python `3.14.8-slim-trixie` 与 uv `0.13.1`，应用依赖与 amane 独立依赖分别由各自的 `uv.lock` 锁定。应用以非 editable 包安装，包含 Web 与迁移资源。镜像以 UID/GID 1000 运行，内置 FFmpeg、FFprobe、OpenSSL 和 amane 独立环境。uv 与 Git 只用于构建阶段。构建上下文只允许代码与资源，不包含工作树、媒体、真实 Peach 数据库或凭据。
+构建使用 [Dockerfile](../Dockerfile) 固定的官方 Python 与 uv 镜像，应用依赖与 amane 独立依赖分别由各自的 `uv.lock` 锁定。应用以非 editable 包安装，包含 Web 与迁移资源。镜像以 UID/GID 1000 运行，内置 FFmpeg、FFprobe、OpenSSL 和 amane 独立环境。uv 与 Git 只用于构建阶段。构建上下文只允许代码与资源，不包含工作树、媒体、真实 Peach 数据库或凭据。
 
 GitHub Actions 的 `Docker` 工作流先构建并运行临时卷验收，通过后发布。仓库变量 `DOCKERHUB_USERNAME` 和机密 `DOCKERHUB_TOKEN` 用于 Docker Hub 发布；机密只保存在 GitHub，不进入项目文件。未配置发布身份时仍执行构建验收。ARM 镜像需通过同等运行验收后再加入发布。
 

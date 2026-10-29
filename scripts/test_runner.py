@@ -634,9 +634,9 @@ CI_BROWSER_TESTS = frozenset({
 
 
 def ci_frontend_delegated() -> bool:
-    """Test 工作流的 Python 与浏览器任务由 web-bundle 承担前端工具检查。"""
+    """Linux Test 承担前端工具和浏览器检查，桌面保留 Python 契约。"""
     return (os.environ.get("GITHUB_ACTIONS") == "true"
-            and os.environ.get("GITHUB_WORKFLOW") == "Test"
+            and os.environ.get("GITHUB_WORKFLOW") in {"Test", "Desktop", "Release"}
             and os.environ.get("GITHUB_JOB") in {"python", "web-e2e"})
 
 

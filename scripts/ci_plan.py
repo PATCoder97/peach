@@ -39,6 +39,8 @@ def validate_results(results: dict, required: list[str], *, phase: str = "comple
         mandatory = {"plan"}
     elif phase == "complete":
         mandatory = {"plan", "python", "workflow-lint", "frontend-ready"}
+    elif phase == "desktop":
+        mandatory = {"plan"}
     else:
         raise ValueError(f"未知验证阶段：{phase}")
     if not mandatory.issubset(required):
@@ -69,13 +71,33 @@ def browser_input(path: str) -> bool:
         or "web" in runner.scopes_for_changes([path])[0]
 
 
-def plan(event: str, paths: list[str], contents: dict | None = None) -> dict:
-    from . import test_runner as runner
-    scopes, _ = runner.scopes_for_changes(paths, contents=contents)
-    wide = event == "workflow_dispatch" or "full" in scopes
-    runtime_tools = wide or scopes != ("checks",)
+def desktop_systems(paths: list[str]) -> list[str]:
+    """平台入口、打包脚本与直接回归触发对应桌面平台。"""
+    systems = set()
+    for path in paths:
+        name = Path(path).name.lower()
+        if path in {".github/workflows/desktop.yml", ".github/workflows/release.yml"}:
+            systems.update(("windows-latest", "macos-latest"))
+        elif any(word in name for word in ("windows", "win32")) or path.endswith(".ps1"):
+            systems.add("windows-latest")
+        elif any(word in name for word in ("macos", "darwin")):
+            systems.add("macos-latest")
+        elif path in {"peach.spec", "setup.py"} or path.startswith((
+                "scripts/installer/", "resources/setup/", "src/peach/tray", "src/peach/platform",
+                "src/peach/mount", "src/peach/certs", "src/peach/process", "src/peach/desktop",
+                "src/peach/standalone_update", "src/peach/folder_picker", "src/peach/local_playback",
+                "src/peach/netwatch", "src/peach/ffmpeg", "src/peach/hardware_transcode",
+                "tests/test_tray", "tests/test_platform", "tests/test_mount", "tests/test_certs",
+                "tests/test_process", "tests/test_desktop", "tests/test_standalone_update",
+                "tests/test_folder_picker", "tests/test_local_playback", "tests/test_netwatch")):
+            systems.update(("windows-latest", "macos-latest"))
+    return sorted(systems)
+
+
+def python_matrix(systems: list[str], *, wide: bool, runtime_tools: bool) -> dict:
+    """全量按平台分片，定向域在一台 runner 内运行。"""
     rows = []
-    for system in ("macos-latest", "windows-latest"):
+    for system in systems:
         scope = "full" if wide else "auto"
         # 独立 runner 承担分片，避免共享文件、端口和全量证据锁。
         shards = (4 if system == "windows-latest" else 2) if scope == "full" else 1
@@ -83,10 +105,19 @@ def plan(event: str, paths: list[str], contents: dict | None = None) -> dict:
             rows.append({"os": system, "python": "3.14", "scope": scope,
                          "runtime_tools": runtime_tools,
                          "shard_index": index, "shard_count": shards})
-    wheels = [{"os": "windows-latest", "python": "3.14"},
-              {"os": "macos-latest", "python": "3.14"}]
-    shared = wide
+    return {"include": rows}
+
+
+def plan(event: str, paths: list[str], contents: dict | None = None, *, target: str = "linux") -> dict:
+    from . import test_runner as runner
+    scopes, _ = runner.scopes_for_changes(paths, contents=contents)
+    wide = event == "workflow_dispatch" or "full" in scopes
     effective = runtime_paths(paths, contents)
+    systems = (["macos-latest", "windows-latest"] if event == "workflow_dispatch"
+               else desktop_systems(effective)) if target == "desktop" else ["ubuntu-latest"]
+    matrix = python_matrix(systems, wide=wide, runtime_tools=wide or scopes != ("checks",))
+    wheels = [{"os": system, "python": "3.14"} for system in systems]
+    shared = wide
     browser = shared or any(browser_input(path) for path in effective)
     frontend = shared or any(path.startswith(("frontend/", "web/dist/", ".github/workflows/test.yml"))
                              or path == "scripts/copy-rules.json" for path in effective)
@@ -95,21 +126,33 @@ def plan(event: str, paths: list[str], contents: dict | None = None) -> dict:
                                        "scripts/vendor_web_dependencies.mjs"} for path in effective)
     wheel = shared or "packaging" in scopes or any(path.startswith(("src/", "migrations/", "web/", "resources/"))
                                                  for path in effective)
+    docker = shared or any(path in {"Dockerfile", ".dockerignore", "compose.yaml", "pyproject.toml", "uv.lock",
+                                   "setup.py", "MANIFEST.in", "README.md", "scripts/smoke_docker.py",
+                                   "scripts/write_reporting_config.py", "scripts/build_amane_runtime.py",
+                                   "scripts/amane_bridge.spec", ".github/workflows/docker.yml",
+                                   ".github/workflows/test.yml"}
+                           or path.startswith(("src/", "migrations/", "web/", "resources/", "tools/amane-bridge/"))
+                           for path in paths)
+    if target == "desktop":
+        required = ["plan", "python", "wheel-build", "wheel-smoke"] if systems else ["plan"]
+        return {"matrix": matrix, "wheel_matrix": {"include": wheels},
+                "active": bool(systems), "required_jobs": required, "wide": wide}
     required = ["plan", "python", "workflow-lint", "frontend-ready"]
     required += [name for enabled, names in ((browser, ["web-e2e"]), (frontend, ["web-bundle"]),
-                                            (vendor, ["web-vendor"]), (wheel, ["wheel-build", "wheel-smoke"]))
+                                            (vendor, ["web-vendor"]), (wheel, ["wheel-build", "wheel-smoke"]),
+                                            (docker, ["docker"]))
                  if enabled for name in names]
-    return {"matrix": {"include": rows}, "wheel_matrix": {"include": wheels}, "wide": wide,
+    return {"matrix": matrix, "wheel_matrix": {"include": wheels}, "wide": wide,
             "browser_matrix": browser_matrix(), "browser": browser, "frontend": frontend,
-            "vendor": vendor, "wheel": wheel, "required_jobs": required}
+            "vendor": vendor, "wheel": wheel, "docker": docker, "required_jobs": required}
 
 
-def github_verified_base(root: Path) -> str:
+def github_verified_base(root: Path, workflow: str = "test.yml") -> str:
     """最近成功的主线 Test 必须属于当前祖先，失败区间继续包含在差异内。"""
     from .ci_scope import ancestor_of_head, verified_base
     repo = os.environ['GITHUB_REPOSITORY']
     payload = subprocess.check_output(
-        ['gh', 'api', f'repos/{repo}/actions/workflows/test.yml/runs?branch=master&event=push&status=success&per_page=20'],
+        ['gh', 'api', f'repos/{repo}/actions/workflows/{workflow}/runs?branch=master&event=push&status=success&per_page=20'],
         text=True, encoding='utf-8')
     runs = json.loads(payload)['workflow_runs']
     rows = [{'sha': run['head_sha'], 'status': 'success'} for run in runs
@@ -125,8 +168,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--event", choices=("push", "pull_request", "workflow_dispatch"))
     parser.add_argument("--base")
+    parser.add_argument("--target", choices=("linux", "desktop"), default="linux")
     parser.add_argument("--verify-results", action="store_true")
-    parser.add_argument("--phase", choices=("complete", "frontend"), default="complete")
+    parser.add_argument("--phase", choices=("complete", "frontend", "desktop"), default="complete")
     args = parser.parse_args()
     if args.verify_results:
         validate_results(json.loads(os.environ["RESULTS"]), json.loads(os.environ["REQUIRED_JOBS"]),
@@ -138,14 +182,21 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     base = args.base
     try:
-        if args.event == 'push':
+        if args.event == 'push' and args.target == 'linux':
             base = github_verified_base(root)
+        elif args.event == 'push' and args.target == 'desktop':
+            try:
+                base = github_verified_base(root, "desktop.yml")
+            except (OSError, KeyError, ValueError, subprocess.CalledProcessError) as error:
+                print(f"桌面已验证基线未取得，比较本次推送基线：{error}", file=sys.stderr)
         paths = runner.changed_files(root, base)
-        result = plan(args.event, paths, runner.changed_contents(root, base, paths))
+        result = plan(args.event, paths, runner.changed_contents(root, base, paths), target=args.target)
     except (OSError, KeyError, ValueError, subprocess.CalledProcessError) as error:
+        if args.target == "desktop" and args.event != "workflow_dispatch":
+            raise ValueError("桌面改动范围未取得，不能判为无需验证") from error
         # 首次推送、浅克隆或已删除基线：扩大验证，不能把无 diff 当成无需测试。
         print(f'已验证基线未取得，使用全量：{error}', file=sys.stderr)
-        result = plan("workflow_dispatch", [])
+        result = plan("workflow_dispatch", [], target=args.target)
     result['base'] = base
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if output := os.environ.get("GITHUB_OUTPUT"):
