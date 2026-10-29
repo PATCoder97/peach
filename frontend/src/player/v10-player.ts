@@ -59,23 +59,45 @@ export const createV10Player: VideojsFactory = (video, options) => {
   const signal = cleanup.signal;
   let disposed = false, sourceGeneration = 0, playGeneration = 0, expectedDuration = 0, source: PlayerSource = { src: '', type: '' }, failure: unknown = null;
   let idle: ReturnType<typeof setTimeout> | undefined;
+  const inactive = () => {
+    if (idle) clearTimeout(idle);
+    root.classList.remove('vjs-user-active'); root.classList.add('vjs-user-inactive');
+  };
   const active = () => {
     root.classList.add('vjs-user-active'); root.classList.remove('vjs-user-inactive');
     if (idle) clearTimeout(idle);
     if (!video.paused) idle = setTimeout(() => {
       if (root.matches(':focus-within,:hover') && root.querySelector('[aria-expanded="true"]')) return;
-      root.classList.remove('vjs-user-active'); root.classList.add('vjs-user-inactive');
+      inactive();
     }, 2500);
   };
   root.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') active() }, { signal });
   root.addEventListener('focusin', active, { signal });
+  let touchGesture = false;
+  root.addEventListener('pointerdown', event => { touchGesture = event.pointerType === 'touch' }, { signal });
   if (options.controls !== false) {
-    video.addEventListener('click', active, { signal });
+    let touchActive: boolean | undefined;
+    const isBlank = (target: EventTarget | null) => target === video || target === container || target === media
+      || target instanceof Element && (target.classList.contains('vjs-peach-transport') || target.hasAttribute('data-player-transport-gap'));
+    container.addEventListener('pointerdown', event => {
+      touchActive = event.pointerType === 'touch' && isBlank(event.target)
+        ? root.classList.contains('vjs-user-active') : undefined;
+    }, { signal });
+    container.addEventListener('pointercancel', () => { touchActive = undefined }, { signal });
+    container.addEventListener('click', event => {
+      const wasActive = touchActive ?? root.classList.contains('vjs-user-active');
+      touchActive = undefined;
+      if (!isBlank(event.target)) return;
+      const touch = (event as PointerEvent).pointerType === 'touch'
+        || window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      if (touch && wasActive) inactive();
+      else active();
+    }, { signal });
     container.addEventListener('click', event => {
       if ((event.target as Element).closest('button,media-play-button,media-mute-button,media-fullscreen-button,media-pip-button,[role="slider"]')) active();
     }, { signal, capture: true });
   }
-  video.addEventListener('dblclick', () => root.querySelector<HTMLElement>('media-fullscreen-button')?.click(), { signal });
+  video.addEventListener('dblclick', () => { if (!touchGesture) root.querySelector<HTMLElement>('media-fullscreen-button')?.click() }, { signal });
   const update = () => {
     root.classList.toggle('vjs-paused', video.paused); root.classList.toggle('vjs-playing', !video.paused);
     root.classList.toggle('vjs-ended', video.ended); root.classList.toggle('vjs-has-started', video.currentTime > 0 || !video.paused);

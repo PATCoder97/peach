@@ -112,7 +112,7 @@ describe('Video.js 10 播放链', () => {
   });
 
   for (const viewport of VIEWPORTS) {
-    it(`${viewport.name}：点画面只显示控件，中央按钮暂停并前后跳转 30 秒`, { timeout: 60_000 }, async () => {
+    it(`${viewport.name}：画面控制按钮显隐，中央按钮暂停并前后跳转 30 秒`, { timeout: 60_000 }, async () => {
       const opened = await visit(browser, `/assets/${requiredEnv('PEACH_E2E_ITEM')}`, viewport, async page => {
         await page.addInitScript(() => {
           localStorage.setItem('peach.locale.v1', 'vi');
@@ -152,8 +152,27 @@ describe('Video.js 10 播放链', () => {
         else await video.click({ position });
         await controls.waitFor({ state: 'visible' });
         assert.equal(await video.evaluate((node: HTMLVideoElement) => node.paused), false);
+        if (viewport.mobile) {
+          await video.tap({ position });
+          await controls.waitFor({ state: 'hidden' });
+          assert.equal(await video.evaluate((node: HTMLVideoElement) => node.paused), false);
+          await video.tap({ position });
+          await controls.waitFor({ state: 'visible' });
+        }
         await controls.getByRole('button', { name: 'Tạm dừng', exact: true }).click();
         assert.equal(await video.evaluate((node: HTMLVideoElement) => node.paused), true);
+        if (viewport.mobile) {
+          const back = await controls.locator('[data-player-skip="-30"]').boundingBox();
+          const play = await controls.locator('[data-player-transport-play]').boundingBox();
+          assert.ok(back && play);
+          const gap = { x: (back.x + back.width + play.x) / 2, y: play.y + play.height / 2 };
+          await page.touchscreen.tap(gap.x, gap.y);
+          await controls.waitFor({ state: 'hidden' });
+          assert.equal(await player.locator('.vjs-control-bar').evaluate(node => getComputedStyle(node).opacity), '0');
+          assert.equal(await video.evaluate((node: HTMLVideoElement) => node.paused), true);
+          await video.tap({ position });
+          await controls.waitFor({ state: 'visible' });
+        }
         await video.evaluate((node: HTMLVideoElement) => { node.currentTime = 40 });
         await page.waitForFunction(() => !document.querySelector<HTMLVideoElement>('#stage video.vjs-tech')!.seeking);
         await controls.getByRole('button', { name: 'Tiến 30 giây', exact: true }).click();

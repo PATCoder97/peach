@@ -25,6 +25,59 @@ function mounted(controls = false) {
 }
 
 describe('Video.js 10 播放会话', () => {
+  it('连续触屏点击保持画面显隐手势，鼠标双击进入全屏', () => {
+    const { video, player } = mounted(true);
+    const fullscreen = vi.spyOn(player.el().querySelector<HTMLElement>('media-fullscreen-button')!, 'click');
+    video.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
+    video.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(fullscreen).not.toHaveBeenCalled();
+    video.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'mouse', bubbles: true }));
+    video.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(fullscreen).toHaveBeenCalledOnce();
+    player.dispose();
+  });
+
+  it.each([true, false])('触屏点击空白交替隐藏与显示控件，保持 paused=%s', paused => {
+    vi.useFakeTimers();
+    const { video, player } = mounted(true);
+    Object.defineProperty(video, 'paused', { configurable: true, value: paused });
+    const pause = vi.spyOn(video, 'pause').mockImplementation(() => {});
+    const play = vi.spyOn(video, 'play').mockResolvedValue(undefined);
+    const tap = (target: Element) => target.dispatchEvent(new PointerEvent('click', { pointerType: 'touch', bubbles: true }));
+    tap(video);
+    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
+    vi.advanceTimersByTime(3000);
+    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
+    video.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
+    video.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    tap(video);
+    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
+    tap(player.el().querySelector('media-play-button')!);
+    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
+    tap(video);
+    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
+    expect(play).not.toHaveBeenCalled();
+    expect(pause).not.toHaveBeenCalled();
+    player.dispose();
+  });
+
+  it('中央控件间隙切换显隐，跳转按钮保持控件显示', () => {
+    const { video, player } = mounted(true);
+    mountPlayerTransport(player, video, player.el().querySelector<HTMLElement>('.vjs-control-bar')!);
+    Object.defineProperty(video, 'duration', { configurable: true, value: 100 });
+    video.dispatchEvent(new Event('loadedmetadata'));
+    const group = player.el().querySelector<HTMLElement>('.vjs-peach-transport')!;
+    const tap = (target: Element) => target.dispatchEvent(new PointerEvent('click', { pointerType: 'touch', bubbles: true }));
+    tap(group.querySelector('[data-player-transport-gap]')!);
+    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
+    tap(group);
+    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
+    tap(group.querySelector('[data-player-skip="30"]')!);
+    expect(video.currentTime).toBe(30);
+    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
+    player.dispose();
+  });
+
   it.each([true, false])('点击画面显示控件并保持 paused=%s，触屏移动不抢先唤起控件', paused => {
     const { video, player } = mounted(true);
     Object.defineProperty(video, 'paused', { configurable: true, value: paused });

@@ -34,20 +34,21 @@
 .video-js.vjs-waiting:not(.vjs-paused) .vjs-loading-spinner{display:block}
 .video-js .vjs-error-display{display:none;position:absolute;inset:0;pointer-events:none}
 .video-js.vjs-error .vjs-error-display{display:flex;align-items:center;justify-content:center}
-.video-js.vjs-user-inactive.vjs-playing .vjs-control-bar{opacity:0;pointer-events:none}
-.vjs-peach-transport{position:absolute;z-index:18;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:24px}
-.vjs-peach-transport>button{display:grid;place-items:center;position:relative;flex:none;width:52px;height:52px;padding:0;border:0;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;touch-action:manipulation}
+.video-js.vjs-user-inactive .vjs-control-bar{opacity:0;pointer-events:none}
+.vjs-peach-transport{position:absolute;z-index:18;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center}
+.vjs-peach-transport [data-player-transport-gap]{align-self:stretch;width:24px;touch-action:manipulation}
+.vjs-peach-transport>button{display:grid;place-items:center;position:relative;flex:none;width:52px;height:52px;padding:0;border:0;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;touch-action:manipulation;pointer-events:auto}
 .vjs-peach-transport>button:focus-visible{outline:2px solid var(--tungsten);outline-offset:3px}
 .vjs-peach-transport>button:disabled{opacity:.45;cursor:default}
 .vjs-peach-transport svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 .vjs-peach-transport [data-player-transport-play]{width:64px;height:64px}
 .vjs-peach-transport [data-player-transport-play] svg{width:42px;height:42px;fill:currentColor;stroke:none}
 .vjs-peach-transport [data-player-skip] span{position:absolute;top:21px;left:0;right:0;text-align:center;font-size:10px;font-weight:600;pointer-events:none}
-.video-js.vjs-user-inactive.vjs-playing .vjs-peach-transport{visibility:hidden;pointer-events:none}
+.video-js.vjs-user-inactive .vjs-peach-transport{visibility:hidden;pointer-events:none}
 .video-js:has(.vjs-peach-settings-menu[aria-hidden="false"]) .vjs-peach-transport,.video-js.vjs-error .vjs-peach-transport{visibility:hidden;pointer-events:none}
 .video-js.vjs-waiting:not(.vjs-paused) .vjs-peach-transport{visibility:hidden;pointer-events:none}
 [data-miniplayer-frame] .vjs-peach-transport{display:none}
-@media(max-width:480px){.vjs-peach-transport{gap:16px}}
+@media(max-width:480px){.vjs-peach-transport [data-player-transport-gap]{width:16px}}
 .video-js.vjs-fullscreen{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-height:none!important}
 .video-js media-container:fullscreen{width:100vw;height:100vh;background:#000}
 .video-js .vjs-modal-dialog-content{position:absolute}
