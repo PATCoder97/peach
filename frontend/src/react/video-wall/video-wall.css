@@ -128,7 +128,7 @@ body[data-wall-open] :is(body>header,[data-network-banner],#drawer,#main,#catalo
 .peach-react [data-wall-player] { position:absolute; inset:0; width:100%; height:100%; }
 .peach-react [data-wall-player][hidden] { display:none; }
 .peach-react [data-wall-player] .video-js { width:100%; height:100%; background:transparent; }
-.peach-react [data-wall-player] :is(.vjs-control-bar,.vjs-big-play-button,.vjs-title-bar) { display:none; }
+.peach-react [data-wall-player] :is(.vjs-control-bar,.vjs-big-play-button,.vjs-title-bar,.vjs-peach-transport) { display:none; }
 .peach-react [data-wall-player] :is([data-player-stats-button],[data-player-net],[data-player-stats]) { display:none; }
 .peach-react [data-wall-focus-actions] { position:absolute; bottom:22px; left:24px; right:18px; display:flex; flex-direction:column; gap:10px; z-index:3; }
 .peach-react [data-wall-control-row] { display:flex; align-items:center; gap:6px; }

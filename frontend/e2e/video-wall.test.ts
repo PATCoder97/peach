@@ -527,11 +527,11 @@ describe('播放墙的浏览与详情', () => {
           title:(title.getBoundingClientRect().top - box.top) / box.height,
           font:parseFloat(getComputedStyle(title.querySelector('b')!).fontSize),
           close:getComputedStyle(root.querySelector('[data-wall-focus-close]')!).backgroundColor,
-          overlays:[...root.querySelectorAll('[data-player-stats-button],[data-player-net],[data-player-stats]')].map(node => getComputedStyle(node).display) };
+          overlays:[...root.querySelectorAll('[data-player-stats-button],[data-player-net],[data-player-stats],.vjs-peach-transport')].map(node => getComputedStyle(node).display) };
       });
       assert.match(playingStyle.blur, /blur\(36px\)/); assert.ok(playingStyle.title < .2);
       assert.equal(playingStyle.font, 22); assert.equal(playingStyle.close, 'rgba(0, 0, 0, 0.66)');
-      assert.equal(playingStyle.overlays.length, 3); assert.ok(playingStyle.overlays.every(value => value === 'none'));
+      assert.equal(playingStyle.overlays.length, 4); assert.ok(playingStyle.overlays.every(value => value === 'none'));
       await page.getByRole('button', { name:'暂停', exact:true }).click();
       await page.waitForFunction(() => document.querySelector<HTMLVideoElement>('[data-wall-player] video')?.paused);
       await page.getByRole('button', { name:'播放', exact:true }).click();

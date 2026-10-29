@@ -27,6 +27,7 @@ const sharedFixtureTag = '巨乳';
 const fixtureText: Readonly<Record<string, readonly string[]>> = {
   ...Object.fromEntries(['/performers', '/creators', '/studios', '/agencies', '/series', '/tags'].map(route => [route, indexSourceText])),
   '/': ['河畔慢跑.mp4', '阳台花园.mp4', '车站的傍晚.mp4', '雪后山径.mp4', sharedFixtureTag],
+  '/taste': [sharedFixtureTag],
   '/junk-files': [sharedFixtureTag],
   '/review': ['厨房里的周末', '陈知夏', '苏念安', '极光影像', '慢生活厨房', '横屏', '料理', '音乐现场',
     '雨后街道', '顾清和', '江小满', '海岸线工作室', '城市漫步', '竖屏', '自然风景', '湖面航拍', '夜景延时', sharedFixtureTag],
