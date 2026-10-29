@@ -100,7 +100,7 @@ Test 工作流的 `web-bundle` 在 Ubuntu 上统一执行 tsc、lint、Vitest、
 
 PR 与普通主线计划按改动选择前端、vendor、wheel 与浏览器任务，文档只执行适用检查；实际依赖、未知影响、无已验证基线与手动验证包含全部任务。`frontend-ready` 汇总所选前端检查，未选择的任务可以跳过；后端、浏览器、wheel 与镜像由同一计划独立启动。产物差异以文件统计显示。`verified` 保持「完整验证结果」这个固定 check 名，根据计划核对必需任务（包括所选 Docker build/smoke），缺失、失败、取消及必需任务跳过均判失败。Actions 工作流本身由固定版 actionlint 检查语法、表达式、依赖与脚本。PR 更新取消同 PR 的过期运行，主线 Test 按提交各自保留结果。GitHub 的计划任务与 Python 任务使用同一个已验证基线，不以最近一次失败的推送提交代替。
 
-GitHub 的 Test 和 Desktop 不使用顶层 `paths` 跳过整个 workflow，路径过滤由计划脚本在 job 层执行，保证汇总 check 始终产生结果。仓库保护规则应要求 Test 的「完整验证结果」，不要求动态矩阵行、可选前端或独立 Docker workflow 的 check。Desktop 的「桌面验证结果」独立反映平台改动验证，不是 Docker 发布依赖。维护者启用或修改保护规则前，应在 PR 的 Checks 中核对实际 check 名。
+GitHub 的 Test 和 Desktop 不使用顶层 `paths` 跳过整个 workflow，路径过滤由计划脚本在 job 层执行，保证汇总 check 始终产生结果。仓库保护规则可要求 Test 的「完整验证结果」与 Desktop 的「桌面验证结果」两个固定 check；没有平台改动时，后者仅核对计划后成功。不要要求动态矩阵行、可选前端或独立 Docker workflow 的 check。桌面汇总拒绝所选平台失败，但不是 Docker 发布依赖。维护者启用或修改保护规则前，应在 PR 的 Checks 中核对实际 check 名。
 
 uv、npm 沿用锁文件缓存；Docker 使用 `peach-linux-amd64` 的 GHA BuildKit 缓存。PR 新提交取消同 PR 的旧 Test、Desktop 与其中的镜像构建，发布和主线运行保留。Docker 工作流通过 `workflow_call` 接收 Test 调用，PR 不另起第二次镜像构建；版本标签由 Docker 自身触发，build/smoke 成功后才登录并推送。手动 `publish=false` 只验收，`source_ref` 可选择源码，缓存不代替容器冒烟。
 
