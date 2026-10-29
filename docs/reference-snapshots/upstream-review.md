@@ -4,6 +4,12 @@
 
 ## amane 桥
 
+### 播放器镜像的依赖复核
+
+2026-10-29 将桥锁的 `openai` 从 `3.40.0` 更新到 `3.41.0`，amane 的固定提交与爬虫消费范围保持不变。前端构建使用的 `@sentry/vite-plugin` 从 `11.9.0` 更新到 `11.10.0`，其 Node 要求包含项目使用的 Node 24。两份 npm 审计未发现漏洞；桥类加载、前端构建与正式全量按更新后的锁文件验证。
+
+同批将 `lucide-static` 从 `1.62.0` 更新到 `1.63.0`，`healthicons` 从 `2.0.0` 更新到 `3.0.0`。[Health Icons 3.0.0](https://github.com/resolvetosavelives/healthicons/releases/tag/v3.0.0) 的重命名涉及表情与部分医疗图标，不涉及 Peach 消费的 `outline-24px/contraceptives/sperm.svg`；原始 SVG 路径与许可证读取通过 vendor 构建核对，未接入上游新增的框架组件。
+
 ### 多语言镜像的传递依赖复核
 
 2026-10-28 将主锁的 `urllib3-future` 从 `2.25.904` 更新到 `2.25.905`，两份锁的 `tzdata` 从 `2026.5` 更新到 `2026.6`；桥锁的 `pydantic-settings` 从 `2.16.1` 更新到 `2.16.2`、`ag-ui-protocol` 从 `0.1.22` 更新到 `1.0.0`。桥仍只消费爬虫与网络接口，不引入 AG-UI 服务端或协议接口。独立锁环境的 `bridge.py --self-check` 已成功加载全部 20 个站点类；依赖策略与桥契约的定向回归通过。该检查不代替最终镜像与全量回归。

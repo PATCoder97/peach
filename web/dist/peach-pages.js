@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "dcbf6f1d-651b-448e-b125-f2bce3a171bc", e._sentryDebugIdIdentifier = "sentry-dbid-dcbf6f1d-651b-448e-b125-f2bce3a171bc");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "16aad0a6-7851-4bb3-89c9-a7b3b31e4ea9", e._sentryDebugIdIdentifier = "sentry-dbid-16aad0a6-7851-4bb3-89c9-a7b3b31e4ea9");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -10548,6 +10548,7 @@ var D = /* @__PURE__ */ o(((e) => {
 	其它文件: ["Other file", "Tệp khác"],
 	网址快捷方式: ["Web shortcut", "Lối tắt trang web"]
 }, me = {
+	播放控制: ["Playback controls", "Điều khiển phát video"],
 	播放器菜单: ["Player menu", "Menu trình phát"],
 	循环播放: ["Loop", "Phát lặp lại"],
 	展开: ["Expand", "Mở rộng"],
@@ -11769,6 +11770,12 @@ var D = /* @__PURE__ */ o(((e) => {
 	"已把关注里的 {value0} 记到 {value1} 名下": ["Linked followed creator {value0} to {value1}", "Đã liên kết người sáng tạo theo dõi {value0} với {value1}"],
 	"已添加标签「{value0}」": ["Added tag “{value0}”", "Đã thêm thẻ “{value0}”"],
 	"已删除标签「{value0}」": ["Deleted tag “{value0}”", "Đã xóa thẻ “{value0}”"],
+	"浏览兴趣以{category}为主，Peach 中稳定出现{tags}。": ["Browsing interests mainly focus on {category}; {tags} appear consistently in Peach.", "Sở thích duyệt web chủ yếu là {category}; {tags} xuất hiện thường xuyên trong Peach."],
+	"浏览兴趣目前以{category}为主，Peach 观看证据仍偏少。": ["Browsing interests currently focus on {category}; viewing evidence in Peach is still limited.", "Sở thích duyệt web hiện chủ yếu là {category}; bằng chứng xem trong Peach còn ít."],
+	"Peach 观看行为目前更集中在{tags}。": ["Viewing activity in Peach currently focuses more on {tags}.", "Hoạt động xem trong Peach hiện tập trung hơn vào {tags}."],
+	"探索 {tag}": ["Explore {tag}", "Khám phá {tag}"],
+	"浏览信号 {visits} 次 · 馆藏 {items} 部 · 已有观看印证": ["{visits} browsing signals · {items} library titles · Corroborated by viewing", "{visits} tín hiệu duyệt web · {items} tác phẩm trong thư viện · Đã đối chiếu với lượt xem"],
+	"浏览信号 {visits} 次 · 馆藏 {items} 部 · 尚无观看印证": ["{visits} browsing signals · {items} library titles · No viewing corroboration yet", "{visits} tín hiệu duyệt web · {items} tác phẩm trong thư viện · Chưa đối chiếu với lượt xem"],
 	"{total} 个符合 · 显示 {shown}": ["{total} matches · showing {shown}", "{total} mục phù hợp · hiển thị {shown}"],
 	"已加载 {name}": ["Loaded {name}", "Đã tải {name}"],
 	"找到 {count} 条中文字幕": ["Found {count} Chinese subtitles", "Tìm thấy {count} phụ đề tiếng Trung"],
@@ -11966,6 +11973,8 @@ var D = /* @__PURE__ */ o(((e) => {
 	常访问网站: ["Frequently visited sites", "Trang thường truy cập"],
 	"证据还不足以形成稳定口味结论。": ["There is not enough evidence for a stable preference conclusion yet.", "Chưa đủ bằng chứng để đưa ra kết luận sở thích ổn định."],
 	仍在学习: ["Still learning", "Đang tìm hiểu"],
+	可信度较高: ["High confidence", "Độ tin cậy cao"],
+	可信度中等: ["Moderate confidence", "Độ tin cậy trung bình"],
 	去馆藏评价作品: ["Rate titles in your library", "Đánh giá tác phẩm trong thư viện"],
 	停止公网入口: ["Stop public access", "Dừng truy cập công khai"],
 	计费: ["Metered", "Tính phí"],
@@ -27687,4 +27696,4 @@ ay && oy && (0, M.createRoot)(ay).render(/* @__PURE__ */ (0, B.jsx)(ny, { childr
 	data: { ...ay.dataset }
 }) }));
 
-//# debugId=dcbf6f1d-651b-448e-b125-f2bce3a171bc
+//# debugId=16aad0a6-7851-4bb3-89c9-a7b3b31e4ea9

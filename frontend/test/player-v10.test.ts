@@ -1,5 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createV10Player } from '../src/player/v10-player';
+import { mountPlayerTransport } from '../src/player/transport-controls';
+import { LOCALE_KEY, setLocale } from '../src/i18n';
 
 const engine = () => ({ bandwidthEstimate: 8000000, currentLevel: -1,
   levels: [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }], on: vi.fn() });
@@ -13,16 +15,92 @@ beforeAll(() => {
   if (!customElements.get('hlsjs-video')) customElements.define('hlsjs-video', TestMedia);
   if (!customElements.get('dash-video')) customElements.define('dash-video', class extends TestMedia {});
 });
-afterEach(() => { document.body.replaceChildren(); vi.restoreAllMocks(); vi.unstubAllGlobals() });
+afterEach(() => { setLocale('zh-CN'); localStorage.removeItem(LOCALE_KEY); document.body.replaceChildren(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals() });
 
-function mounted() {
+function mounted(controls = false) {
   const video = document.createElement('video'); document.body.append(video);
-  const player = createV10Player(video, { controls: false });
+  const player = createV10Player(video, { controls });
   const media = player.el().querySelector('hlsjs-video') as TestMedia;
   return { video, player, media };
 }
 
 describe('Video.js 10 播放会话', () => {
+  it.each([true, false])('点击画面显示控件并保持 paused=%s，触屏移动不抢先唤起控件', paused => {
+    const { video, player } = mounted(true);
+    Object.defineProperty(video, 'paused', { configurable: true, value: paused });
+    const pause = vi.spyOn(video, 'pause').mockImplementation(() => {});
+    const play = vi.spyOn(video, 'play').mockResolvedValue(undefined);
+    player.el().classList.replace('vjs-user-active', 'vjs-user-inactive');
+    player.el().dispatchEvent(new PointerEvent('pointermove', { pointerType: 'touch' }));
+    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
+    video.click();
+    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
+    expect(play).not.toHaveBeenCalled();
+    expect(pause).not.toHaveBeenCalled();
+    player.dispose();
+  });
+
+  it('播放时控件自动隐藏，点击画面唤回并重新开始隐藏计时', () => {
+    vi.useFakeTimers();
+    const { video, player } = mounted(true);
+    Object.defineProperty(video, 'paused', { configurable: true, value: false });
+    video.dispatchEvent(new Event('play'));
+    vi.advanceTimersByTime(2500);
+    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
+    video.click();
+    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
+    vi.advanceTimersByTime(2499);
+    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
+    vi.advanceTimersByTime(1);
+    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
+    player.dispose();
+    vi.useRealTimers();
+  });
+
+  it('前后 30 秒连续跳转限制在片长内，未知片长时禁用跳转', () => {
+    const { video, player } = mounted(true);
+    mountPlayerTransport(player, video, player.el().querySelector<HTMLElement>('.vjs-control-bar')!);
+    const back = player.el().querySelector<HTMLButtonElement>('[data-player-skip="-30"]')!;
+    const ahead = player.el().querySelector<HTMLButtonElement>('[data-player-skip="30"]')!;
+    expect(back.disabled).toBe(true);
+    Object.defineProperty(video, 'duration', { configurable: true, value: 100 });
+    video.dispatchEvent(new Event('loadedmetadata'));
+    expect(back.disabled).toBe(false);
+    video.currentTime = 40;
+    ahead.click(); expect(video.currentTime).toBe(70);
+    ahead.click(); ahead.click(); expect(video.currentTime).toBe(100);
+    back.click(); expect(video.currentTime).toBe(70);
+    video.currentTime = 10;
+    back.click(); expect(video.currentTime).toBe(0);
+    Object.defineProperty(video, 'duration', { configurable: true, value: NaN });
+    video.dispatchEvent(new Event('emptied'));
+    expect(ahead.disabled).toBe(true);
+    player.dispose();
+  });
+
+  it('中央按钮通过播放会话切换状态，名称随语言与播放状态更新，销毁后解除订阅', () => {
+    const { video, player } = mounted(true);
+    let paused = true;
+    Object.defineProperty(video, 'paused', { get: () => paused });
+    const play = vi.spyOn(player, 'play').mockImplementation(async () => { paused = false; video.dispatchEvent(new Event('play')) });
+    const pause = vi.spyOn(player, 'pause').mockImplementation(() => { paused = true; video.dispatchEvent(new Event('pause')) });
+    mountPlayerTransport(player, video, player.el().querySelector<HTMLElement>('.vjs-control-bar')!);
+    const group = player.el().querySelector<HTMLElement>('.vjs-peach-transport')!;
+    const button = group.querySelector<HTMLButtonElement>('[data-player-transport-play]')!;
+    setLocale('vi');
+    expect(button.getAttribute('aria-label')).toBe('Phát');
+    expect(group.querySelector('[data-player-skip="-30"]')?.getAttribute('aria-label')).toBe('Lùi 30 giây');
+    button.click(); expect(play).toHaveBeenCalledOnce();
+    expect(button.getAttribute('aria-label')).toBe('Tạm dừng');
+    button.click(); expect(pause).toHaveBeenCalledOnce();
+    setLocale('en');
+    expect(button.getAttribute('aria-label')).toBe('Playback');
+    player.dispose();
+    setLocale('vi');
+    expect(button.getAttribute('aria-label')).toBe('Playback');
+    expect(group.isConnected).toBe(false);
+  });
+
   it('普通 HTTP 的随机源为无 ID 的视频创建独立播放器', () => {
     vi.stubGlobal('crypto', { getRandomValues: crypto.getRandomValues.bind(crypto) });
     const first = mounted().player;
