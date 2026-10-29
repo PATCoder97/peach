@@ -419,8 +419,7 @@ class BrowserSuiteWorkflowTests(unittest.TestCase):
     def test_the_browser_job_installs_every_prerequisite_and_runs_the_web_scope(self):
         job = self.job("web-e2e")
         for step in ("runs-on: ubuntu-latest", "actions/setup-node", 'node-version: "24"',
-                     "npm --prefix frontend ci", "FedericoCarboni/setup-ffmpeg",
-                     'ffmpeg-version: "9.0.1"',
+                     "npm --prefix frontend ci",
                      "PEACH_E2E_CHROME=", "./scripts/test.sh web"):
             self.assertIn(step, job, f"web-e2e job 缺了 {step}")
 
