@@ -138,8 +138,9 @@ class MacStandaloneDistributionTests(TestCase):
     def test_mismatched_python_architecture_is_rejected_before_building(self):
         with mock.patch.object(self.builder.sys, "platform", "darwin"), \
                 mock.patch.object(self.builder.platform, "machine", return_value="arm64"), \
+                mock.patch.object(self.builder, "ROOT", self.root), \
                 mock.patch.object(self.builder.subprocess, "run") as run:
-            with self.assertRaises(SystemExit):
+            with self.assertRaisesRegex(SystemExit, "目标架构必须与当前 Python 一致"):
                 self.builder.build(self.root, target_arch="x86_64")
         run.assert_not_called()
 
