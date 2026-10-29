@@ -1,6 +1,18 @@
 import { expect, it } from 'vitest';
 import { translateSystem } from '../src/i18n/system';
 
+it('后端配置、下载与复核提示翻译完整模板，路径与诊断值保持原样', () => {
+  expect(translateSystem('所选图片不在本机缓存：R:\\资料\\封面.jpg','en'))
+    .toBe('The selected image is not in the local cache: R:\\资料\\封面.jpg');
+  expect(translateSystem('该创作者有 230 条作品，超过单次批准上限 200，请在页面上显式勾选后再通过','vi'))
+    .toBe('Người sáng tạo này có 230 tác phẩm, vượt giới hạn 200 cho mỗi lần phê duyệt. Hãy đánh dấu rõ các mục trên trang trước khi phê duyệt.');
+  expect(translateSystem('分析浏览记录：已处理 3 / 5 条','vi'))
+    .toBe('Đang phân tích lịch sử duyệt web: đã xử lý 3 / 5');
+  expect(translateSystem('文件整理未完成：R:\\作品\\原名.mp4','en'))
+    .toBe('File organization is incomplete: R:\\作品\\原名.mp4');
+  expect(translateSystem('未登记的诊断消息：原始原因','en')).toBe('未登记的诊断消息：原始原因');
+});
+
 it('容器扫描的阶段名称与部分完成回执按语言显示', () => {
   expect(translateSystem('读取媒体属性与检查垃圾','en')).toBe('Read media properties and check for junk');
   expect(translateSystem('采集外部资料与封面','vi')).toBe('Lấy thông tin và ảnh bìa từ nguồn ngoài');

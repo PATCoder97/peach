@@ -3,8 +3,22 @@ import { afterEach, expect, it } from 'vitest';
 import { setLocale } from '../../src/i18n';
 import { useTranslation } from '../../src/react/i18n';
 import { mount } from './render';
+import { ErrorText } from '../../src/react/settings/section';
 
 afterEach(() => setLocale('zh-CN'));
+
+it('接口校验错误随语言切换，保持表单输入节点与原始服务端原因', async () => {
+  const source = '媒体库名称请使用 1 到 80 个可见字符';
+  setLocale('en');
+  const host = await mount(<div><ErrorText>{source}</ErrorText><input defaultValue="我的馆藏" /></div>);
+  const input = host.querySelector('input');
+  expect(host.querySelector('[role=alert]')?.textContent).toBe('Use 1–80 visible characters for the media library name');
+  await act(async()=>setLocale('vi'));
+  expect(host.querySelector('[role=alert]')?.textContent).toBe('Tên thư viện nội dung phải gồm 1 đến 80 ký tự hiển thị');
+  expect(host.querySelector('input')).toBe(input);
+  expect(input?.value).toBe('我的馆藏');
+  expect(source).toBe('媒体库名称请使用 1 到 80 个可见字符');
+});
 
 it('登记的动态界面模板响应语言，原始字段和输入不参与翻译', async () => {
   function View() {

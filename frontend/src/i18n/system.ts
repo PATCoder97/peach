@@ -1,7 +1,7 @@
 import { getLocale, translate, type Locale } from './index';
 import { systemMessages } from './system-messages';
 
-const templates = Object.keys(systemMessages).map(source => {
+const templates = Object.keys(systemMessages).filter(source => /\{[a-zA-Z][a-zA-Z0-9_]*\}/.test(source)).map(source => {
   const names: string[] = [];
   const parts = source.split(/(\{[a-zA-Z][a-zA-Z0-9_]*\})/g);
   const pattern = parts.map(part => {

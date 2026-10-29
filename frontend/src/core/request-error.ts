@@ -1,4 +1,4 @@
-import { translate } from '../i18n';
+import { translateSystem } from '../i18n/system';
 
 /** 读取原始失败原因，保留状态码优先级与服务端明确给出的原因。 */
 export function requestErrorSource(cause:any,status=0):string{
@@ -15,5 +15,5 @@ export function requestErrorSource(cause:any,status=0):string{
 
 /** 统一错误反馈跟随界面语言；不改写响应体、状态码与业务数据。 */
 export function requestErrorMessage(cause:any,status=0):string{
-  return translate(requestErrorSource(cause,status));
+  return translateSystem(requestErrorSource(cause,status));
 }
