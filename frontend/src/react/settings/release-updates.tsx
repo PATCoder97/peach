@@ -8,6 +8,7 @@ import { confirmModal } from '@peach/legacy/ui';
 import { Button } from '@/components/base/buttons/button';
 
 import { apiGet, apiSend, errorMessage } from '../../api';
+import { formatDateTime } from '../../i18n/format';
 import type { ReleaseState, UpdateJob } from '../bundle';
 import { Note } from '../components/note';
 import { Progress } from '../components/progress';
@@ -107,7 +108,7 @@ export function ReleaseUpdates({ initial, initialJob }: { initial: ReleaseState;
         ? <Help>{uiText("应用更新包复用已安装工具；工具缺失、损坏或版本变化时会另行下载所需工具包。")}</Help>
         : data.package_kind === 'full' ? <Help>{uiText("本次更新包含媒体工具。")}</Help> : null}
       {data.state === 'unchecked' && !data.checked_at && !error && job.state === 'idle' ? null : <Stack divided>
-        {data.checked_at ? <Help>{uiText("检查于 ")}{new Date(data.checked_at * 1000).toLocaleString()}</Help> : null}
+        {data.checked_at ? <Help>{uiText("检查于 ")}{formatDateTime(data.checked_at * 1000, { dateStyle: 'short', timeStyle: 'medium' })}</Help> : null}
         {data.state === 'available' && !error
           ? <Note tone="info" title={uiText("有可用更新")}>{data.message}</Note>
           : error || data.state === 'error'
@@ -117,7 +118,7 @@ export function ReleaseUpdates({ initial, initialJob }: { initial: ReleaseState;
         {job.state !== 'idle' && job.state !== 'error' ? (
           <div aria-live="polite" className="flex flex-col gap-2">
             <Progress label={uiText("更新准备进度")} value={job.progress} stops={STOPS} />
-            <Help>{uiText("下载 → 校验 → 解压 → 准备安装 · ")}{job.message}</Help>
+            <Help>{uiText("下载 → 校验 → 解压 → 准备安装 · ")}{uiText(job.message)}</Help>
             <Help>{reading}</Help>
           </div>
         ) : null}

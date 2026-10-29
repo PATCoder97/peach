@@ -1,6 +1,8 @@
 /* 「存储空间」：勾选几类一起清理或全部清理，不能清理的写明原因；统计中按上次的文件数报进度；
  * 容器部署给出宿主机上的迁移步骤。 */
-import { expect, it, vi } from 'vitest';
+import { act } from 'react';
+import { afterEach, expect, it, vi } from 'vitest';
+import { setLocale } from '../../src/i18n';
 import * as legacyUi from '@peach/legacy/ui';
 
 import type { StorageCategory, StorageState } from '../../src/react/bundle';
@@ -26,6 +28,38 @@ const measured: StorageState = {
   job: { state: 'idle', message: '' },
   relocation: { available: true, message: '', last: null },
 };
+
+afterEach(async () => { await act(async () => setLocale('zh-CN')) });
+
+it('存储分类、说明、图例和清理确认随语言切换，保留选择与原始路径', async () => {
+  const seen = confirmWith(false);
+  const sample: StorageState = { ...measured, data_root: 'C:\\原始路径', usage: { ...measured.usage!, categories: [
+    { ...measured.usage!.categories[2]!, description: '浏览器不能直接播放的影片转码后的副本' },
+  ] } };
+  const host = await mount(<StorageSettings initial={sample} receipt={vi.fn()} />);
+  const selected = box(host, 'playback');
+  await click(selected);
+  for (const [locale, label, reason, description, button] of [
+    ['en', 'Playback cache', 'Videos will be transcoded again on the next playback', 'Transcoded copies of videos that the browser cannot play directly', 'Clean selected'],
+    ['vi', 'Bộ nhớ đệm phát video', 'Video sẽ được chuyển mã lại khi phát lần sau', 'Bản chuyển mã của video mà trình duyệt không phát trực tiếp được', 'Dọn mục đã chọn'],
+  ] as const) {
+    await act(async () => setLocale(locale));
+    expect(box(host, 'playback')).toBe(selected);
+    expect(selected.checked).toBe(true);
+    expect(host.textContent).toContain(label);
+    expect(host.textContent).toContain(reason);
+    expect(host.textContent).toContain(description);
+    expect(host.textContent?.replaceAll(sample.data_root, '')).not.toMatch(/\p{Script=Han}/u);
+    const clean = buttonNamed(button, host);
+    expect(clean).toBeDefined();
+    await click(clean!);
+    expect(String(seen.at(-1)!.body)).toContain(label);
+    expect(String(seen.at(-1)!.body)).not.toMatch(/\p{Script=Han}/u);
+  }
+  await act(async () => setLocale('zh-CN'));
+  expect(host.textContent).toContain('播放缓存');
+  expect(box(host, 'playback')).toBe(selected);
+});
 
 type Confirmation = Parameters<typeof legacyUi.confirmModal>[0];
 

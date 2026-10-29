@@ -54,7 +54,7 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
   }
   const [shown, setShown] = useState(value ?? 0);
   const [draft, setDraft] = useState(String(value && value > 0 ? value : remembered.current));
-  const [error, setError] = useState('');
+  const [invalid, setInvalid] = useState(false);
   const input = useRef<HTMLInputElement | null>(null);
   const apply = useRef(onApply);
   apply.current = onApply;
@@ -71,11 +71,11 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
     if (!node) return;
     if (!node.value || !node.checkValidity()) {
       node.setAttribute('aria-invalid', 'true');
-      setError(t('请输入 {min}–{max} 的整数（{unit}）', { min, max, unit: t(unit) }));
+      setInvalid(true);
       return;
     }
     node.removeAttribute('aria-invalid');
-    setError('');
+    setInvalid(false);
     remembered.current = Number(node.value);
     localStorage.setItem(storageKey(id), String(remembered.current));
     apply.current(remembered.current);
@@ -95,7 +95,7 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
   const toggle = () => {
     const node = input.current;
     node?.removeAttribute('aria-invalid');
-    setError('');
+    setInvalid(false);
     if (!on) {
       setShown(remembered.current);
       setDraft(String(remembered.current));
@@ -123,13 +123,15 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
               setDraft(event.target.value);
               if (event.target.value && event.target.checkValidity()) {
                 event.target.removeAttribute('aria-invalid');
-                setError('');
+                setInvalid(false);
               }
             }}
             onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); commit() } }} />
           <span aria-hidden="true">{t(unit)}{dayReading(Number(draft), unit) ? ` · ${dayReading(Number(draft), unit)}` : ''}</span>
         </div>
-        <small id={`${id}-error`} data-number-error="" role="status" hidden={!error}>{error}</small>
+        <small id={`${id}-error`} data-number-error="" role="status" hidden={!invalid}>
+          {invalid ? t('请输入 {min}–{max} 的整数（{unit}）', { min, max, unit: t(unit) }) : ''}
+        </small>
       </div>
     </div>
   );
