@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 带单位、可选开关与字段错误反馈的数值设置。
  *
  * 可选的那几项（悬停放大、相关推荐、搜索记录、关注自动更新）前面有一枚开关：关掉就是 0，
@@ -6,6 +7,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { boundedPreference } from '../../number-setting';
+import { translate as t } from '../../i18n';
+import { useTranslation } from '../i18n';
 
 export interface NumberSpec { min: number; max: number; unit: string; optional?: boolean; fallback: number }
 
@@ -29,7 +32,7 @@ const storageKey = (id: string) => `peach.number.${id}`;
 export function dayReading(value: number, unit: string): string {
   if (unit !== '分钟' || !Number.isInteger(value) || value < 1440) return '';
   const days = value / 1440;
-  return Number.isInteger(days) ? `${days.toLocaleString()} 天` : `约 ${days.toFixed(1)} 天`;
+  return Number.isInteger(days) ? t('{count} 天', { count: days.toLocaleString() }) : t('约 {count} 天', { count: days.toFixed(1) });
 }
 
 export function NumberSetting({ id, label, value, disabled = false, onApply }: {
@@ -39,6 +42,8 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
   disabled?: boolean;
   onApply(value: number): void;
 }) {
+  const uiText = useUiTranslation();
+  useTranslation();
   const spec: NumberSpec = NUMBER_SPECS[id];
   const { min, max, unit, fallback } = spec;
   const optional = spec.optional === true;
@@ -66,7 +71,7 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
     if (!node) return;
     if (!node.value || !node.checkValidity()) {
       node.setAttribute('aria-invalid', 'true');
-      setError(`请输入 ${min}–${max} 的整数（${unit}）`);
+      setError(t('请输入 {min}–{max} 的整数（{unit}）', { min, max, unit: t(unit) }));
       return;
     }
     node.removeAttribute('aria-invalid');
@@ -107,13 +112,13 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
   return (
     <div data-number-setting="">
       {optional
-        ? <input type="checkbox" data-toggle="" role="switch" aria-label={`启用${label}`}
+        ? <input type="checkbox" data-toggle="" role="switch" aria-label={uiText("启用{value0}", { value0: uiText(label) })}
             checked={on} disabled={blocked} onChange={toggle} />
         : null}
       <div data-number-fields="" hidden={optional && !on}>
         <div data-number-control="">
           <input ref={input} type="number" inputMode="numeric" className="geist-input" min={min} max={max} step={1}
-            value={draft} disabled={blocked} aria-label={label} aria-describedby={`${id}-error`}
+            value={draft} disabled={blocked} aria-label={uiText(label)} aria-describedby={`${id}-error`}
             onChange={(event) => {
               setDraft(event.target.value);
               if (event.target.value && event.target.checkValidity()) {
@@ -122,7 +127,7 @@ export function NumberSetting({ id, label, value, disabled = false, onApply }: {
               }
             }}
             onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); commit() } }} />
-          <span aria-hidden="true">{unit}{dayReading(Number(draft), unit) ? ` · ${dayReading(Number(draft), unit)}` : ''}</span>
+          <span aria-hidden="true">{t(unit)}{dayReading(Number(draft), unit) ? ` · ${dayReading(Number(draft), unit)}` : ''}</span>
         </div>
         <small id={`${id}-error`} data-number-error="" role="status" hidden={!error}>{error}</small>
       </div>

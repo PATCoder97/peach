@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 垃圾文件队列（`/junk-files`，由路由树画进 `#grid`）：计数行加一屏逐项处置的卡片。
  *
  * 页面画在壳的 `#grid` 里，计数行经 portal 画进 `#count` 里自己建的一个 `.peach-react` 容器：
@@ -88,6 +89,7 @@ function useCountHost(row: HTMLElement | null): HTMLElement | null {
 function JunkBody({ props, data, pending, error, retry }: {
   props: JunkQueueProps; data: JunkPage | undefined; pending: boolean; error: Error | null; retry(): void;
 }) {
+  const uiText = useUiTranslation();
   const reveal = useSkeletonReveal(pending, props.skeletonHtml);
   const batch = Math.max(1, props.batchSize || 60);
   const [segments, setSegments] = useState(1);
@@ -105,9 +107,9 @@ function JunkBody({ props, data, pending, error, retry }: {
     if (!items.length) {
       const dismissed = props.view === 'dismissed';
       return (
-        <EmptyState icon={CheckGlyph} title={dismissed ? '没有已排除的文件' : '没有待判断的垃圾文件'}
-          actions={dismissed ? <ButtonLink size="small" href="/junk-files">查看待判断</ButtonLink> : undefined}>
-          {dismissed ? '点“不是垃圾”的资源会保留在这里，可随时重新判断。' : '当前分类没有待检查文件。'}
+        <EmptyState icon={CheckGlyph} title={dismissed ? uiText("没有已排除的文件") : uiText("没有待判断的垃圾文件")}
+          actions={dismissed ? <ButtonLink size="small" href="/junk-files">{uiText("查看待判断")}</ButtonLink> : undefined}>
+          {dismissed ? uiText("点“不是垃圾”的资源会保留在这里，可随时重新判断。") : uiText("当前分类没有待检查文件。")}
         </EmptyState>
       );
     }
@@ -123,7 +125,7 @@ function JunkBody({ props, data, pending, error, retry }: {
         {/* 队列一次只取前 200 条：露到底了还有没取的，说清楚是截断而不是全部。 */}
         {shown.length >= items.length && Number(data.total || 0) > items.length
           ? <p data-junk-truncated="" className="py-6 text-center text-caption-1-regular text-text-secondary">
-              {`显示前 ${items.length.toLocaleString()} 条，共 ${Number(data.total).toLocaleString()} 条；处理掉这些后，其余的会补上来。`}
+              {uiText("显示前 {value0} 条，共 {value1} 条；处理掉这些后，其余的会补上来。", { value0: String(items.length.toLocaleString()), value1: String(Number(data.total).toLocaleString()) })}
             </p>
           : null}
       </>

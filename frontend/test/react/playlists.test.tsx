@@ -13,6 +13,7 @@ import {
 } from '../../src/react/playlists/playlists';
 import { PlaylistsPage } from '../../src/react/playlists/playlists-page';
 import { queryClient } from '../../src/react/query';
+import { setLocale } from '../../src/i18n';
 import { buttonNamed, click, mount, settle, submit, type } from './render';
 
 afterEach(() => { queryClient.clear() });
@@ -91,6 +92,26 @@ function confirmYes() {
 }
 
 describe('首屏', () => {
+  it('接口校验提示随语言切换而更新，保留名称且不重复提交', async () => {
+    const body = { error: 'ValueError: 播放列表名称最多 80 个字符' };
+    const server = serve({ 'POST /api/playlist': { status: 400, body } });
+    await act(async()=>setLocale('en'));
+    try {
+      const host = await open([]);
+      const input = createInput(host);
+      await type(input, '保留原始名称');
+      await submit(host.querySelector('[data-playlist-create]'));
+      await settle();
+      expect(host.textContent).toContain('Playlist names can contain at most 80 characters');
+      await act(async()=>setLocale('vi'));
+      expect(host.textContent).toContain('Tên danh sách phát dài tối đa 80 ký tự');
+      expect(host.textContent).not.toContain('Playlist names can contain at most');
+      expect(createInput(host)).toBe(input);
+      expect(input.value).toBe('保留原始名称');
+      expect(server.posts()).toHaveLength(1);
+      expect(body.error).toBe('ValueError: 播放列表名称最多 80 个字符');
+    } finally { await act(async()=>setLocale('zh-CN')) }
+  });
   it('缓存里有上一次的列表也照样重取：首页刚存的 Mix 要看得到', async () => {
     queryClient.setQueryData(PLAYLISTS_KEY, { items: [row(1)] });
     const server = serve({ 'GET /api/playlists': { body: { items: [row(1), row(2)] } } });

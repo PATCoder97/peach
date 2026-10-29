@@ -4,6 +4,10 @@
 
 ## amane 桥
 
+### 多语言镜像的传递依赖复核
+
+2026-10-28 将主锁的 `urllib3-future` 从 `2.25.904` 更新到 `2.25.905`，两份锁的 `tzdata` 从 `2026.5` 更新到 `2026.6`；桥锁的 `pydantic-settings` 从 `2.16.1` 更新到 `2.16.2`、`ag-ui-protocol` 从 `0.1.22` 更新到 `1.0.0`。桥仍只消费爬虫与网络接口，不引入 AG-UI 服务端或协议接口。独立锁环境的 `bridge.py --self-check` 已成功加载全部 20 个站点类；依赖策略与桥契约的定向回归通过。该检查不代替最终镜像与全量回归。
+
 ### 稳定版 v0.23.0 暂不采用
 
 2026-10-28 复核官方 [v0.23.0](https://github.com/sqzw-x/amane/releases/tag/v0.23.0)，提交 `4230de458c3197e1e17b6c5b42cc385fc6961d15`。[相对现固定提交的差集](https://github.com/sqzw-x/amane/compare/fd9294fbe5b4aa88ce1df84d534f6816ad9460d5...4230de458c3197e1e17b6c5b42cc385fc6961d15)含 16 个提交、142 个文件，爬虫只改了 `theporndb`；桥消费的 makers、prestige、faleno、dahlia、mgstage、fc2club、freejavbt、airav、avsox 站点类和 `amane.net` 都没有变化，其余是 CLI、服务端与图片代理。继续固定 v0.22.1；桥接站点或网络接口出现修复时再升级。

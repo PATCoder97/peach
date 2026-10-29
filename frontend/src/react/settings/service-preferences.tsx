@@ -1,9 +1,10 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* Peach 配置中的采集档位与来源更新偏好，读写复用设置接口和查询缓存。 */
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { appSettingsStore } from '@peach/appearance';
-import { SettingsRow } from '@/components/application/settings/settings-rows';
+import { SettingsRow } from '../components/settings-rows';
 import { Select, SelectItem } from '@/components/base/select/select';
 import { Switch } from '@/components/base/switch/switch';
 import { Input } from '@/components/base/input/input';
@@ -25,10 +26,12 @@ import { busyProps } from './use-action';
 const THUMBNAIL_OPTIONS = [['off', '关闭'], ['precise', '每 10 秒一张'], ['coarse', '每 30 秒一张']] as const;
 
 export function VideoThumbnailRow({ epoch = 0 }: { epoch?: number }) {
-  return <Section title="时间轴缩略图"><VideoThumbnailControls epoch={epoch} /></Section>;
+  const uiText = useUiTranslation();
+  return <Section title={uiText("时间轴缩略图")}><VideoThumbnailControls epoch={epoch} /></Section>;
 }
 
 export function VideoThumbnailControls({ epoch = 0, disabled = false }: { epoch?: number; disabled?: boolean }) {
+  const uiText = useUiTranslation();
   const status = useQuery({ queryKey: THUMBNAIL_JOBS_KEY, queryFn: ({ signal }) => fetchThumbnailJobs(signal), refetchOnMount: 'always' });
   const save = useSaveThumbnailMode();
   const reset = save.reset;
@@ -38,19 +41,19 @@ export function VideoThumbnailControls({ epoch = 0, disabled = false }: { epoch?
   return (
     <>
       <Rows>
-        <SettingsRow label="时间轴预览" description="按所选间隔抽帧，仅处理本机磁盘上的视频。">
+        <SettingsRow label={uiText("时间轴预览")} description={uiText("按所选间隔抽帧，仅处理本机磁盘上的视频。")}>
           <div id="videoThumbnailSetting">
-            <Select aria-label="缩略图采集间隔" selectedKey={data?.mode || 'off'}
+            <Select aria-label={uiText("缩略图采集间隔")} selectedKey={data?.mode || 'off'}
               isDisabled={disabled || !data || status.isFetching || save.isPending}
               onSelectionChange={(key) => { if (key !== null) save.mutate(String(key)) }}>
-              {THUMBNAIL_OPTIONS.map(([key, label]) => <SelectItem key={key} id={key}>{label}</SelectItem>)}
+              {THUMBNAIL_OPTIONS.map(([key, label]) => <SelectItem key={key} id={key}>{uiText(label)}</SelectItem>)}
             </Select>
           </div>
         </SettingsRow>
       </Rows>
       {save.isPending || data?.status === 'running'
         ? <Stack divided>
-            <Help role="status">{save.isPending ? '正在保存…' : '正在采集。'}</Help>
+            <Help role="status">{save.isPending ? uiText("正在保存…") : uiText("正在采集。")}</Help>
             {save.isPending ? null : <TaskCenterLink />}
           </Stack>
         : null}
@@ -60,6 +63,7 @@ export function VideoThumbnailControls({ epoch = 0, disabled = false }: { epoch?
 }
 
 export function FollowPreferenceRows({ receipt }: { receipt(message: string): void }) {
+  const uiText = useUiTranslation();
   const store = appSettingsStore();
   useSyncExternalStore(store.subscribe, store.version);
   const settings = useQuery({ queryKey: SETTINGS_KEY, queryFn: ({ signal }) => fetchSettings(signal), refetchOnMount: 'always' });
@@ -67,13 +71,13 @@ export function FollowPreferenceRows({ receipt }: { receipt(message: string): vo
   const initialDays = settings.data?.followInitialDays ?? store.value.followInitialDays;
   const error = initial.error || settings.error;
   return (
-    <Section title="关注采集">
+    <Section title={uiText("关注采集")}>
       <Rows>
         <FollowScheduleRow />
         <FeedScheduleRow />
-        <SettingsRow label="首次采集范围">
+        <SettingsRow label={uiText("首次采集范围")}>
           <div id="followInitialDaysSetting">
-            <Select aria-label="首次采集范围" selectedKey={String(initialDays)}
+            <Select aria-label={uiText("首次采集范围")} selectedKey={String(initialDays)}
               isDisabled={settings.isFetching || initial.isPending}
               onSelectionChange={(key) => {
                 if (key === null) return;
@@ -83,12 +87,12 @@ export function FollowPreferenceRows({ receipt }: { receipt(message: string): vo
                   receipt('已保存首次采集范围');
                 } });
               }}>
-              {FOLLOW_INITIAL_RANGE_OPTIONS.map(([key, label]) => <SelectItem key={key} id={key}>{label}</SelectItem>)}
+              {FOLLOW_INITIAL_RANGE_OPTIONS.map(([key, label]) => <SelectItem key={key} id={key}>{uiText(label)}</SelectItem>)}
             </Select>
           </div>
         </SettingsRow>
-        <SettingsRow label="头像刷新">每 3 个月</SettingsRow>
-        <SettingsRow label="favicon 刷新">每年</SettingsRow>
+        <SettingsRow label={uiText("头像刷新")}>{uiText("每 3 个月")}</SettingsRow>
+        <SettingsRow label={uiText("favicon 刷新")}>{uiText("每年")}</SettingsRow>
       </Rows>
       {error ? <Stack divided><ErrorText>{errorMessage(error)}</ErrorText></Stack> : null}
     </Section>
@@ -96,6 +100,7 @@ export function FollowPreferenceRows({ receipt }: { receipt(message: string): vo
 }
 
 function FollowScheduleRow() {
+  const uiText = useUiTranslation();
   const status = useQuery({ queryKey: FOLLOW_SCHEDULE_KEY, queryFn: ({ signal }) => fetchFollowSchedule(signal),
     refetchOnMount: 'always', refetchInterval: (query) => schedulePollInterval(query.state.data) });
   const save = useSaveFollowSchedule();
@@ -122,28 +127,28 @@ function FollowScheduleRow() {
   const error = save.error || status.error;
   return (
     <>
-      <SettingsRow label="自动检查更新">
+      <SettingsRow label={uiText("自动检查更新")}>
         {/* 间隔框只在开着时出现；这一行按有框的高度留位，读回状态时下面几行不跟着动。 */}
         <div id="followScheduleSetting" className="flex min-h-9 min-w-0 flex-wrap items-center justify-end gap-2">
-          <Switch aria-label="自动检查更新" isSelected={data?.enabled === true} isDisabled={blocked}
+          <Switch aria-label={uiText("自动检查更新")} isSelected={data?.enabled === true} isDisabled={blocked}
             onChange={(on) => {
               localStorage.setItem('peach.number.followScheduleSetting', String(remembered.current));
               save.mutate(on ? remembered.current : 0);
             }} />
           {data?.enabled ? <div className="flex items-center gap-2">
             <Input type="number" inputMode="numeric" name="follow-interval" autoComplete="off"
-              aria-label="自动检查间隔" className="w-24"
+              aria-label={uiText("自动检查间隔")} className="w-24"
               value={draft} onChange={(value) => { setDraft(value); setInvalid(false) }} onBlur={commit}
               onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); commit() } }}
               isDisabled={blocked} isInvalid={invalid} />
-            <span className="text-body-2-regular text-text-secondary">分钟</span>
+            <span className="text-body-2-regular text-text-secondary">{uiText("分钟")}</span>
           </div> : null}
         </div>
       </SettingsRow>
-      {invalid ? <Stack><ErrorText>请输入 15–10080 的整数（分钟）。</ErrorText></Stack> : null}
+      {invalid ? <Stack><ErrorText>{uiText("请输入 15–10080 的整数（分钟）。")}</ErrorText></Stack> : null}
       {save.isPending || data?.running
-        ? <Stack><Help role="status">{save.isPending ? '正在保存…' : '正在检查来源更新…'}</Help></Stack> : null}
-      <ScheduleFailure kind="follow" status={data} title="上次自动检查失败" />
+        ? <Stack><Help role="status">{save.isPending ? uiText("正在保存…") : uiText("正在检查来源更新…")}</Help></Stack> : null}
+      <ScheduleFailure kind="follow" status={data} title={uiText("上次自动检查失败")} />
       {error ? <Stack><ErrorText>{errorMessage(error)}</ErrorText></Stack> : null}
     </>
   );
@@ -151,25 +156,26 @@ function FollowScheduleRow() {
 
 /* 订阅源定时拉取没有可调的档位，这一行只读出间隔与上一轮的失败。 */
 function FeedScheduleRow() {
+  const uiText = useUiTranslation();
   const status = useQuery({ queryKey: FEED_SCHEDULE_KEY, queryFn: ({ signal }) => fetchFeedSchedule(signal),
     refetchOnMount: 'always', refetchInterval: (query) => schedulePollInterval(query.state.data) });
   const data = status.data;
   /* 首次读取时先占住这一行：读数回来再填字，下面的行不往下跳。 */
   if (!data) {
-    return status.isPending ? <SettingsRow label="订阅源拉取">
-      <span data-skeleton aria-busy="true" aria-label="正在读取订阅源拉取间隔"
+    return status.isPending ? <SettingsRow label={uiText("订阅源拉取")}>
+      <span data-skeleton aria-busy="true" aria-label={uiText("正在读取订阅源拉取间隔")}
         className="block h-4 w-16 rounded-2lg bg-background-tertiary-default" />
     </SettingsRow> : null;
   }
   const minutes = data.interval_minutes;
-  const interval = minutes % 60 ? `每 ${minutes} 分钟` : `每 ${minutes / 60} 小时`;
+  const interval = minutes % 60 ? uiText('每 {count} 分钟', { count: minutes }) : uiText('每 {count} 小时', { count: minutes / 60 });
   return (
     <>
-      <SettingsRow label="订阅源拉取">
-        <span id="feedScheduleSetting">{!data.available ? '只在写入端可用' : data.enabled ? interval : '已关闭'}</span>
+      <SettingsRow label={uiText("订阅源拉取")}>
+        <span id="feedScheduleSetting">{!data.available ? uiText("只在写入端可用") : data.enabled ? interval : uiText("已关闭")}</span>
       </SettingsRow>
-      {data.running ? <Stack><Help role="status">正在拉取订阅源…</Help></Stack> : null}
-      <ScheduleFailure kind="feed" status={data} title="上次自动拉取失败" />
+      {data.running ? <Stack><Help role="status">{uiText("正在拉取订阅源…")}</Help></Stack> : null}
+      <ScheduleFailure kind="feed" status={data} title={uiText("上次自动拉取失败")} />
     </>
   );
 }
@@ -179,6 +185,7 @@ function FeedScheduleRow() {
 function ScheduleFailure({ kind, status, title }: {
   kind: keyof typeof SCHEDULE_RUNS; status: FollowScheduleStatus | undefined; title: string;
 }) {
+  const uiText = useUiTranslation();
   const run = useRunSchedule(kind);
   if (!status?.enabled || status.running || !status.last_error) return null;
   const failures = status.consecutive_failures ?? 0;
@@ -190,7 +197,7 @@ function ScheduleFailure({ kind, status, title }: {
   return (
     <Stack>
       <Note tone="error" title={title} action={<Button variant="secondary" size="small"
-        disabled={!status.available} {...busyProps(run.isPending)} onClick={() => run.mutate()}>立即重试</Button>}>
+        disabled={!status.available} {...busyProps(run.isPending)} onClick={() => run.mutate()}>{uiText("立即重试")}</Button>}>
         {reason}
       </Note>
     </Stack>

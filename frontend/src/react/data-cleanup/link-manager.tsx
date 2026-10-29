@@ -1,3 +1,5 @@
+import { useTranslation as useUiTranslation } from "../i18n";
+import { useSystemTranslation } from '../i18n';
 /* 数据管理页上的「链接管理」。
  *
  * 三份真相三个键（见 `links.ts`）：库里链接的现状、那趟联网检查、那趟删除。检查与删除
@@ -52,11 +54,12 @@ const count = (value: number | undefined) => Number(value || 0).toLocaleString()
 /** 一格读数：名目、数字、可选的一句注。每一类各占一格：挤成一行时标签和数字之间只剩
  *  间隔点，数字归谁全靠猜。 */
 function Stat({ label, value, note }: { label: string; value: string; note?: string }) {
+  const systemText = useSystemTranslation();
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
-      <span className="text-caption-1-regular leading-5 text-text-secondary">{label}</span>
+      <span className="text-caption-1-regular leading-5 text-text-secondary">{systemText(label)}</span>
       <b className="text-title-2-semibold font-bold leading-5 tabular-nums text-text-primary">{value}</b>
-      {note ? <small className="text-caption-1-regular leading-5 text-text-secondary">{note}</small> : null}
+      {note ? <small className="text-caption-1-regular leading-5 text-text-secondary">{systemText(note)}</small> : null}
     </div>
   );
 }
@@ -68,6 +71,7 @@ function LinkTable(
     picked: readonly number[]; onPick(next: number[]): void; children?: ReactNode; footer?: ReactNode; confirmed?: boolean;
   },
 ) {
+  const uiText = useUiTranslation();
   if (!items.length) return null;
   const columns: DataColumn<LinkRow>[] = [
     { id: 'entity', label: 'Peach 资料', width: 180, min: 128, value: (item) => item.entity,
@@ -90,7 +94,7 @@ function LinkTable(
       render: (item) => <div className="min-w-0 w-full" data-link-result={confirmed ? 'gone' : 'unclear'}>
         {/^(?:HTTP\s+)?[1-5]\d{2}$/.test(item.note.trim())
           ? <StatusLabel tone={confirmed || /^(?:HTTP\s+)?5\d{2}$/.test(item.note.trim()) ? 'error' : 'warning'} data-link-code="">{item.note.trim()}</StatusLabel>
-          : <div className="flex flex-col items-start gap-1"><StatusLabel tone={confirmed ? 'error' : 'warning'}>{confirmed ? '地址已失效' : '未取得结论'}</StatusLabel>
+          : <div className="flex flex-col items-start gap-1"><StatusLabel tone={confirmed ? 'error' : 'warning'}>{confirmed ? uiText("地址已失效") : uiText("未取得结论")}</StatusLabel>
               <ErrorExcerpt text={item.note} className="tabular-nums text-text-secondary" /></div>}
       </div> },
     { id: 'url', label: '地址', width: 360, min: 180, value: (item) => item.url,
@@ -113,6 +117,7 @@ function LinkTable(
 }
 
 export function LinkManager() {
+  const uiText = useUiTranslation();
   const stats = useQuery({ queryKey: LINKS_KEY, queryFn: ({ signal }) => fetchLinkStats(signal) });
   const [picked, setPicked] = useState<number[]>([]);
   const [gonePicked, setGonePicked] = useState<number[]>([]);
@@ -170,45 +175,45 @@ export function LinkManager() {
   let progress: ReactNode = null;
   let result: ReactNode = null;
   if (pruned?.status === 'failed') {
-    result = <Note tone="error" title="链接清理未完成">{pruned.error || '请查看任务记录，核对已处理的链接。'}</Note>;
+    result = <Note tone="error" title={uiText("链接清理未完成")}>{pruned.error || uiText("请查看任务记录，核对已处理的链接。")}</Note>;
   } else if (pruned && !gone.length && !unclear.length) {
-    result = <Note tone="success" title="完成">{pruneText(pruned)}</Note>;
+    result = <Note tone="success" title={uiText("完成")}>{pruneText(pruned)}</Note>;
   } else if (startError) {
-    result = <Note tone="error" title="检查失败">{errorMessage(startError)}</Note>;
+    result = <Note tone="error" title={uiText("检查失败")}>{errorMessage(startError)}</Note>;
   } else if (check.query.isError && state) {
-    result = <Note tone="neutral" title="任务状态">{DISCONNECTED}</Note>;
+    result = <Note tone="neutral" title={uiText("任务状态")}>{DISCONNECTED}</Note>;
   } else if (state?.status === 'failed') {
-    result = <Note tone="error" title="检查失败">{state.error || '检查失败'}</Note>;
+    result = <Note tone="error" title={uiText("检查失败")}>{state.error || uiText("检查失败")}</Note>;
   } else if (state && state.status !== 'idle') {
     progress = <>
       {state.status === 'running'
         ? <TaskProgress embedded label={checkLine(state)} value={Math.min(state.checked || 0, state.total || 0)} total={state.total} />
         : null}
       {removing
-        ? <TaskProgress embedded label={prune.job?.message || '正在重验并删除失效链接'}
+        ? <TaskProgress embedded label={prune.job?.message || uiText("正在重验并删除失效链接")}
             value={Math.min(prune.job?.checked || 0, prune.job?.total || 0)} total={prune.job?.total} />
         : null}
     </>;
     const pickedLabel = `立即重试所选（${selectedRetryable.length}）`;
     result = done || gone.length || unclear.length ? (
       <div className={RESULT_PANEL}>
-        {pruned?.status === 'complete' ? <Note tone="success" title="完成">{pruneText(pruned)}</Note> : null}
-        <LinkTable title="地址已失效" items={gone} hint={GONE_HINT} picked={gonePicked} onPick={setGonePicked} confirmed
+        {pruned?.status === 'complete' ? <Note tone="success" title={uiText("完成")}>{pruneText(pruned)}</Note> : null}
+        <LinkTable title={uiText("地址已失效")} items={gone} hint={GONE_HINT} picked={gonePicked} onPick={setGonePicked} confirmed
           footer={done && gone.length ? <>
             <p className="mr-auto min-w-0 text-caption-1-regular text-text-secondary">{PRUNE_HINT}</p>
             <Button variant="danger" {...busyProps(removing)} onClick={() => removeGone()}>
-              {`删除 ${gone.length} 条失效链接`}
+              {uiText("删除 {value0} 条失效链接", { value0: String(gone.length) })}
             </Button>
           </> : null}>
           <Button variant="danger" size="small" disabled={!done || !selectedGone.length}
             {...busyProps(removing)} onClick={() => removeGone(selectedGone)}>
-            {`删除所选（${selectedGone.length}）`}
+            {uiText("删除所选（{value0}）", { value0: String(selectedGone.length) })}
           </Button>
         </LinkTable>
-        <LinkTable title="本次未访问成功" items={unclear} hint={UNCLEAR_HINT}
+        <LinkTable title={uiText("本次未访问成功")} items={unclear} hint={UNCLEAR_HINT}
           picked={picked} onPick={setPicked} footer={retryable.length
             ? <Button variant="primary" leadingIcon={RETRY} {...busyProps(running)}
-                onClick={() => run(retryable.map((item) => item.id))}>{`立即重试全部（${retryable.length}）`}</Button>
+                onClick={() => run(retryable.map((item) => item.id))}>{uiText("立即重试全部（{value0}）", { value0: String(retryable.length) })}</Button>
             : null}>
           {retryable.length
             ? <>
@@ -218,7 +223,7 @@ export function LinkManager() {
             : null}
         </LinkTable>
         {done && !gone.length && !unclear.length
-          ? <p className={`${RESULT_SECTION} text-body-regular text-notification-success-foreground`}>全部链接均可访问。</p>
+          ? <p className={`${RESULT_SECTION} text-body-regular text-notification-success-foreground`}>{uiText("全部链接均可访问。")}</p>
           : null}
       </div>
     ) : null;
@@ -228,16 +233,16 @@ export function LinkManager() {
     <section id="link-manager" aria-labelledby="link-manager-title" className="flex scroll-mt-20 flex-col gap-4">
       <Fieldset layout="stack" labelledBy="link-manager-title" footer={
         <Button data-link-check="" leadingIcon={LinkCheckIcon} {...busyProps(running)} onClick={() => run()}>
-          {running ? '检查中' : done ? '重新检查' : '检查死链'}
+          {running ? uiText("检查中") : done ? uiText("重新检查") : uiText("检查死链")}
         </Button>
       }>
-        <FieldsetTitle id="link-manager-title" gap="small">链接管理</FieldsetTitle>
+        <FieldsetTitle id="link-manager-title" gap="small">{uiText("链接管理")}</FieldsetTitle>
         {stats.isError
-          ? <Note tone="error" title="链接统计读取失败">{errorMessage(stats.error)}</Note>
+          ? <Note tone="error" title={uiText("链接统计读取失败")}>{errorMessage(stats.error)}</Note>
           : info
             ? <>
                 <div className="link-stat-grid mt-4 gap-x-8 gap-y-3">
-                  <Stat label="链接总数" value={count(info.total)}
+                  <Stat label={uiText("链接总数")} value={count(info.total)}
                     note={`分布在 ${count(info.entities)} 个女优、厂牌与系列`} />
                   {Object.entries(info.by_kind ?? {}).map(([kind, value]) => (
                     <Stat key={kind} label={LINK_KINDS[kind] || kind} value={count(value)} />
@@ -245,7 +250,7 @@ export function LinkManager() {
                 </div>
                 {hosts.length
                   ? <div className="mt-4 flex min-w-0 flex-col gap-0.5">
-                      <span className="text-caption-1-regular text-text-secondary">主要站点</span>
+                      <span className="text-caption-1-regular text-text-secondary">{uiText("主要站点")}</span>
                       <div className="flex min-w-0 flex-wrap gap-x-5 gap-y-2">
                         {hosts.map(([host, n]) => <span key={host} data-top-host="" className="inline-flex min-w-0 max-w-full items-center gap-1.5">
                           <a href={`https://${host}`} target="_blank" rel="noopener noreferrer"

@@ -1,3 +1,6 @@
+import { useTranslation as useUiTranslation } from "../i18n";
+import { translate as t } from '../../i18n/index';
+import { useTranslation } from '../i18n';
 /* 馆藏卡片网格：目录与回收站（由路由树画进 `#grid`）、资料页作品区、详情页的接着看。
  *
  * 取数、排法与续页都在这里；打开、选择、稍后看与回收站操作是壳递进来的动作。换筛选或壳要求
@@ -254,7 +257,7 @@ export function LoadMore({ entity, load, enabled, children }: {
   return (
     <>
       {entity
-        ? <button ref={attach} type="button" data-entity-more="" {...aria} onClick={() => void run(true)}>{children ?? '载入更多'}</button>
+        ? <button ref={attach} type="button" data-entity-more="" {...aria} onClick={() => void run(true)}>{children ?? t("载入更多")}</button>
         /* 失败时只留下面那条重试：哨兵收起但不卸下，重试接上之后照旧由它续页。 */
         : <div ref={attach} data-load-more="" {...aria} hidden={Boolean(state.error)} onClick={() => void run(true)}
           dangerouslySetInnerHTML={{ __html: loadingDotsHtml(LOAD_MORE_STATUS) }} />}
@@ -316,15 +319,16 @@ function useShortsStrips(
 function ShortsStrip({ cut, props, onOpen }: {
   cut: ShortsCut; props: CatalogGridProps; onOpen: (item: MediaItem) => void;
 }) {
+  const uiText = useUiTranslation();
+  useTranslation();
   const row = useRef<HTMLDivElement | null>(null);
   const { wireDrag } = props;
   useEffect(() => { if (row.current) wireDrag(row.current) }, [wireDrag]);
   return (
     <section data-shorts-strip="">
-      <h2>
-        竖屏 <span data-shorts-count="">{`${cut.total.toLocaleString()} 个`}</span>
+      <h2>{t("竖屏")}<span data-shorts-count="">{uiText("{value0} 个", { value0: String(cut.total.toLocaleString()) })}</span>
         <button type="button" data-shorts-enter="" onClick={() => props.actions.openShorts()}>
-          <Icon name="gallery-vertical-end" /><span>进入沉浸模式</span>
+          <Icon name="gallery-vertical-end" /><span>{t("进入沉浸模式")}</span>
         </button>
       </h2>
       <div ref={row} data-shorts-row="">
@@ -347,10 +351,11 @@ function mixFace(item: MediaItem, layout: MediaCardLayout, eager: boolean): Artw
 function HomeMix({ seed, layout, helpers, actions }: {
   seed: MediaItem; layout: MediaCardLayout; helpers: MediaCardHelpers; actions: CatalogGridProps['actions'];
 }) {
+  const uiText = useUiTranslation();
   const faces = useRef(new Map<string, string>());
   const latest = useRef(layout);
   latest.current = layout;
-  const label = mixLabel(seed, helpers.tagLabel);
+  const label = mixLabel(seed, helpers.tagLabel, uiText('为你推荐'));
   const flipImages = useCallback(async () => {
     const current = latest.current;
     const related = await actions.mixRelated(seed.id);
@@ -363,13 +368,13 @@ function HomeMix({ seed, layout, helpers, actions }: {
   const artwork = mixFace(seed, layout, false);
   return (
     <MixCard data-mix-seed={String(seed.id)} name={`Mix · ${label}`}
-      caption={`${helpers.displayName(seed, seed.name || '')}及相似作品`} count={0} badge="Mix" glyph wholeCard
+      caption={uiText("{value0}及相似作品", { value0: String(helpers.displayName(seed, seed.name || '')) })} count={0} badge="Mix" glyph wholeCard
       poster={null} artwork={artwork}
       artworkIdentity={size === 'small' ? artwork.html : mixFace(seed, { ...layout, size: 'small' }, false).html}
       relayoutArt={(root) => relayoutCovers(root, size)}
       ratio={cardRatio(seed, 'grid', layout)}
       flipImages={flipImages} faceHtml={(id) => faces.current.get(id) || ''} canFlip={actions.canFlip}
       faces={[]} onOpenEntity={actions.openEntity}
-      onOpen={(anchor) => actions.openMix(seed.id, anchor)} openLabel={`打开 Mix · ${label}`} />
+      onOpen={(anchor) => actions.openMix(seed.id, anchor)} openLabel={uiText('打开 Mix · {name}', { name: label })} />
   );
 }

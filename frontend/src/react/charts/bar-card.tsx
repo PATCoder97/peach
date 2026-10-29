@@ -7,6 +7,9 @@ import { EvilBarChart } from '@/registry/charts/recharts-bar-chart';
 
 import { CategoryTick, categoryAxisWidth, CHART_CARD, ChartEmpty, ChartHead, tone } from './chart-card';
 import { ChartTip } from './chart-tip';
+import { useTranslation } from '../i18n';
+import { getLocale } from '../../i18n';
+import { formatNumber } from '../../i18n/format';
 
 /** 一根柱子：显示的名字和它的数。写成类型别名，EvilCharts 的 `data` 要能当 `Record` 收。 */
 export type BarRow = { name: string; value: number };
@@ -19,6 +22,7 @@ export const BAR_LABEL_ROOM = 56;
 
 /** 柱端的数：十万以上读成「万」「亿」，柱端那一小截放得下；全数在悬停浮层里。 */
 export function shortCount(value: number): string {
+  if (getLocale() !== 'zh-CN') return formatNumber(value, { notation: 'compact', maximumFractionDigits: 1 });
   const abs = Math.abs(value);
   const scaled = (unit: number, name: string) => {
     const figure = value / unit;
@@ -45,6 +49,7 @@ export function BarCard(
     layout?: 'vertical' | 'horizontal';
   },
 ) {
+  const t = useTranslation();
   const data = rows
     .filter((row) => Number.isFinite(row.value) && row.value >= 0)
     .map((row) => ({ name: row.name, value: row.value }));
@@ -56,8 +61,8 @@ export function BarCard(
      名字放不下就由 `CategoryTick` 截断。 */
   return (
     <section className={CHART_CARD} aria-label={title}>
-      <ChartHead title={title} figure={total.toLocaleString()} note={unit} />
-      <EvilBarChart data={data} config={{ value: { label: series, colors: tone(color) } }}
+      <ChartHead title={t(title)} figure={formatNumber(total)} note={t(unit)} />
+      <EvilBarChart data={data} config={{ value: { label: t(series), colors: tone(color) } }}
         layout={layout} barRadius={4}
         chartProps={horizontal ? { margin: { top: 5, right: BAR_LABEL_ROOM, bottom: 5, left: 5 } } : undefined}
         className={horizontal

@@ -1,3 +1,6 @@
+import { uiTextHtml } from '../i18n/html';
+import { translate as t } from '../i18n';
+import { esc as escapeUi } from '../core';
 import { createRevealSourceAction } from './source-action';
 import { emptyEntityFilters, parseEntityFilters, entityFilterSearch, parseMediaView, entityViewSearch } from '../react/entity-page/entity-route';
 import { photoViewActive as hasPhotoView } from '../react/entity-page/photo-surface';
@@ -48,7 +51,7 @@ export function sortKeys(current,dir,jav=javActive()){
   return sortOptions(jav).map(([key,label])=>{
     const pressed=current===key,next=nextSortState(key,current,dir);
     return {key,label,pressed,dir:pressed&&sortDirWord(key,dir)?(dir==='asc'?'asc':'desc'):'',
-      ariaLabel:next?`按${label}${next.dir?sortDirWord(next.sort,next.dir):''}排序`:''}});
+      ariaLabel:next?t('按{label}{direction}排序',{label:t(label),direction:next.dir?t(sortDirWord(next.sort,next.dir)):''}):''}});
 }
 
 export function routeEntityPage(kind,name,filters,media=entityState.EMPTY_ENTITY_MEDIA,options={}){
@@ -87,15 +90,15 @@ export async function syncForIsland(id){
 }
 
 export async function syncMissing(id,status,done){
-  status.textContent='正在核对目录…';
+  status.textContent=t('正在核对目录…');
   try{
     const r=await api('/api/purge-missing',{method:'POST',body:JSON.stringify({id})});
     if(r.ok===false){status.textContent=entityState.sourceHint(r.error);return}
     status.textContent=r.removed
-      ? `${entityState.syncedText(r)}（核对 ${r.checked} 项${r.unreadable?`，${r.unreadable} 项未能读取`:''}）`
+      ? t('{result}（核对 {count} 项{unreadable}）',{result:entityState.syncedText(r),count:r.checked,unreadable:r.unreadable?t('，{count} 项未能读取',{count:r.unreadable}):''})
       : r.unreadable
-        ? `目录有 ${r.unreadable} 项暂时无法读取，本次未改动`
-        : `目录内 ${r.checked} 项都还在，无需改动`;
+        ? t('目录有 {count} 项暂时无法读取，本次未改动',{count:r.unreadable})
+        : t('目录内 {count} 项都还在，无需改动',{count:r.checked});
     if(r.removed){
       const ids=(r.items||[]).filter(item=>item.disposal!=='reattached').map(item=>item.id);
       if(done)done(r);
@@ -123,13 +126,13 @@ export async function entityAliasForm(mine,write){
   const form=formModal({
     title:'添加别名',
     description:'图库按名字查找图片，添加别名可能找到更多备选图片；也可以将别名设为统一显示的名称。',
-    body:`<label class="modalfield"><span>别名</span>
+    body:`<label class="modalfield"><span>${uiTextHtml("别名")}</span>
         <input class="geist-input" name="alias" maxlength="80" autocomplete="off"
-          placeholder="另一种写法，或另一个艺名"></label>`
-      +(mine.length?`<div class="modalfield"><span>自己添过的</span>
+          placeholder="${escapeUi(t("另一种写法，或另一个艺名"))}" data-i18n-placeholder="另一种写法，或另一个艺名"></label>`
+      +(mine.length?`<div class="modalfield"><span>${uiTextHtml("自己添过的")}</span>
         <div class="aliaschips">${mine.map(one=>`<span class="aliaschip">${esc(one)}
           <button type="button" data-alias-drop="${esc(one)}"
-            aria-label="撤销别名 ${esc(one)}">${icon('x')}</button></span>`).join('')}</div></div>`:''),
+            aria-label="${esc(t('撤销别名 {name}', { name: one }))}">${icon('x')}</button></span>`).join('')}</div></div>`:''),
     confirmLabel:'添加别名',
     confirmDisabled:true,
     onConfirm:()=>write({alias:field.value.trim()})});
@@ -154,7 +157,7 @@ export async function entityAliasForm(mine,write){
 export function showEntityLoading(kind,name){
   const jav=['performer','studio'].includes(kind)&&feedState.hasEntityPart(kind,name,'jav');
   const head=`<div data-filter-row="bottom" class="flex min-w-0 items-center gap-3 px-3 py-2 min-h-12"><h3 data-entity-readout><span data-skeleton="count" class="relative inline-block h-3.5 w-24 rounded-md align-middle skeleton-sheen"></span></h3>${islandShortcutsEntry()}${kind==='agency'?'':filterControlsSkeletonHtml(sortKeys(state.sort,state.dir,jav),jav?{name:'jav-layout',label:'JAV 卡片版式',value:javLayout(),options:JAV_LAYOUTS}:null)}</div>`;
-  const top=kind==='agency'?'':`<div data-entity-media><button type="button" data-media-view="videos" aria-label="视频" aria-pressed="true" ${FILTER_WAITING}>${icon('play')}</button><button type="button" data-media-view="photos" data-media-icon="image" aria-label="照片" ${FILTER_WAITING}>${icon('pics')}</button></div><span data-entity-sep></span><div data-entity-scroll><div data-entity-states>${catalogState.catalogViews().map(view=>`<button type="button" data-entity-state="${esc(view.k)}" aria-pressed="${state.state===view.k}" ${FILTER_WAITING}>${esc(view.label)}</button>`).join('')}<span data-entity-sep></span></div>`;
+  const top=kind==='agency'?'':`<div data-entity-media><button type="button" data-media-view="videos" aria-label="${escapeUi(t("视频"))}" data-i18n-aria-label="视频" aria-pressed="true" ${FILTER_WAITING}>${icon('play')}</button><button type="button" data-media-view="photos" data-media-icon="image" aria-label="${escapeUi(t("照片"))}" data-i18n-aria-label="照片" ${FILTER_WAITING}>${icon('pics')}</button></div><span data-entity-sep></span><div data-entity-scroll><div data-entity-states>${catalogState.catalogViews().map(view=>`<button type="button" data-entity-state="${esc(view.k)}" aria-pressed="${state.state===view.k}" ${FILTER_WAITING}>${esc(view.label)}</button>`).join('')}<span data-entity-sep></span></div>`;
   const body=kind==='agency'
     ?indexSkeletonHtml({kind:'performers',layout:indexState.peopleIndexLayout()})
     :catalogContentSkeletonHtml('正在读取作品',cardRatio(gridLayout({active:jav,home:false,portrait:false})));
@@ -180,8 +183,8 @@ export function syncEntitySkeletonParts(kind,name){
 
 export function showEntityMissing(kind){
   const index=ENTITY_ROUTES[kind]||kind,title=INDEX_TITLES[index]||'条目';
-  const actions=INDEX_TITLES[index]?`<a class="geist-button primary" href="/${index}">返回${title}列表</a>`:'';
-  $('#index').innerHTML=preferencesState.emptyState('search-x',`找不到这个${title}`,'名字可能拼错了，或者已经合并到别的名字下；回列表里重新找。',{actions});
+  const actions=INDEX_TITLES[index]?`<a class="geist-button primary" href="/${index}">${esc(t('返回{type}列表',{type:t(title)}))}</a>`:'';
+  $('#index').innerHTML=preferencesState.emptyState('search-x',t('找不到这个{type}',{type:t(title)}),'名字可能拼错了，或者已经合并到别的名字下；回列表里重新找。',{actions});
 }
 
 export function openEntity(kind,name){openRoutedPage(entityState.application.fresh(kind,name))}
@@ -232,15 +235,15 @@ entityState.SOURCE_HINTS = {
   'unsupported platform':'当前服务端系统不支持直接定位文件',
   'reveal failed':'打开文件管理器失败，请重试',
 };
-entityState.sourceHint = message=>entityState.SOURCE_HINTS[message]||message;
-entityState.syncedText = r=>[r.trashed?`已把 ${r.trashed} 项移入回收站`:'',
-  r.vanished?`${r.vanished} 项带个人记录，已标为已消失`:'',
-  r.reattached?`${r.reattached} 项的记录已接到库里的另一个版本`:''].filter(Boolean).join('，');
+entityState.sourceHint = message=>t(entityState.SOURCE_HINTS[message]||message);
+entityState.syncedText = r=>[r.trashed?t('已把 {count} 项移入回收站',{count:r.trashed}):'',
+  r.vanished?t('{count} 项带个人记录，已标为已消失',{count:r.vanished}):'',
+  r.reattached?t('{count} 项的记录已接到库里的另一个版本',{count:r.reattached}):''].filter(Boolean).join(t('，'));
 entityState.sourceToolButtons = id=>`
-    <button type="button" data-reveal="${id}" title="在文件管理器里打开源文件所在目录"
-      aria-label="定位源文件">${icon('folder-open')}</button>
-    <button type="button" data-sync="${id}" title="核对该目录：磁盘上已删除的移入 Peach 回收站，带个人记录的标为已消失"
-      aria-label="同步删除">${icon('folder-sync')}</button>`;
+    <button type="button" data-reveal="${id}" title="${escapeUi(t("在文件管理器里打开源文件所在目录"))}" data-i18n-title="在文件管理器里打开源文件所在目录"
+      aria-label="${escapeUi(t("定位源文件"))}" data-i18n-aria-label="定位源文件">${icon('folder-open')}</button>
+    <button type="button" data-sync="${id}" title="${escapeUi(t("核对该目录：磁盘上已删除的移入 Peach 回收站，带个人记录的标为已消失"))}" data-i18n-title="核对该目录：磁盘上已删除的移入 Peach 回收站，带个人记录的标为已消失"
+      aria-label="${escapeUi(t("同步删除"))}" data-i18n-aria-label="同步删除">${icon('folder-sync')}</button>`;
 }
 
 export function connectPhotoController(){

@@ -12,16 +12,18 @@ import { chooseGlowPreset, glowChips, type GlowSettings } from '@peach/appearanc
 
 import type { SettingsStore } from '../../settings-store';
 import './glow-preset-grid.css';
+import { useTranslation } from '../i18n';
 
 export function GlowPresetGrid({ store, label, hidden }: {
   store: SettingsStore<GlowSettings>; label: string; hidden?: boolean;
 }) {
+  const t = useTranslation();
   const glow = store.value.homeGlow;
   return (
-    <div data-glow-grid="" role="group" aria-label={label} hidden={hidden}>
+    <div data-glow-grid="" role="group" aria-label={t(label)} hidden={hidden}>
       {glowChips(glow).map((chip) => (
         <button type="button" key={chip.key} data-glow-chip="" data-glow-preset={chip.key}
-          aria-pressed={chip.key === glow.preset} title={chip.label} aria-label={chip.label}
+          aria-pressed={chip.key === glow.preset} title={t(chip.label)} aria-label={t(chip.label)}
           onClick={() => chooseGlowPreset(chip.key, store)}>
           <span data-glow-ball="" aria-hidden="true" data-glow-native={chip.native ? '' : undefined}
             style={chip.native ? undefined : { '--glow-chip': chip.fill } as CSSProperties} />

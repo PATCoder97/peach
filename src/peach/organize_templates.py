@@ -277,13 +277,19 @@ def render(template: str, values: dict[str, str], *,
     return "/".join(components), frozenset(missing)
 
 
-def example_path(file_template: str, dir_template: str) -> dict:
+def example_path(file_template: str, dir_template: str, *, locale: str = 'zh-CN') -> dict:
     """以固定示例字段渲染当前输入的路径。"""
+    values = dict(EXAMPLE_VALUES)
+    if locale == 'en':
+        values.update(title='Title', studio='Studio', series='Series', actors='Actor A, Actor B', mosaic='Uncensored')
+    elif locale == 'vi':
+        values.update(title='Tiêu đề', studio='Hãng phim', series='Loạt phim',
+                      actors='Diễn viên A, Diễn viên B', mosaic='Không che')
     parts = {}
     for field, text, directory in (("file", file_template, False), ("dir", dir_template, True)):
         try:
-            parts[field], _missing = render(text, EXAMPLE_VALUES, directory=directory)
+            parts[field], _missing = render(text, values, directory=directory)
         except TemplateError as error:
             return {"ok": False, "error": str(error), "field": field}
-    filename = (parts["file"] if file_template.strip() else "ABC-123 标题") + ".mp4"
+    filename = (parts["file"] if file_template.strip() else f"ABC-123 {values['title']}") + ".mp4"
     return {"ok": True, "example": "/".join(filter(None, (parts["dir"], filename)))}

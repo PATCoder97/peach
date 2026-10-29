@@ -1,14 +1,29 @@
 name: Docker
 
-# 只验收不发布：镜像的版本号与 edge 由 release.yml 在 GitHub Release 成功后推送，
-# edge 始终指向最新发布的版本（ADR-0121）。
+# 分叉仓库推送版本标签时自动验收并发布个人镜像；手动入口可发布指定分支。
+# 官方版本号与 edge 仍由 release.yml 发布（ADR-0121）。
 on:
   pull_request:
     paths: [Dockerfile, .dockerignore, compose.yaml, 'src/**', 'migrations/**', 'web/**', 'resources/**', pyproject.toml, uv.lock, setup.py, MANIFEST.in, scripts/smoke_docker.py, .github/workflows/docker.yml]
   push:
     branches: [master]
+    tags: ['v[0-9]*.[0-9]*.[0-9]*']
     paths: [Dockerfile, .dockerignore, compose.yaml, 'src/**', 'migrations/**', 'web/**', 'resources/**', pyproject.toml, uv.lock, setup.py, MANIFEST.in, scripts/smoke_docker.py, .github/workflows/docker.yml]
   workflow_dispatch:
+    inputs:
+      source_ref:
+        description: '构建源码的分支、标签或提交；留空使用所选工作流分支'
+        type: string
+        required: false
+      publish:
+        description: '验收成功后推送到 DOCKERHUB_USERNAME/peach'
+        type: boolean
+        default: false
+      image_tag:
+        description: '个人镜像标签'
+        type: string
+        default: vi-en
+        required: true
 
 permissions:
   contents: read
@@ -21,10 +36,39 @@ concurrency:
 jobs:
   image:
     name: Linux amd64 镜像验收
+    if: github.event_name != 'push' || github.ref_type != 'tag' || github.repository != 'peach-mitao/peach'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
+          persist-credentials: false
+      - name: 核对个人镜像目标
+        if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
+        id: target
+        env:
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
+          IMAGE_TAG: ${{ github.event_name == 'push' && github.ref_type == 'tag' && github.ref_name || inputs.image_tag }}
+          VERSION_TAG: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+        shell: bash
+        run: |
+          if [[ "$VERSION_TAG" == true ]]; then
+            if [[ ! "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo '自动发布需要 vX.Y.Z 格式的版本标签。' >&2
+              exit 1
+            fi
+            IMAGE_TAG="${IMAGE_TAG#v}"
+          fi
+          if [[ ! "$DOCKERHUB_USERNAME" =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
+            echo '请在 Actions Variables 设置有效的 DOCKERHUB_USERNAME。' >&2
+            exit 1
+          fi
+          if [[ ! "$IMAGE_TAG" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$ ]]; then
+            echo '镜像标签无效；请使用字母、数字、下划线、点或连字符。' >&2
+            exit 1
+          fi
+          echo "image=$DOCKERHUB_USERNAME/peach:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
@@ -34,8 +78,28 @@ jobs:
         with:
           context: .
           load: true
-          tags: longmeidao/peach:test
+          tags: peach:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: 验收临时容器
-        run: python3 scripts/smoke_docker.py longmeidao/peach:test
+        run: python3 scripts/smoke_docker.py peach:ci
+      - name: 登录个人 Docker Hub
+        if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: 推送已验收镜像
+        if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
+        env:
+          IMAGE: ${{ steps.target.outputs.image }}
+        shell: bash
+        run: |
+          docker tag peach:ci "$IMAGE"
+          docker push "$IMAGE"
+          {
+            echo '### Docker Hub 镜像'
+            echo "镜像：\`$IMAGE\`"
+            echo "源码提交：\`$(git rev-parse HEAD)\`"
+            echo "拉取命令：\`docker pull $IMAGE\`"
+          } >> "$GITHUB_STEP_SUMMARY"

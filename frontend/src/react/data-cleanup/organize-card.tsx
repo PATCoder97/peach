@@ -1,3 +1,5 @@
+import { useTranslation as useUiTranslation } from "../i18n";
+import { getLocale } from '../../i18n';
 /* 数据管理页上的「整理」（ADR-0039）：选来源、填两份模板、预览、执行，外加整批回滚。
  *
  * 预览是一次同步请求，结果只活在这张卡上；执行与回滚是同一趟后台任务，快照摊在
@@ -36,6 +38,7 @@ const ROLLBACK_BODY = '将把上一批整理动过的文件退回整理前的名
 const PLAN_ROWS = 8;
 
 function PlanRows({ plan }: { plan: OrganizePlan }) {
+  const uiText = useUiTranslation();
   return (
     <>
       <ol className="mt-2 flex min-w-0 flex-col gap-1">
@@ -49,7 +52,7 @@ function PlanRows({ plan }: { plan: OrganizePlan }) {
         ))}
       </ol>
       {plan.truncated || plan.rows.length > PLAN_ROWS
-        ? <p className="text-caption-1-regular text-text-secondary">只列出前 8 行，完整计划在计划 CSV 里。</p>
+        ? <p className="text-caption-1-regular text-text-secondary">{uiText("只列出前 8 行，完整计划在计划 CSV 里。")}</p>
         : null}
     </>
   );
@@ -58,6 +61,7 @@ function PlanRows({ plan }: { plan: OrganizePlan }) {
 export function OrganizeCard(
   { toast, failure }: { toast(message: string): void; failure(action: string, error: unknown): void },
 ) {
+  const uiText = useUiTranslation();
   const organize = useQuery({ queryKey: ORGANIZE_KEY, queryFn: ({ signal }) => fetchOrganize(signal) });
   const data = organize.data;
   const locations = data?.locations ?? [];
@@ -77,8 +81,8 @@ export function OrganizeCard(
   const dirInput = useRef<HTMLInputElement>(null);
   const pathInput = useRef<HTMLInputElement>(null);
   const example = useQuery({
-    queryKey: ['organize-example', fields.file, fields.dir],
-    queryFn: ({ signal }) => fetchOrganizeExample(fields.file, fields.dir, signal),
+    queryKey: ['organize-example', fields.file, fields.dir, getLocale()],
+    queryFn: ({ signal }) => fetchOrganizeExample(fields.file, fields.dir, signal, getLocale()),
     enabled: Boolean(data),
   });
   const [target, setTarget] = useState<'file' | 'dir'>('file');
@@ -182,18 +186,18 @@ export function OrganizeCard(
     const line = current.message || current.stage || '正在整理文件';
     state = <TaskProgress embedded label={line} value={Math.min(current.checked || 0, current.total || 0)} total={current.total} />;
   } else if (outcome?.status === 'failed') {
-    state = <Note tone="error" title="文件整理未完成">{outcome.error || '请查看任务记录，核对已处理的文件。'}</Note>;
+    state = <Note tone="error" title={uiText("文件整理未完成")}>{outcome.error || uiText("请查看任务记录，核对已处理的文件。")}</Note>;
   } else if (outcome) {
     const { text, failed } = organizeOutcome(outcome);
-    state = <Note tone={failed ? 'warning' : 'success'} title={failed ? '部分完成' : '整理结果'}>{text}</Note>;
+    state = <Note tone={failed ? 'warning' : 'success'} title={failed ? uiText("部分完成") : uiText("整理结果")}>{text}</Note>;
   } else if (job.start.isError) {
-    state = <Note tone="error" title="整理失败">{errorMessage(job.start.error)}</Note>;
+    state = <Note tone="error" title={uiText("整理失败")}>{errorMessage(job.start.error)}</Note>;
   } else if (preview.isPending) {
-    state = <TaskProgress embedded label="正在核对整理计划" />;
+    state = <TaskProgress embedded label={uiText("正在核对整理计划")} />;
   } else if (preview.isError && previewMatches) {
-    state = <Note tone="error" title="整理预览失败">{errorMessage(preview.error)}</Note>;
+    state = <Note tone="error" title={uiText("整理预览失败")}>{errorMessage(preview.error)}</Note>;
   } else if (plan) {
-    state = <><Note tone="neutral" title="预览结果">{planSummary(plan)}</Note>{changes ? <PlanRows plan={plan} /> : null}</>;
+    state = <><Note tone="neutral" title={uiText("预览结果")}>{planSummary(plan)}</Note>{changes ? <PlanRows plan={plan} /> : null}</>;
   }
 
   return (
@@ -202,90 +206,85 @@ export function OrganizeCard(
       footer={
         <>
           {data?.last_batch
-            ? <Button variant="secondary" {...busyProps(running)} onClick={runRollback}>回滚上一批</Button>
+            ? <Button variant="secondary" {...busyProps(running)} onClick={runRollback}>{uiText("回滚上一批")}</Button>
             : null}
           <Button variant={applicable ? 'secondary' : 'primary'} disabled={!locations.length || running}
-            {...busyProps(preview.isPending)} onClick={runPreview}>预览</Button>
-          {applicable ? <Button variant="primary" onClick={runApply}>执行整理</Button> : null}
+            {...busyProps(preview.isPending)} onClick={runPreview}>{uiText("预览")}</Button>
+          {applicable ? <Button variant="primary" onClick={runApply}>{uiText("执行整理")}</Button> : null}
         </>
       }>
-      <FieldsetTitle id="cleanup-organize-title" gap="medium">整理</FieldsetTitle>
-      <p className="text-body-regular text-text-secondary">
-        清理文件名中的特殊符号与乱码，也可按模板改名并归入目录。先预览，确认后执行；执行过的一批可以整批退回。
-      </p>
+      <FieldsetTitle id="cleanup-organize-title" gap="medium">{uiText("整理")}</FieldsetTitle>
+      <p className="text-body-regular text-text-secondary">{uiText("清理文件名中的特殊符号与乱码，也可按模板改名并归入目录。先预览，确认后执行；执行过的一批可以整批退回。")}</p>
       {organize.isError
-        ? <div className="mt-3"><Note tone="error" title="整理配置读取失败">{errorMessage(organize.error)}</Note></div>
+        ? <div className="mt-3"><Note tone="error" title={uiText("整理配置读取失败")}>{errorMessage(organize.error)}</Note></div>
         : null}
       <div className="mt-3 flex flex-col gap-3">
         <div data-organize-scope className="flex min-w-0 flex-wrap items-start gap-2">
         {locations.length
-          ? <Select aria-label="整理哪个来源" prefix="来源" className="w-fit min-w-25" selectedKey={location || null}
+          ? <Select aria-label={uiText("整理哪个来源")} prefix={uiText("来源")} className="w-fit min-w-25" selectedKey={location || null}
               onSelectionChange={(key) => {
                 if (key === null) return;
                 setChosen(String(key)); setScope({ location: String(key), path: '' });
                 setInvalid(null); preview.reset(); picker.reset(); focused.current = false;
               }}>
               {locations.map((row) => (
-                <SelectItem key={row.location} id={row.location} textValue={LOC[row.location] || row.location}>
-                  <SourceMark mark={MEDIA_SOURCE_ICONS[row.location] || 'database'} />{LOC[row.location] || row.location}
+                <SelectItem key={row.location} id={row.location} textValue={uiText(LOC[row.location] || row.location)}>
+                  <SourceMark mark={MEDIA_SOURCE_ICONS[row.location] || 'database'} />{uiText(LOC[row.location] || row.location)}
                 </SelectItem>
               ))}
             </Select>
           : null}
           <div className="flex min-w-0 basis-64 flex-1 items-start gap-2">
-            <Input aria-label="整理路径" className="min-w-0 flex-1" placeholder="留空整理整个来源"
+            <Input aria-label={uiText("整理路径")} className="min-w-0 flex-1" placeholder={uiText("留空整理整个来源")}
               name="organize-path" autoComplete="off" spellCheck="false" value={path} ref={pathInput}
               isInvalid={invalid === 'path'}
               onChange={(value) => { setScope({ location, path: value }); setInvalid(null); preview.reset(); picker.reset() }} />
-            <IconButton icon={FolderSearchIcon} aria-label="选择整理路径" {...busyProps(picker.isPending)}
+            <IconButton icon={FolderSearchIcon} aria-label={uiText("选择整理路径")} {...busyProps(picker.isPending)}
               onClick={() => picker.mutate({ initial: path || locations.find((row) => row.location === location)?.roots[0] || '', location, path })} />
           </div>
         </div>
-        <p className="text-caption-1-regular text-text-secondary">指定路径时包含子目录，目录模板以该路径为起点。模板均留空时只清理文件名。</p>
-        {picker.isError ? <Note tone="error" title="目录选择失败">{errorMessage(picker.error)}；也可直接输入路径。</Note> : null}
-        <Input label="文件名模板" placeholder="{code}[ {title}]" value={fields.file} ref={fileInput}
+        <p className="text-caption-1-regular text-text-secondary">{uiText("指定路径时包含子目录，目录模板以该路径为起点。模板均留空时只清理文件名。")}</p>
+        {picker.isError ? <Note tone="error" title={uiText("目录选择失败")}>{errorMessage(picker.error)}{uiText("；也可直接输入路径。")}</Note> : null}
+        <Input label={uiText("文件名模板")} placeholder="{code}[ {title}]" value={fields.file} ref={fileInput}
           spellCheck="false" isInvalid={invalid === 'file'}
           onFocus={() => { setTarget('file'); focused.current = true }}
           onChange={(value) => changeTemplates({ file: value })} />
-        <Input label="目录模板" placeholder="留空表示原地改名" value={fields.dir} ref={dirInput}
+        <Input label={uiText("目录模板")} placeholder={uiText("留空表示原地改名")} value={fields.dir} ref={dirInput}
           spellCheck="false" isInvalid={invalid === 'dir'}
           onFocus={() => { setTarget('dir'); focused.current = true }}
           onChange={(value) => changeTemplates({ dir: value })} />
         {data?.presets?.length
-          ? <div className="flex flex-col gap-2" role="group" aria-label="套用模板">
-              <p className="text-caption-1-medium text-text-secondary">套用模板</p>
+          ? <div className="flex flex-col gap-2" role="group" aria-label={uiText("套用模板")}>
+              <p className="text-caption-1-medium text-text-secondary">{uiText("套用模板")}</p>
               <div className="flex flex-wrap gap-2">
               {data.presets.map((preset) => (
-                <Button key={preset.label} variant="secondary" size="small" title={preset.example || preset.label}
+                <Button key={preset.label} variant="secondary" size="small" title={uiText(preset.example || preset.label)}
                   className="max-w-full [&>span]:min-w-0 [&>span]:shrink"
                   onClick={() => { changeTemplates({ file: preset.file, dir: preset.dir }); focused.current = false }}>
-                  <span className="truncate">{preset.label}</span>
+                  <span className="truncate">{uiText(preset.label)}</span>
                 </Button>
               ))}
               </div>
             </div>
           : null}
         <p aria-live="polite" aria-busy={example.isFetching} data-organize-example=""
-          className="text-caption-1-regular text-text-secondary">
-          路径示例：<code className="wrap-anywhere">{example.data?.example || example.data?.error
-            || (example.isError ? errorMessage(example.error) : '正在预览…')}</code>
+          className="text-caption-1-regular text-text-secondary">{uiText("路径示例：")}<code className="wrap-anywhere">{example.data?.example || example.data?.error
+            || (example.isError ? uiText(errorMessage(example.error)) : uiText('正在预览…'))}</code>
         </p>
-        {data?.placeholders?.length ? <div className="flex flex-col gap-2" role="group" aria-label="插入参数">
+        {data?.placeholders?.length ? <div className="flex flex-col gap-2" role="group" aria-label={uiText("插入参数")}>
           <p className="text-caption-1-regular text-text-secondary" aria-live="polite">
-            <strong className="text-caption-1-semibold text-text-primary">插入参数</strong>（到{target === 'file' ? '文件名模板' : '目录模板'}）
+            <strong className="text-caption-1-semibold text-text-primary">{uiText("插入参数")}</strong>{uiText("（到")}{target === 'file' ? uiText("文件名模板") : uiText("目录模板")}）
           </p>
           <div className="flex flex-wrap gap-1">
             {data.placeholders.map((item) => <Button key={item.key} variant="ghost" size="small"
-              aria-label={`${item.label} {${item.key}}`} onClick={() => insertParameter(item.key)}>
+              aria-label={`${uiText(item.label)} {${item.key}}`} onClick={() => insertParameter(item.key)}>
               <span className="inline-flex flex-wrap items-center gap-x-1.5">
-                <code>{`{${item.key}}`}</code><span className="text-text-secondary">{item.label}</span>
+                <code>{`{${item.key}}`}</code><span className="text-text-secondary">{uiText(item.label)}</span>
               </span>
             </Button>)}
           </div>
         </div> : null}
-        <p className="text-caption-1-regular leading-4.5 text-text-secondary">
-          点击参数插入光标处，选中文字可替换。方括号里的内容在字段为空时整段省略。
-        </p>
+        <p className="text-caption-1-regular leading-4.5 text-text-secondary">{uiText("点击参数插入光标处，选中文字可替换。方括号里的内容在字段为空时整段省略。")}</p>
       </div>
       <div aria-live="polite" className="mt-3 flex flex-col gap-2 empty:hidden">{state}</div>
     </Fieldset>

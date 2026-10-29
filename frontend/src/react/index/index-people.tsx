@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 名册网格：艺人、创作者、厂牌、事务所、系列名册和在线来源创作者。
  *
  * 一格人：圆框或竖幅头像、名字、一个读数。四种实体同一副版式、同一条取图链，区别只在
@@ -39,6 +40,7 @@ function Cell(
   { name: string; readout: string; big: boolean; children: ReactNode; following?: boolean; onPress(): void }
     & Record<`data-${string}`, string>,
 ) {
+  const uiText = useUiTranslation();
   return (
     <button type="button" {...data} data-index-cell="" onClick={onPress}
       className={cardClass({
@@ -46,7 +48,7 @@ function Cell(
         className: `${CELL} ${big ? 'items-stretch text-left' : 'items-center text-center'}`,
       })}>
       {children}
-      {following ? <span data-index-feed="" role="img" aria-label="已订阅新作" className="index-feed-mark absolute top-4 right-4 z-2 inline-flex">
+      {following ? <span data-index-feed="" role="img" aria-label={uiText("已订阅新作")} className="index-feed-mark absolute top-4 right-4 z-2 inline-flex">
         <Chip variant="caption" color="soft"><Rss /></Chip>
       </span> : null}
       <span data-index-name="" className="text-body-medium wrap-anywhere text-text-primary">{name}</span>

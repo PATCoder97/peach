@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { entityPath } from '@peach/legacy/core';
@@ -43,14 +44,15 @@ function writeJavQuery(patch: Record<string, string>): void {
 export function JavPage({ tab, readOnly, navigate, receipt }: {
   tab: string; readOnly: boolean; navigate(path: string): void; receipt(message: string): void;
 }) {
+  const uiText = useUiTranslation();
   const [download, setDownload] = useState<DownloadPrefill | null>(null);
   const [text, changeText] = useState(() => new URLSearchParams(location.search).get('q') || '');
   const setText = (value: string) => { changeText(value); writeJavQuery({ q: value }) };
   const search = (event: FormEvent) => { event.preventDefault() };
   return <div className="flex w-full flex-col gap-6">
     <JavHeader tab={tab} navigate={navigate} find={() => setDownload({})} />
-    <form aria-label={tab === 'discover' ? '筛选推荐' : '筛选想要'} onSubmit={search}>
-      <Input type="search" aria-label={tab === 'discover' ? '筛选推荐' : '筛选想要'} placeholder="筛选番号、女优或标题" leadingIcon={SearchGlyph}
+    <form aria-label={tab === 'discover' ? uiText("筛选推荐") : uiText("筛选想要")} onSubmit={search}>
+      <Input type="search" aria-label={tab === 'discover' ? uiText("筛选推荐") : uiText("筛选想要")} placeholder={uiText("筛选番号、女优或标题")} leadingIcon={SearchGlyph}
         value={text} onChange={setText} enterKeyHint="search" />
     </form>
     {tab === 'discover'
@@ -64,6 +66,7 @@ function Discover({ readOnly, receipt, resource, query, navigate, clearText }: {
   readOnly: boolean; receipt(message: string): void; resource(work: DownloadPrefill): void; query: string;
   navigate(path: string): void; clearText(): void;
 }) {
+  const uiText = useUiTranslation();
   const params = new URLSearchParams(location.search);
   const [scope, changeScope] = useState<DiscoveryScope>(() => params.get('scope') === 'library' ? 'library' : 'external');
   const [tag, changeTag] = useState(() => params.get('tag') || '');
@@ -115,8 +118,8 @@ function Discover({ readOnly, receipt, resource, query, navigate, clearText }: {
   const items = all.filter(item => (!tag || item.tags?.includes(tag)) &&
     (!query || [item.code, item.title, item.performers, item.studio, ...(item.tags || []), ...(item.performer_refs || []).map(ref => ref.name)].join(' ').toLocaleLowerCase().includes(query.toLocaleLowerCase())));
   const waiting = discoveries.isPending;
-  return <section ref={section} aria-label="为你推荐" aria-busy={waiting} className="flex min-w-0 flex-col gap-4">
-    <FilterGlassRows label="发现筛选与排序" topLabel="发现范围与标签" attrs={{ 'data-filter-frame': '', 'data-jav-filter': '', 'data-catalog-frame': '' }}
+  return <section ref={section} aria-label={uiText("为你推荐")} aria-busy={waiting} className="flex min-w-0 flex-col gap-4">
+    <FilterGlassRows label={uiText("发现筛选与排序")} topLabel={uiText("发现范围与标签")} attrs={{ 'data-filter-frame': '', 'data-jav-filter': '', 'data-catalog-frame': '' }}
       busy={waiting} topClassName="gap-1.5 overflow-visible" bottomClassName="min-h-12" top={<div data-catalog-scroll="">
       <div data-catalog-views="">
         {([['external', '库外发现'], ['library', '馆藏探索']] as const).map(([key, label]) =>
@@ -127,35 +130,35 @@ function Discover({ readOnly, receipt, resource, query, navigate, clearText }: {
           {name}<span data-count-badge="">{all.filter(item => item.tags?.includes(name)).length}</span>
         </FilterPill>)}
       </div></div>} bottom={<>
-        <span data-catalog-readout="">{waiting ? <span data-skeleton="count" aria-hidden className="relative inline-block h-3.5 w-37.5 rounded-md align-middle skeleton-sheen" /> : `${items.length} 部`}</span>
+        <span data-catalog-readout="">{waiting ? <span data-skeleton="count" aria-hidden className="relative inline-block h-3.5 w-37.5 rounded-md align-middle skeleton-sheen" /> : uiText("{value0} 部", { value0: String(items.length) })}</span>
         <LibraryShortcuts currentHref={() => location.pathname + location.search} />
-        {query || tag ? <GlassPill onPress={() => { setTag(''); clearText() }}>清除筛选</GlassPill> : null}
+        {query || tag ? <GlassPill onPress={() => { setTag(''); clearText() }}>{uiText("清除筛选")}</GlassPill> : null}
         <span data-entity-sorts="">
         {scope === 'external' ? <FilterIconButton data-entity-batch="" data-jav-metadata-update=""
-          label={metadata?.status === 'running' ? '停止读取' : '更新资料'}
+          label={metadata?.status === 'running' ? uiText("停止读取") : uiText("更新资料")}
           disabled={waiting} data-skeleton-action={waiting ? '' : undefined} busy={!!metadataAction.busy}
           icon={metadata?.status === 'running' ? MetadataStopGlyph : MetadataRefreshGlyph}
           onPress={() => updateMetadata(metadata?.status === 'running' ? 'stop' : 'update')} /> : null}
-        <Segments label="JAV 卡片版式" value={layout} options={JAV_LAYOUTS} onChange={storeJavLayout} />
+        <Segments label={uiText("JAV 卡片版式")} value={layout} options={JAV_LAYOUTS} onChange={storeJavLayout} />
         <SortKeys sorts={DISCOVERY_SORTS.map(([key, label, ariaLabel]) => ({ key, label, ariaLabel,
           pressed: key === sort, dir: direction }))} onSort={key => {
           if (key === sort) setAscending(!ascending); else { setSort(key as DiscoverySort); setAscending(key === 'code') }
         }} /></span>
       </>} />
-    {waiting ? <div role="status" aria-label="正在读取推荐" dangerouslySetInnerHTML={{ __html: javContentSkeleton('discover', layout) }} /> : null}
-    {discoveries.error ? <Note tone="error" title="推荐未取得">{errorMessage(discoveries.error)}</Note> : null}
+    {waiting ? <div role="status" aria-label={uiText("正在读取推荐")} dangerouslySetInnerHTML={{ __html: javContentSkeleton('discover', layout) }} /> : null}
+    {discoveries.error ? <Note tone="error" title={uiText("推荐未取得")}>{errorMessage(discoveries.error)}</Note> : null}
     {scope === 'external' && metadata?.status === 'running' ? <div data-jav-metadata="" className="min-w-0"><TaskProgress embedded
-        label={`正在读取作品资料 · ${metadata.completed} / ${metadata.total} 部`} value={metadata.completed} total={metadata.total} /></div> : null}
+        label={uiText("正在读取作品资料 · {value0} / {value1} 部", { value0: String(metadata.completed), value1: String(metadata.total) })} value={metadata.completed} total={metadata.total} /></div> : null}
     {metadata && metadata.status !== 'running' && (metadata.status !== 'complete' || metadata.failed > 0)
       ? <Note tone="neutral" action={<Button variant="secondary" {...busyProps(metadataAction.busy === 'retry')}
-        aria-label="立即重试读取作品资料" onClick={() => updateMetadata('retry')}>立即重试</Button>}>{metadata.message || `作品资料 ${metadata.completed} / ${metadata.total} 部`}</Note> : null}
+        aria-label={uiText("立即重试读取作品资料")} onClick={() => updateMetadata('retry')}>{uiText("立即重试")}</Button>}>{metadata.message || uiText("作品资料 {value0} / {value1} 部", { value0: String(metadata.completed), value1: String(metadata.total) })}</Note> : null}
     {metadataAction.error ? <Note tone="error">{metadataAction.error}</Note> : null}
-    {!waiting && !discoveries.error && !items.length ? <EmptyState icon={RiCompassLine} title={query || tag ? '没有符合条件的推荐' : '暂无匹配口味的作品'}
-      actions={<><ButtonLink size="small" href="/taste" variant="secondary">查看口味</ButtonLink>
-        {query || tag ? <Button variant="primary" size="small" onClick={() => { clearText(); changeTag(''); writeJavQuery({ q: '', tag: '' }) }}>清除筛选</Button>
-        : scope === 'library' ? <ButtonLink variant="primary" size="small" href="/">浏览馆藏</ButtonLink>
-        : <Button variant="primary" size="small" onClick={() => resource({})}>查找作品</Button>}</>}>
-      {query || tag ? '清除筛选后查看其他作品。' : scope === 'library' ? '观看或标记作品后，可以探索少看的馆藏。' : '可以查找番号，或更新关注来源。'}
+    {!waiting && !discoveries.error && !items.length ? <EmptyState icon={RiCompassLine} title={query || tag ? uiText("没有符合条件的推荐") : uiText("暂无匹配口味的作品")}
+      actions={<><ButtonLink size="small" href="/taste" variant="secondary">{uiText("查看口味")}</ButtonLink>
+        {query || tag ? <Button variant="primary" size="small" onClick={() => { clearText(); changeTag(''); writeJavQuery({ q: '', tag: '' }) }}>{uiText("清除筛选")}</Button>
+        : scope === 'library' ? <ButtonLink variant="primary" size="small" href="/">{uiText("浏览馆藏")}</ButtonLink>
+        : <Button variant="primary" size="small" onClick={() => resource({})}>{uiText("查找作品")}</Button>}</>}>
+      {query || tag ? uiText("清除筛选后查看其他作品。") : scope === 'library' ? uiText("观看或标记作品后，可以探索少看的馆藏。") : uiText("可以查找番号，或更新关注来源。")}
     </EmptyState> : null}
     {action.error ? <Note tone="error">{action.error}</Note> : null}
     <div data-media-grid="" className={JAV_RECOMMENDATION_GRID} style={{ '--card-ratio': ratio } as CSSProperties}>
@@ -163,46 +166,46 @@ function Discover({ readOnly, receipt, resource, query, navigate, clearText }: {
         const performers = item.performer_refs?.length ? item.performer_refs.map(person => person.name).join('、') : item.performers;
         const artwork = discoveryArtwork(item, layout, settings.value.javImage);
         const recommendation = recommendationScore(item.taste_score ?? item.score);
-        const scoreDetails = [recommendation.label, `口味 ${discoveryScore(item.taste_score ?? item.score)}`,
-          discoveries.data?.ranking_method === 'mmr' && item.ranking_score != null ? `排序 ${discoveryScore(item.ranking_score)}` : '',
-          item.source_score != null ? `来源评分 ${item.source_score.toFixed(1)} / 5` : '', ...(item.reasons || [])].filter(Boolean).join(' · ');
+        const scoreDetails = [uiText(recommendation.label), uiText('口味 {score}', { score: discoveryScore(item.taste_score ?? item.score) }),
+          discoveries.data?.ranking_method === 'mmr' && item.ranking_score != null ? uiText('排序 {score}', { score: discoveryScore(item.ranking_score) }) : '',
+          item.source_score != null ? uiText('来源评分 {score} / 5', { score: item.source_score.toFixed(1) }) : '', ...(item.reasons || []).map(reason => uiText(reason))].filter(Boolean).join(' · ');
         return <article key={item.id} data-media-card="" data-jav-card="" onClick={event => {
         if (!(event.target as HTMLElement).closest('a,button,input')) navigate(item.asset_id ? `/assets/${item.asset_id}` : `/works/${encodeURIComponent(item.code)}`);
       }}>
-        <a href={item.asset_id ? `/assets/${item.asset_id}` : `/works/${encodeURIComponent(item.code)}`} aria-label={`查看 ${item.code} 详情`}
+        <a href={item.asset_id ? `/assets/${item.asset_id}` : `/works/${encodeURIComponent(item.code)}`} aria-label={uiText("查看 {value0} 详情", { value0: String(item.code) })}
           onClick={event => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.button === 0) { event.preventDefault(); navigate(event.currentTarget.getAttribute('href')!) } }}
           data-media-pic="" data-jav-cover-box="" className="relative inline-grid place-items-center overflow-hidden rounded-2lg bg-background-tertiary-default">
           {artwork ? <ArtSlot artwork={{ kind: 'cover', html: artwork }} identity={discoveryArtwork(item, 'small', settings.value.javImage)}
-            relayout={root => relayoutCovers(root, layout)} /> : <span data-media-nopic="">无封面</span>}
+            relayout={root => relayoutCovers(root, layout)} /> : <span data-media-nopic="">{uiText("无封面")}</span>}
         </a>
         <div data-media-meta="">
           <DiscoveryFaces item={item} />
           <div data-media-text="">
-            <h3 data-jav-title="" data-media-title="" title={`${item.code} · ${item.title || '标题未取得'}`}><b>{item.code}</b> {item.title ? <span lang={textLang(item.title)}>{item.title}</span> : '标题未取得'}</h3>
+            <h3 data-jav-title="" data-media-title="" title={`${item.code} · ${item.title || uiText('标题未取得')}`}><b>{item.code}</b> {item.title ? <span lang={textLang(item.title)}>{item.title}</span> : uiText("标题未取得")}</h3>
             <div data-media-byline="">
               {item.performer_refs?.[0]?.id ? <a data-media-who="" href={entityPath('performer', item.performer_refs[0].name)} title={performers}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-user-round" /></svg><span>{item.performer_refs[0].name}</span></a>
                 : <span data-media-who="" title={performers}><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-user-round" /></svg><span>{item.performer_refs?.[0]?.name || performers}</span></span>}
-              {(item.performer_refs?.length || 0) > 1 ? <span data-media-who-more="">等 {item.performer_refs!.length} 人</span> : null}
+              {(item.performer_refs?.length || 0) > 1 ? <span data-media-who-more="">{uiText("等 ")}{item.performer_refs!.length}{uiText(" 人")}</span> : null}
               {item.release_date ? <time data-media-release="" dateTime={item.release_date}><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-calendar" /></svg>{item.release_date}</time> : null}
             </div>
         <div data-jav-tags="" data-media-tags="">
-          <button data-jav-taste-score="" type="button" title={scoreDetails} aria-label={`推荐分 ${recommendation.score}，${recommendation.label}`}
+          <button data-jav-taste-score="" type="button" title={scoreDetails} aria-label={uiText("推荐分 {value0}，{value1}", { value0: String(recommendation.score), value1: uiText(recommendation.label) })}
             className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring">
-            <Chip color={recommendation.color}>{recommendation.label}</Chip>
+            <Chip color={recommendation.color}>{uiText(recommendation.label)}</Chip>
           </button>
           {(item.tags || []).slice(0, 4).map(name =>
           <button type="button" data-media-tag="" key={name} aria-pressed={tag === name} onClick={() => setTag(tag === name ? '' : name)}>{name}</button>)}</div>
           </div>
         </div>
         <div data-jav-actions="" className="flex flex-wrap gap-2">
-          {item.link ? <ButtonLink data-button-link="" variant="secondary" trailingIcon={RiExternalLinkLine} href={item.link} target="_blank" rel="noopener noreferrer">作品来源</ButtonLink> : null}
+          {item.link ? <ButtonLink data-button-link="" variant="secondary" trailingIcon={RiExternalLinkLine} href={item.link} target="_blank" rel="noopener noreferrer">{uiText("作品来源")}</ButtonLink> : null}
           <Button variant="ghost" disabled={readOnly || item.wanted || !!item.asset_id} {...busyProps(action.busy === String(item.id))} onClick={() => {
             void action.run(String(item.id), signal => addWant({ code: item.code }, signal), () => {
               receipt('已加入想要'); void invalidateWants(); void discoveries.refetch();
             });
-          }}>{item.asset_id ? '已入库' : item.wanted ? '已加入想要' : '想要'}</Button>
-          <Button variant="secondary" onClick={() => resource({ ...item, cover: item.has_cover ? coverUrl(item, true) : item.cover_url, origin: `${item.asset_id ? 'asset' : 'feed'}:${item.id}` })}>查找资源</Button>
+          }}>{item.asset_id ? uiText("已入库") : item.wanted ? uiText("已加入想要") : uiText("想要")}</Button>
+          <Button variant="secondary" onClick={() => resource({ ...item, cover: item.has_cover ? coverUrl(item, true) : item.cover_url, origin: `${item.asset_id ? 'asset' : 'feed'}:${item.id}` })}>{uiText("查找资源")}</Button>
         </div>
       </article>})}
     </div>

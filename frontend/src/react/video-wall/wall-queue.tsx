@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { cardArtwork } from '@peach/card-art';
 import { fmtDur } from '@peach/legacy/core';
 import { ArtSlot } from '../components/art-slot';
@@ -9,8 +10,9 @@ export function WallQueue({ items, activeId, kind, label, choose, close }: {
   items: readonly QueueItem[]; activeId: number; kind: string;
   label(item: QueueItem): string; choose(item: QueueItem): void; close(): void;
 }) {
+  const uiText = useUiTranslation();
   return <div data-wall-queue="" id="wall-queue">
-    <MixQueue kind={kind} title={kind === 'parts' ? '分卷' : kind === 'editions' ? '版本' : '作品'} summary={`${items.length} 个视频`} onClose={close}>
+    <MixQueue kind={kind} title={kind === 'parts' ? uiText("分卷") : kind === 'editions' ? uiText("版本") : uiText("作品")} summary={uiText("{value0} 个视频", { value0: String(items.length) })} onClose={close}>
       {items.map(item => <MixQueueRow key={item.id} current={item.id === activeId} data-wall-source={item.id}
         aria-label={[item.edition_label, item.part_label ? partLabel(item.part_label) : '', label(item)].filter(Boolean).join(' · ')}
         onClick={() => choose(item)} pic={<ArtSlot artwork={cardArtwork(item, 'small', true, 'cover')} />}>

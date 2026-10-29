@@ -1,3 +1,5 @@
+import { useTranslation as useUiTranslation } from "../i18n";
+import { useSystemTranslation } from '../i18n';
 /* 「存储空间」：数据目录在哪、所在磁盘还剩多少、各类数据各占多少，清理可重建的几类，
  * 或把整个数据目录迁到别的磁盘。
  *
@@ -45,18 +47,19 @@ const cleanable = (category: StorageCategory) => category.cleanable && category.
 
 /** 统计进行中：知道上次有多少文件就画进度条，不知道就只说走过多少。 */
 function Measuring({ job }: { job: StorageState['job'] }) {
+  const uiText = useUiTranslation();
   const files = job.files || 0;
   const expected = job.expected_files || 0;
-  const reading = <>已统计 <AnimatedNumber value={files} /> 个文件 · <AnimatedNumber value={job.bytes || 0} format={fmtSize} /></>;
+  const reading = <>{uiText("已统计 ")}<AnimatedNumber value={files} />{uiText(" 个文件 · ")}<AnimatedNumber value={job.bytes || 0} format={fmtSize} /></>;
   return (
     <div aria-live="polite" className="flex flex-col gap-2">
       {expected
         ? <>
             {/* 文件比上次多时进度条停在 99%，等结果出来。 */}
-            <Progress label="统计进度" value={Math.min(files, expected * 0.99)} max={expected} />
-            <Help>{reading}，上次共 {expected.toLocaleString()} 个</Help>
+            <Progress label={uiText("统计进度")} value={Math.min(files, expected * 0.99)} max={expected} />
+            <Help>{reading}{uiText("，上次共 ")}{expected.toLocaleString()}{uiText(" 个")}</Help>
           </>
-        : <LoadingDots label="正在统计占用空间" />}
+        : <LoadingDots label={uiText("正在统计占用空间")} />}
       {!expected ? <Help>{reading}</Help> : null}
     </div>
   );
@@ -67,6 +70,7 @@ function CategoryRow(
   { category, selected, disabled, onToggle }:
   { category: StorageCategory; selected: boolean; disabled: boolean; onToggle(next: boolean): void },
 ) {
+  const uiText = useUiTranslation();
   const able = cleanable(category);
   const reason = category.cleanable
     ? category.reclaimable > 0 ? `清理后${category.note}` : '没有可以清理的文件'
@@ -74,7 +78,7 @@ function CategoryRow(
   return (
     <div data-category={category.key}
       className="flex min-h-13 w-full items-start gap-3 border-b border-separator-border py-2.5 pr-3 last:border-b-0">
-      <Checkbox aria-label={`清理${category.label}`} isSelected={selected} isDisabled={!able || disabled}
+      <Checkbox aria-label={uiText("清理{value0}", { value0: uiText(category.label) })} isSelected={selected} isDisabled={!able || disabled}
         onChange={onToggle} className="mt-0.5" />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <p className="flex items-center gap-2 text-body-regular text-text-primary">
@@ -86,13 +90,15 @@ function CategoryRow(
       </div>
       <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
         <AnimatedNumber value={category.bytes} format={fmtSize} className="text-body-regular text-text-primary" />
-        {able ? <span className="text-caption-1-regular text-text-secondary">可释放 {fmtSize(category.reclaimable)}</span> : null}
+        {able ? <span className="text-caption-1-regular text-text-secondary">{uiText("可释放 ")}{fmtSize(category.reclaimable)}</span> : null}
       </div>
     </div>
   );
 }
 
 export function StorageSettings({ initial, receipt }: { initial: StorageState; receipt(message: string): void }) {
+  const systemText = useSystemTranslation();
+  const uiText = useUiTranslation();
   const [storage, setStorage] = useState(initial);
   const [accepted, setAccepted] = useState('');
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -175,12 +181,12 @@ export function StorageSettings({ initial, receipt }: { initial: StorageState; r
     return copy;
   });
   return (
-    <Section id="storageSettings" title="存储空间">
+    <Section id="storageSettings" title={uiText("存储空间")}>
       <FactList>
-        <Fact term="数据目录">
+        <Fact term={uiText("数据目录")}>
           <PathLine path={storage.data_root} className="text-body-regular text-text-primary" onRevealed={receipt} />
         </Fact>
-        <Fact term="所在磁盘">{diskLine(storage)}</Fact>
+        <Fact term={uiText("所在磁盘")}>{systemText(diskLine(storage))}</Fact>
       </FactList>
       <Stack divided>
         {storage.job.state === 'measuring' ? <Measuring job={storage.job} /> : null}
@@ -195,11 +201,11 @@ export function StorageSettings({ initial, receipt }: { initial: StorageState; r
               </div>
             </div>
           : storage.job.state === 'measuring' ? null
-            : <Help>统计后显示各类数据的占用，并可清理缓存与旧备份。</Help>}
+            : <Help>{uiText("统计后显示各类数据的占用，并可清理缓存与旧备份。")}</Help>}
         {!storage.relocation.available ? <Help>{storage.relocation.message}</Help> : null}
         {/* 设置页迁移不了的部署（容器）：宿主机上该做的几步，每步一句说明加一条可照抄的命令。 */}
         {!storage.relocation.available && storage.relocation.steps?.length
-          ? <ol className="flex list-decimal flex-col gap-2 pl-5 text-body-2-regular text-text-secondary" aria-label="在宿主机上迁移">
+          ? <ol className="flex list-decimal flex-col gap-2 pl-5 text-body-2-regular text-text-secondary" aria-label={uiText("在宿主机上迁移")}>
               {storage.relocation.steps.map((step) => (
                 <li key={step.command}>
                   {step.text}
@@ -220,15 +226,15 @@ export function StorageSettings({ initial, receipt }: { initial: StorageState; r
         {usage ? <>
           <Button variant="secondary" disabled={locked || !chosen.length}
             {...busyProps(storage.job.state === 'cleaning' && chosen.length > 0)}
-            onClick={() => clean(chosen, '清理所选数据')}>清理所选</Button>
+            onClick={() => clean(chosen, '清理所选数据')}>{uiText("清理所选")}</Button>
           <Button variant="secondary" disabled={locked || !available.length}
-            onClick={() => clean(available, '清理全部可清理的数据')}>全部清理</Button>
+            onClick={() => clean(available, '清理全部可清理的数据')}>{uiText("全部清理")}</Button>
         </> : null}
         <Button variant="secondary" disabled={locked || !storage.relocation.available || !usage}
-          onClick={relocate} {...busyProps(action.busy === 'relocate')}>更改位置</Button>
+          onClick={relocate} {...busyProps(action.busy === 'relocate')}>{uiText("更改位置")}</Button>
         <Button disabled={Boolean(accepted) || storage.job.state === 'cleaning'} onClick={measure}
           {...busyProps(action.busy === 'measure' || storage.job.state === 'measuring')}>
-          {usage ? '重新统计' : '统计占用'}
+          {usage ? uiText("重新统计") : uiText("统计占用")}
         </Button>
       </Footer>
     </Section>

@@ -1,7 +1,77 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { confirmModal } from '../src/ui-kit';
+import { confirmModal, formModal } from '../src/ui-kit';
+import { setLocale } from '../src/i18n';
 
 afterEach(() => document.body.replaceChildren());
+it('批量删除确认切换语言时保留数量和不可恢复提示', async () => {
+  setLocale('en');
+  const write = vi.fn();
+  const pending = confirmModal({title:'永久删除所选项目',body:'将处理选中的 3 项。文件和馆藏记录会永久删除，无法恢复。',
+    confirmLabel:'永久删除所选项目',danger:true,onConfirm:write});
+  const dialog = document.querySelector('dialog')!;
+  try {
+    expect(dialog.textContent).toContain('3 selected items');
+    expect(dialog.textContent).toContain('cannot be recovered');
+    setLocale('vi');
+    expect(dialog.textContent).toContain('3 mục đã chọn');
+    expect(dialog.textContent).toContain('không thể khôi phục');
+    dialog.querySelector<HTMLButtonElement>('[data-modal-cancel]')!.click();
+    expect((await pending).confirmed).toBe(false);
+    expect(write).not.toHaveBeenCalled();
+  } finally { if(dialog.open)dialog.close(); setLocale('zh-CN') }
+});
+it('标签改名确认翻译影响范围并按纯文本保留原始名称', async () => {
+  setLocale('en');
+  const pending = confirmModal({title:'重命名标签',body:'「旧标签」将更名为「<新名字>」，涉及 2 个资源。旧名称保留为别名。',confirmLabel:'重命名标签'});
+  const dialog = document.querySelector('dialog')!;
+  try {
+    expect(dialog.textContent).toContain('Rename 「旧标签」 to “<新名字>”, affecting 2 assets');
+    setLocale('vi');
+    expect(dialog.textContent).toContain('Đổi tên 「旧标签」 thành “<新名字>”, ảnh hưởng 2 tài nguyên');
+    expect(dialog.querySelector('新名字')).toBeNull();
+    dialog.querySelector<HTMLButtonElement>('[data-modal-cancel]')!.click();
+    expect((await pending).confirmed).toBe(false);
+  } finally { if(dialog.open)dialog.close(); setLocale('zh-CN') }
+});
+it('表单弹层换语言时保留输入、焦点和提交操作', async () => {
+  setLocale('en');
+  const write = vi.fn();
+  const view = formModal({ title: '新建播放列表', confirmLabel: '新建', body: '<input aria-label="name">', onConfirm: write });
+  const field = view.dialog.querySelector('input')!;
+  field.value = '我的播放列表';
+  try {
+    expect(view.dialog.querySelector('h3')?.textContent).toBe('Create playlist');
+    setLocale('vi');
+    expect(view.dialog.querySelector('h3')?.textContent).toBe('Tạo danh sách phát');
+    expect(view.dialog.querySelector('input')).toBe(field);
+    expect(field.value).toBe('我的播放列表');
+    expect(document.activeElement).toBe(field);
+    expect(view.confirmButton.textContent).toBe('Tạo mới');
+    view.confirmButton.click();
+    expect((await view.done).confirmed).toBe(true);
+    expect(write).toHaveBeenCalledOnce();
+  } finally { if(view.dialog.open)view.close(); setLocale('zh-CN') }
+});
+it('确认弹层换语言时保留文件名和同一按钮，取消仍不执行写入', async () => {
+  const write = vi.fn();
+  setLocale('en');
+  const pending = confirmModal({ title: '清理所选', body: '已安排 3 项处理', items: ['技术详情.mp4'],
+    confirmLabel: '清理所选', onConfirm: write });
+  const dialog = document.querySelector('dialog')!;
+  const cancel = dialog.querySelector<HTMLButtonElement>('[data-modal-cancel]')!;
+  try {
+    expect(dialog.querySelector('h3')?.textContent).toBe('Clean selected');
+    expect(dialog.textContent).toContain('Scheduled 3 operations');
+    setLocale('vi');
+    expect(dialog.querySelector('h3')?.textContent).toBe('Dọn mục đã chọn');
+    expect(dialog.textContent).toContain('Đã lên lịch 3 thao tác');
+    expect(dialog.querySelector('[data-modal-cancel]')).toBe(cancel);
+    expect(dialog.querySelector('li')?.textContent).toBe('技术详情.mp4');
+    cancel.click();
+    expect((await pending).confirmed).toBe(false);
+    expect(write).not.toHaveBeenCalled();
+  } finally { if (dialog.open) dialog.close(); setLocale('zh-CN') }
+});
 it('确认清单逐条呈现文件名，文件名保持纯文本', async () => {
   const names = ['作品一.mp4', '<img src=x onerror=alert(1)>.mp4'];
   const pending = confirmModal({title:'清理记录',body:'清理 2 项',items:names,confirmLabel:'清理记录'});

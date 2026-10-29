@@ -1,5 +1,6 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* JAV 想要：按状态分组的作品卡，复用资源链接查询与查找资源弹层。 */
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Radio } from 'react-aria-components';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -40,9 +41,10 @@ const facts = (want: Want) => [want.release_date, want.studio, want.performers, 
   .filter(Boolean).join(' · ');
 
 function Cover({ want }: { want: Want }) {
+  const uiText = useUiTranslation();
   return (
     <span className="relative inline-grid w-card-cover shrink-0 aspect-card-cover place-items-center overflow-hidden rounded-2lg bg-background-tertiary-default max-sm:w-24">
-      <span className="text-caption-1-regular text-text-secondary">无封面</span>
+      <span className="text-caption-1-regular text-text-secondary">{uiText("无封面")}</span>
       {want.cover ? (
         <img src={want.cover} alt="" loading="lazy" referrerPolicy={want.remote_cover ? 'no-referrer' : undefined}
           onError={(event) => event.currentTarget.remove()} className="absolute inset-0 size-full object-cover" />
@@ -55,6 +57,7 @@ function WantRow({ want, readOnly, busy, onReset, onRemove, onCloudDownload, dow
   want: Want; readOnly: boolean; busy: string; downloads?: DownloadsSnapshot; provider: string; toast(message: string): void;
   onReset(): void; onRemove(): void; onCloudDownload(): void;
 }) {
+  const uiText = useUiTranslation();
   const [resolvedSource, setResolvedSource] = useState('');
   const source = want.link || resolvedSource || (want.code ? `https://javdb.com/search?q=${encodeURIComponent(want.code)}&f=all` : '');
   return (
@@ -72,18 +75,18 @@ function WantRow({ want, readOnly, busy, onReset, onRemove, onCloudDownload, dow
         {facts(want) ? <p className="text-body-2-regular text-text-secondary">{facts(want)}</p> : null}
         {!want.code || want.phase === 'unreleased' || want.phase === 'acquired' ?
           <p data-want-note="" className="text-caption-1-regular text-text-secondary">{searchNote(want)}</p> : null}
-        {want.scrape_error ? <ErrorLine text={want.scrape_error} prefix="资料未取得：" tone="muted" /> : null}
+        {want.scrape_error ? <ErrorLine text={want.scrape_error} prefix={uiText("资料未取得：")} tone="muted" /> : null}
         <div className="mt-1 flex flex-wrap items-center gap-2">
-          {source ? <ButtonLink data-button-link="" variant="secondary" size="small" trailingIcon={RiExternalLinkLine} href={source} target="_blank" rel="noopener noreferrer">来源页</ButtonLink> : null}
+          {source ? <ButtonLink data-button-link="" variant="secondary" size="small" trailingIcon={RiExternalLinkLine} href={source} target="_blank" rel="noopener noreferrer">{uiText("来源页")}</ButtonLink> : null}
           <Button variant="secondary" size="small" leadingIcon={RiDeleteBinLine} disabled={readOnly} {...busyProps(busy === `remove:${want.id}`)}
-            onClick={onRemove}>移除</Button>
+            onClick={onRemove}>{uiText("移除")}</Button>
           {want.phase === 'given_up' ? (
             <Button variant="secondary" size="small" disabled={readOnly} {...busyProps(busy === `reset:${want.id}`)}
-              onClick={onReset}>重新查找</Button>
+              onClick={onReset}>{uiText("重新查找")}</Button>
           ) : null}
           {/* 还在找的两段才给云下载：未发售的没有资源可下，已入库的已经到手。 */}
           {want.phase === 'searching' || want.phase === 'given_up' ? (
-            <Button variant="secondary" size="small" onClick={onCloudDownload}>查找资源</Button>
+            <Button variant="secondary" size="small" onClick={onCloudDownload}>{uiText("查找资源")}</Button>
           ) : null}
         </div>
       </div>
@@ -98,6 +101,7 @@ function WantRow({ want, readOnly, busy, onReset, onRemove, onCloudDownload, dow
 function WantPhase({ phase, label, rows, row }: {
   phase: string; label: string; rows: Want[]; row(want: Want): ReactNode;
 }) {
+  const uiText = useUiTranslation();
   const [page, setPage] = useState(1);
   const [magnetFilter, setMagnetFilter] = useState('all');
   const cached = cachedMagnetStates(rows);
@@ -107,30 +111,30 @@ function WantPhase({ phase, label, rows, row }: {
     : rows.filter(want => hasMagnet(want) === (magnetFilter === 'available'));
   const win = pageWindow(filtered.length, WANT_PAGE_SIZE, page);
   return (
-    <section aria-label={label} data-want-phase={phase} className="flex flex-col gap-4">
+    <section aria-label={uiText(label)} data-want-phase={phase} className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
       <h3 className="flex items-baseline gap-2 text-title-2-medium text-text-primary">
-        {label}
+        {uiText(label)}
         <span className="text-body-2-regular tabular-nums text-text-secondary">{rows.length.toLocaleString()}</span>
       </h3>
-      {phase === 'searching' ? <SegmentedRadioGroup name="want-magnet-filter" aria-label="待找磁链筛选"
+      {phase === 'searching' ? <SegmentedRadioGroup name="want-magnet-filter" aria-label={uiText("待找磁链筛选")}
         orientation="horizontal" value={magnetFilter} className={SEGMENTED_TRACK} onChange={value => { setMagnetFilter(value); setPage(1) }}>
-        {MAGNET_FILTERS.map(([value, text]) => <Radio key={value} value={value} aria-label={text} className={SEGMENT}>
-          {text}<span className="text-caption-1-regular tabular-nums text-text-tertiary">{
+        {MAGNET_FILTERS.map(([value, text]) => <Radio key={value} value={value} aria-label={uiText(text)} className={SEGMENT}>
+          {uiText(text)}<span className="text-caption-1-regular tabular-nums text-text-tertiary">{
             (value === 'all' ? rows.length : value === 'available' ? available.length : rows.length - available.length).toLocaleString()
           }</span>
         </Radio>)}
       </SegmentedRadioGroup> : null}
       </div>
-      {!filtered.length ? <EmptyState size="compact" icon={RiStarLine} title="暂无符合条件的作品"
-        actions={<Button size="small" onClick={() => { setMagnetFilter('all'); setPage(1) }}>查看全部</Button>}>{null}</EmptyState> : null}
+      {!filtered.length ? <EmptyState size="compact" icon={RiStarLine} title={uiText("暂无符合条件的作品")}
+        actions={<Button size="small" onClick={() => { setMagnetFilter('all'); setPage(1) }}>{uiText("查看全部")}</Button>}>{null}</EmptyState> : null}
       <ul className="flex flex-col gap-4">{filtered.slice(win.start, win.end).map(row)}</ul>
       {win.pages > 1 ? (
         <div data-want-pager="" className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-body-2-regular tabular-nums text-text-secondary">
-            {`${(win.start + 1).toLocaleString()}–${win.end.toLocaleString()} / ${win.total.toLocaleString()} 条`}
+            {uiText("{value0}–{value1} / {value2} 条", { value0: String((win.start + 1).toLocaleString()), value1: String(win.end.toLocaleString()), value2: String(win.total.toLocaleString()) })}
           </span>
-          <Pagination label={`${label}分页`} page={win.page} pages={win.pages} onPage={setPage} />
+          <Pagination label={uiText("{value0}分页", { value0: uiText(label) })} page={win.page} pages={win.pages} onPage={setPage} />
         </div>
       ) : null}
     </section>
@@ -145,6 +149,8 @@ export interface WantListProps {
 }
 
 export function WantList({ readOnly, toast, query = '', clearQuery }: WantListProps) {
+  const uiText = useUiTranslation();
+  const codeInputId = useId();
   const [code, setCode] = useState('');
   const [download, setDownload] = useState<DownloadPrefill | null>(null);
   const action = useAction();
@@ -193,30 +199,30 @@ export function WantList({ readOnly, toast, query = '', clearQuery }: WantListPr
   return (
     <div aria-busy={wants.isPending} className="flex flex-col gap-8">
       <div className={cardClass({ padding: 'none', className: 'flex flex-col gap-4 px-6 py-5 max-sm:px-4' })}>
-        <h3 className="text-title-2-medium text-text-primary">按番号添加</h3>
+        <h3 className="text-title-2-medium text-text-primary">{uiText("按番号添加")}</h3>
         <div className="flex flex-wrap items-end gap-2">
           <div className="min-w-64 grow max-sm:min-w-0">
-            <Input aria-label="番号" placeholder="输入番号，例如 SSIS-950" value={code}
+            <Input id={codeInputId} aria-label={uiText("番号")} placeholder={uiText("输入番号，例如 SSIS-950")} value={code}
               isDisabled={readOnly} onChange={setCode} onKeyDown={onKeyDown} />
           </div>
           <Button variant="primary" disabled={readOnly || !code.trim()} {...busyProps(action.busy === 'add')}
-            onClick={add}>添加</Button>
+            onClick={add}>{uiText("添加")}</Button>
         </div>
-        {action.error ? <Note tone="error" title="这一次没有完成">{action.error}</Note> : null}
+        {action.error ? <Note tone="error" title={uiText("这一次没有完成")}>{action.error}</Note> : null}
       </div>
 
-      {wants.error ? <Note tone="error" title="想要清单读取失败">{errorMessage(wants.error)}</Note> : null}
-      {wants.isPending ? <div role="status" aria-label="正在读取想要" dangerouslySetInnerHTML={{ __html: javContentSkeleton('wants') }} /> : null}
-      {data?.scraping ? <Help role="status">正在给刚加入的番号取资料与封面。</Help> : null}
-      {downloads.error ? <Note tone="error" title="下载配置未取得">{errorMessage(downloads.error)}</Note> : null}
-      {downloads.data && !configured.length ? <Note tone="neutral">尚未配置下载渠道。<a href={'/settings/library?section=' + encodeURIComponent('下载渠道')}>下载渠道设置</a></Note> : null}
-      {downloads.data && !downloads.data.available ? <Note tone="neutral">云下载只在允许修改数据库的设备上可用。</Note> : null}
+      {wants.error ? <Note tone="error" title={uiText("想要清单读取失败")}>{errorMessage(wants.error)}</Note> : null}
+      {wants.isPending ? <div role="status" aria-label={uiText("正在读取想要")} dangerouslySetInnerHTML={{ __html: javContentSkeleton('wants') }} /> : null}
+      {data?.scraping ? <Help role="status">{uiText("正在给刚加入的番号取资料与封面。")}</Help> : null}
+      {downloads.error ? <Note tone="error" title={uiText("下载配置未取得")}>{errorMessage(downloads.error)}</Note> : null}
+      {downloads.data && !configured.length ? <Note tone="neutral">{uiText("尚未配置下载渠道。")}<a href={'/settings/library?section=' + encodeURIComponent('下载渠道')}>{uiText("下载渠道设置")}</a></Note> : null}
+      {downloads.data && !downloads.data.available ? <Note tone="neutral">{uiText("云下载只在允许修改数据库的设备上可用。")}</Note> : null}
 
       {data && !items.length ? (
-        <EmptyState size="compact" icon={RiStarLine} title={query ? '没有符合条件的作品' : '还没有想要的作品'}
-          actions={query && clearQuery ? <Button size="small" onClick={clearQuery}>清除搜索</Button>
-            : !query && !readOnly ? <EmptyFocusButton target='input[aria-label="番号"]'>添加作品</EmptyFocusButton> : undefined}>
-          {query ? '试试其他番号、女优或标题。' : '输入番号，添加想看的作品。'}
+        <EmptyState size="compact" icon={RiStarLine} title={query ? uiText("没有符合条件的作品") : uiText("还没有想要的作品")}
+          actions={query && clearQuery ? <Button size="small" onClick={clearQuery}>{uiText("清除搜索")}</Button>
+            : !query && !readOnly ? <EmptyFocusButton target={`[id="${codeInputId}"]`}>{uiText("添加作品")}</EmptyFocusButton> : undefined}>
+          {query ? uiText("试试其他番号、女优或标题。") : uiText("输入番号，添加想看的作品。")}
         </EmptyState>
       ) : null}
 

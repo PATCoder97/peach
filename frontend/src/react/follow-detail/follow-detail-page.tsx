@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 关注详情（ADR-0031）：舞台里那一整块——媒体区、右侧队列与侧栏。
  *
  * 舞台（`<dialog id="stage">`）、它的进出场、小窗与 Video.js 都归舞台岛（`../stage/`），JAV 详情
@@ -96,10 +97,10 @@ function GoneNote({ onBack }: { onBack(): void }) {
 }
 
 /** 关闭键。`id` 留着：Escape、点浮窗外面与壳的兜底都按 `#closeStage` 找它再点一下。 */
-const CloseStage = ({ onClose }: { onClose(): void }) => (
-  <button type="button" data-stage-close="" id="closeStage" title="关闭" aria-label="关闭" onClick={onClose}
+const CloseStage = ({ onClose }: { onClose(): void }) => { const uiText = useUiTranslation(); return ((
+  <button type="button" data-stage-close="" id="closeStage" title={uiText("关闭")} aria-label={uiText("关闭")} onClick={onClose}
     dangerouslySetInnerHTML={{ __html: icon('x') }} />
-);
+)); };
 
 function Detail({ data, context, mediaIndex, onMedia, mediaView, relatedLimit, helpers, actions }: FollowDetailProps & {
   data: FollowDetailData; context: FollowContext; onMedia(index: number | null): void;
@@ -172,6 +173,7 @@ function MediaFrame({ item, media, actions, onMedia, issues }: {
   item: FollowDetailItem; media: DetailMedia; helpers: FollowFeedHelpers; actions: FollowDetailActions;
   onMedia(index: number | null): void; issues: MediaIssues;
 }) {
+  const uiText = useUiTranslation();
   const { kind, selected, src, images, position, carousel, frameRatio } = media;
   const frame = useRef<HTMLDivElement>(null);
   const slides = detailSlides(item, media);
@@ -211,13 +213,13 @@ function MediaFrame({ item, media, actions, onMedia, issues }: {
       ) : (
         <div data-follow-detail-placeholder="">
           <span className="contents" dangerouslySetInnerHTML={{ __html: sourceIcon(item.resource_provider || item.provider) }} />
-          <span>没有可用预览</span>
+          <span>{uiText("没有可用预览")}</span>
         </div>
       )}
       {carousel ? <MediaCarousel items={images} position={position} onSelect={onMedia} below renderThumbnail={entry => {
         const image = images.find(image => image.index === entry.index)!;
         const thumbnail = image.thumb_url || (item.playable ? `/follow-stream?id=${item.id}&media=${entry.index}` : item.thumb_url);
-        return thumbnail ? <img src={thumbnail} alt="" referrerPolicy="no-referrer" /> : <span>预览未取得</span>;
+        return thumbnail ? <img src={thumbnail} alt="" referrerPolicy="no-referrer" /> : <span>{uiText("预览未取得")}</span>;
       }} /> : null}
     </div>
   );
@@ -245,11 +247,12 @@ function useDragRow(helpers: FollowFeedHelpers) {
 function CollectionQueue({ group, itemId, helpers, actions }: {
   group: FollowGroup; itemId: number; helpers: FollowFeedHelpers; actions: FollowDetailActions;
 }) {
+  const uiText = useUiTranslation();
   const items = videoItems(group) as FollowDetailItem[];
   const listRef = useDragRow(helpers);
   return (
-    <MixQueue kind="collection" data-follow-queue="" title="视频合集" onClose={actions.close} listRef={listRef}
-      summary={`${followTitle(group.primary)} · ${items.length} 个视频`}>
+    <MixQueue kind="collection" data-follow-queue="" title={uiText("视频合集")} onClose={actions.close} listRef={listRef}
+      summary={uiText("{value0} · {value1} 个视频", { value0: String(followTitle(group.primary)), value1: String(items.length) })}>
       {items.map((member) => {
         const duplicate = group.duplicates.includes(member);
         const copy = collectionCopy(group, member, duplicate ? member.provider_label : '');
@@ -282,6 +285,7 @@ function MediaQueue({ item, current, currentId = item.id, helpers, actions, onMe
   item: FollowDetailItem; current: number | null; currentId?: number; helpers: FollowFeedHelpers;
   actions: FollowDetailActions; onMedia(index: number | null): void;
 }) {
+  const uiText = useUiTranslation();
   const items = item.media_items || [];
   const listRef = useDragRow(helpers);
   const groups: { key: string; label: string; items: FollowDetailMedia[] }[] = [];
@@ -293,8 +297,8 @@ function MediaQueue({ item, current, currentId = item.id, helpers, actions, onMe
   });
   const pick = (media: FollowDetailMedia) => (item.id === currentId ? onMedia(media.index) : actions.openItem(item.id, media.index));
   return (
-    <MixQueue kind="media" data-follow-queue="" title="多媒体" onClose={actions.close} listRef={listRef}
-      summary={`${followTitle(item)} · ${items.length} 个媒体`}>
+    <MixQueue kind="media" data-follow-queue="" title={uiText("多媒体")} onClose={actions.close} listRef={listRef}
+      summary={uiText("{value0} · {value1} 个媒体", { value0: String(followTitle(item)), value1: String(items.length) })}>
       {groups.map((row) => [
         row.label ? <MixGroupLabel key={`label:${row.key}`} label={row.label} count={row.items.length} /> : null,
         ...row.items.map((media) => (
@@ -302,7 +306,7 @@ function MediaQueue({ item, current, currentId = item.id, helpers, actions, onMe
             data-follow-media-item={media.index} data-media-kind={media.media_kind || ''} onClick={() => pick(media)}
             pic={media.thumb_url ? <QueueThumb src={media.thumb_url} /> : <NoThumb kind={media.media_kind || ''} />}>
             <b data-middle-truncate="">{mediaName(media)}</b>
-            <span data-truncate-end="">{media.media_kind === 'image' ? '图片' : '视频'}</span>
+            <span data-truncate-end="">{media.media_kind === 'image' ? uiText("图片") : uiText("视频")}</span>
           </MixQueueRow>
         )),
       ])}
@@ -316,6 +320,7 @@ function Side({ item, data, context, media, write, issue, helpers, actions }: {
   item: FollowDetailItem; data: FollowDetailData; context: FollowContext; media: DetailMedia;
   write: DetailWrite; issue: MediaIssue; helpers: FollowFeedHelpers; actions: FollowDetailActions;
 }) {
+  const uiText = useUiTranslation();
   const { kind, selected, src } = media;
   const single: FollowGroup = { primary: item, variants: [], duplicates: [], has_wip: item.variant_kind === 'wip' };
   const badges = followBadges(single, item);
@@ -334,7 +339,7 @@ function Side({ item, data, context, media, write, issue, helpers, actions }: {
             dangerouslySetInnerHTML={{ __html: followTitleMarks(single, item) + esc(followTitle(item)) }} />
           {item.url ? (
             <a data-follow-origin="" href={item.url} target="_blank" rel="noreferrer noopener"
-              title="打开来源页面" aria-label="打开来源页面"
+              title={uiText("打开来源页面")} aria-label={uiText("打开来源页面")}
               dangerouslySetInnerHTML={{ __html: EXTERNAL_MARK }} />
           ) : null}
         </div>
@@ -345,11 +350,11 @@ function Side({ item, data, context, media, write, issue, helpers, actions }: {
         </div>
         <div data-item-identity="" data-follow-detail-identity="">
           <section data-id-group="creator">
-            <h5 data-id-label="">创作者</h5>
+            <h5 data-id-label="">{uiText("创作者")}</h5>
             <div data-id-row="">
               {identity.entityName ? <FollowAuthorLink name={identity.entityName} actions={actions}
                 data-id-cell="creator" data-entity-kind="creator" data-follow-source-avatar=""
-                title={identity.author} aria-label={`查看 ${identity.author} 的作者页`}>
+                title={identity.author} aria-label={uiText("查看 {value0} 的作者页", { value0: String(identity.author) })}>
                 <span data-id-face="" dangerouslySetInnerHTML={{ __html: identity.avatar }} />
                 <span data-id-name="">{identity.author}</span>
               </FollowAuthorLink> : <span data-id-cell="creator" data-follow-source-avatar="">
@@ -359,20 +364,16 @@ function Side({ item, data, context, media, write, issue, helpers, actions }: {
             </div>
           </section>
           {postedBy || identity.credited ? <div data-follow-detail-credit="">
-            {postedBy ? <span>发布者 {postedBy}</span> : null}
-            {identity.credited ? <span>署名含 {identity.credited}</span> : null}
+            {postedBy ? <span>{uiText("发布者 ")}{postedBy}</span> : null}
+            {identity.credited ? <span>{uiText("署名含 ")}{identity.credited}</span> : null}
           </div> : null}
         </div>
         {item.summary ? <Summary key={item.id} text={item.summary} /> : null}
         {mediaIssue ? <p data-follow-media-issue="">{mediaIssue}</p> : null}
         {/* 上游没给出媒体时，代理只会回一个不含缘由的失败。有缩略图就换上缩略图并说明这是缩略图；
             连缩略图也取不到，才说「这次没取到、多半是限流」——别让人对着一块空画布猜。 */}
-        <p data-follow-media-issue="" data-media-load-issue="" hidden={issue !== 'failed'}>
-          媒体未取回：上游这一次没有返回内容，多半是站点限流，过一阵再打开。
-        </p>
-        <p data-follow-media-issue="" data-media-thumb-fallback="" hidden={issue !== 'thumb'}>
-          原图未取回，先显示缩略图：上游拦下了这一次请求。
-        </p>
+        <p data-follow-media-issue="" data-media-load-issue="" hidden={issue !== 'failed'}>{uiText("媒体未取回：上游这一次没有返回内容，多半是站点限流，过一阵再打开。")}</p>
+        <p data-follow-media-issue="" data-media-thumb-fallback="" hidden={issue !== 'thumb'}>{uiText("原图未取回，先显示缩略图：上游拦下了这一次请求。")}</p>
         {item.resource_urls?.length ? (
           <div data-follow-resources="">
             {item.resource_urls.map((url) => (
@@ -383,42 +384,42 @@ function Side({ item, data, context, media, write, issue, helpers, actions }: {
           </div>
         ) : null}
         <div data-stage-actions="" data-follow-detail-actions="">
-          <button type="button" data-stage-action="later" data-follow-detail-save="" aria-label={saved ? '已保存' : '保存到数据库'}
-            title={saved ? '已保存' : '保存到数据库'} disabled={saved} {...busyAttrs('save')}
+          <button type="button" data-stage-action="later" data-follow-detail-save="" aria-label={saved ? uiText("已保存") : uiText("保存到数据库")}
+            title={saved ? uiText("已保存") : uiText("保存到数据库")} disabled={saved} {...busyAttrs('save')}
             onClick={write.save} dangerouslySetInnerHTML={{ __html: icon(saved ? 'check' : 'bookmark-plus') }} />
           <button type="button" data-stage-action="later" data-follow-detail-want="" aria-pressed={!!write.want}
-            aria-label={write.want ? '取消想要' : '想要'} title={write.want ? '取消想要' : '想要'}
+            aria-label={write.want ? uiText("取消想要") : uiText("想要")} title={write.want ? uiText("取消想要") : uiText("想要")}
             {...busyAttrs('want')} onClick={write.toggleWant} dangerouslySetInnerHTML={{ __html: icon('star') }} />
-          <button type="button" data-stage-action="seen" data-follow-detail-status="seen" aria-label="标记已看" title="标记已看"
+          <button type="button" data-stage-action="seen" data-follow-detail-status="seen" aria-label={uiText("标记已看")} title={uiText("标记已看")}
             aria-pressed={item.status === 'seen'} {...busyAttrs('seen')} onClick={() => write.status('seen')}
             dangerouslySetInnerHTML={{ __html: icon('eye') }} />
-          <button type="button" data-stage-action="dislike" data-follow-detail-status="ignored" aria-label="忽略" title="忽略"
+          <button type="button" data-stage-action="dislike" data-follow-detail-status="ignored" aria-label={uiText("忽略")} title={uiText("忽略")}
             aria-pressed={item.status === 'ignored'} {...busyAttrs('ignored')} onClick={() => write.status('ignored')}
             dangerouslySetInnerHTML={{ __html: icon('eye-off') }} />
           {item.status === 'seen' || item.status === 'ignored' ? (
-            <button type="button" data-follow-detail-status="new" aria-label="恢复未看" title="恢复未看"
+            <button type="button" data-follow-detail-status="new" aria-label={uiText("恢复未看")} title={uiText("恢复未看")}
               {...busyAttrs('new')} onClick={() => write.status('new')}
               dangerouslySetInnerHTML={{ __html: icon('rotate-ccw') }} />
           ) : null}
           {kind === 'image' && selected ? (
-            <button type="button" data-stage-action="dislike" data-follow-media-hide={selected.index} aria-label="隐藏这张图"
-              title="隐藏这张图" {...busyAttrs(`hide:${selected.index}`)} onClick={() => write.hide(selected.index)}
+            <button type="button" data-stage-action="dislike" data-follow-media-hide={selected.index} aria-label={uiText("隐藏这张图")}
+              title={uiText("隐藏这张图")} {...busyAttrs(`hide:${selected.index}`)} onClick={() => write.hide(selected.index)}
               dangerouslySetInnerHTML={{ __html: icon('image-off') }} />
           ) : null}
           {src ? (
             <a data-stage-action-link="" data-follow-download="" href={`${src}${src.includes('?') ? '&' : '?'}download=1`} download=""
-              aria-label="下载到本地" title="下载到本地" dangerouslySetInnerHTML={{ __html: icon('download') }} />
+              aria-label={uiText("下载到本地")} title={uiText("下载到本地")} dangerouslySetInnerHTML={{ __html: icon('download') }} />
           ) : null}
         </div>
         {/* 被隐藏的图退到这条恢复带上：缩略图加一枚撤销键，点了就回到轮播。不占媒体队列，也不进
             角标数——它们已经是「不在看」的那部分。 */}
         {item.hidden_media?.length ? (
           <div data-follow-hidden-media="">
-            <span data-follow-hidden-label="">已隐藏 {item.hidden_media.length} 张</span>
+            <span data-follow-hidden-label="">{uiText("已隐藏 ")}{item.hidden_media.length}{uiText(" 张")}</span>
             <div data-follow-hidden-thumbs="">
               {item.hidden_media.map((hidden) => (
                 <button type="button" key={hidden.index} data-follow-media-restore={hidden.index}
-                  title={`恢复显示 ${hidden.name || ''}`} aria-label={`恢复显示 ${hidden.name || ''}`}
+                  title={uiText("恢复显示 {value0}", { value0: String(hidden.name || '') })} aria-label={uiText("恢复显示 {value0}", { value0: String(hidden.name || '') })}
                   {...busyAttrs(`restore:${hidden.index}`)} onClick={() => write.restore(hidden.index)}>
                   {hidden.thumb_url ? <QueueThumb src={hidden.thumb_url} /> : <Glyph name="image-off" />}
                   <i dangerouslySetInnerHTML={{ __html: icon('rotate-ccw') }} />
@@ -436,6 +437,7 @@ function Side({ item, data, context, media, write, issue, helpers, actions }: {
 
 /** 摘要默认收在八行内，量出来确实被截了才给「展开」；展开后同一枚键收回。 */
 function Summary({ text }: { text: string }) {
+  const uiText = useUiTranslation();
   const node = useRef<HTMLParagraphElement>(null);
   const [open, setOpen] = useState(false);
   const [overflows, setOverflows] = useState(false);
@@ -453,7 +455,7 @@ function Summary({ text }: { text: string }) {
       <p ref={node} data-follow-detail-summary="" data-long-text="" lang={textLang(text)} data-clamped={open ? undefined : ''}>{text}</p>
       {overflows || open ? (
         <Button variant="ghost" size="small" data-follow-summary-toggle="" aria-expanded={open} onClick={() => setOpen(!open)}>
-          {open ? '收起' : '展开'}
+          {open ? uiText("收起") : uiText("展开")}
         </Button>
       ) : null}
     </>

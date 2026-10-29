@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 添加关注：把一条链接、一个名字或一个 id 变成已关注的来源。
  *
  * 查找只是列出候选、不写任何东西：发现要联网，结果也可能不止一个，替用户决定「就是
@@ -77,6 +78,7 @@ function SuggestMenu(
     onPick(value: string): void; onClose(): void;
   },
 ) {
+  const uiText = useUiTranslation();
   // 上下键走到菜单可见区外的那一行，把它滚进来；菜单外的页面不动。
   useEffect(() => {
     menu.current?.querySelector('[aria-current="true"]')?.scrollIntoView({ block: 'nearest' });
@@ -84,10 +86,10 @@ function SuggestMenu(
   return (
     <Popover ref={menu} triggerRef={field} isOpen isNonModal shouldFlip={false}
       onOpenChange={(open) => { if (!open) onClose() }}
-      placement="bottom start" offset={4} aria-label="来源建议"
+      placement="bottom start" offset={4} aria-label={uiText("来源建议")}
       className={cx(MENU_POPOVER_SURFACE, 'flex w-(--trigger-width) flex-col gap-1 overscroll-contain')}>
       {busy && !options.length
-        ? <div className="px-2 py-1.5"><LoadingDots label="正在查找建议" /></div>
+        ? <div className="px-2 py-1.5"><LoadingDots label={uiText("正在查找建议")} /></div>
         : null}
       {options.map((option, at) => (
         <Fragment key={`${option.group}-${option.value}`}>
@@ -125,6 +127,7 @@ function SourceFilter(
     onHidden(next: Set<string>): void;
   },
 ) {
+  const uiText = useUiTranslation();
   const rows = (credentials.providers || []).filter((row) => row.followable);
   const shown = rows.filter((row) => !hidden.has(row.provider_label)).length;
   const label = shown === rows.length ? '全部来源' : `${shown}/${rows.length} 个来源`;
@@ -133,8 +136,8 @@ function SourceFilter(
     if (on) next.delete(provider); else next.add(provider);
     onHidden(next);
   };
-  return <SelectionPopover label="来源筛选" triggerLabel={label} leadingIcon={RiFilter3Line}
-    empty="暂无可用来源"
+  return <SelectionPopover label={uiText("来源筛选")} triggerLabel={label} leadingIcon={RiFilter3Line}
+    empty={uiText("暂无可用来源")}
     items={rows.map(row => ({ id: row.provider_label, selected: !hidden.has(row.provider_label),
       label: <span className="flex min-w-0 items-center gap-1.5"><SourceIcon provider={row.provider} />{row.provider_label}</span> }))}
     onChange={toggle}
@@ -153,8 +156,9 @@ function PickRow(
     onPick(key: string, on: boolean): void;
   },
 ) {
+  const uiText = useUiTranslation();
   if (row.kind === 'error') {
-    return <Note tone="error" title={row.line}>{row.error || '查找失败'}</Note>;
+    return <Note tone="error" title={row.line}>{row.error || uiText("查找失败")}</Note>;
   }
   const candidates = (row.candidates || []).filter(
     (candidate) => !hidden.has(candidate.provider_label || ''));
@@ -172,7 +176,7 @@ function PickRow(
               <b className="text-body-medium">{candidate.provider_label}</b>
               <span className="min-w-0 break-words">{candidate.label}</span>
               <small className="text-caption-1-regular text-text-secondary">
-                {candidate.known ? '已经关注' : candidate.evidence}
+                {candidate.known ? uiText("已经关注") : candidate.evidence}
               </small>
             </span>
           </Checkbox>
@@ -193,6 +197,7 @@ function PickRow(
 }
 
 export function AddSource({ data, credentials, readOnly, toast }: AddSourceProps) {
+  const uiText = useUiTranslation();
   const [line, setLine] = useState('');
   const [composing, setComposing] = useState(false);
   /** 这一趟查的是什么。等待提示使用已提交的词，输入框可继续编辑并保留重试内容。 */
@@ -334,7 +339,7 @@ export function AddSource({ data, credentials, readOnly, toast }: AddSourceProps
             const next = event.relatedTarget;
             if (!event.currentTarget.contains(next) && !menu.current?.contains(next)) setFocused(false);
           }}>
-          <Input aria-label="来源链接、名字或 id" placeholder={PLACEHOLDER} value={line}
+          <Input aria-label={uiText("来源链接、名字或 id")} placeholder={PLACEHOLDER} value={line}
             leadingIcon={RiSearchLine} enterKeyHint="search" isDisabled={readOnly} onChange={setLine}
             onCompositionStart={() => { setComposing(true); setActive(-1) }}
             onCompositionEnd={(event) => { setComposing(false); setLine(event.currentTarget.value) }}
@@ -346,19 +351,19 @@ export function AddSource({ data, credentials, readOnly, toast }: AddSourceProps
         </div>
         <SourceFilter credentials={credentials} hidden={hidden} onHidden={setHidden} />
         <Button variant="primary" disabled={readOnly || !line.trim()}
-          {...busyProps(running || resolve.isPending)} onClick={() => search(line)}>查找</Button>
+          {...busyProps(running || resolve.isPending)} onClick={() => search(line)}>{uiText("查找")}</Button>
       </div>
 
       <div aria-live="polite" className="flex flex-col gap-3 empty:hidden">
         {running || resolve.isPending ? <TaskProgress embedded
           label={job?.message || (job?.total ? `查找中：${job.checked || 0}/${job.total}` : byName ? BY_NAME_HINT : BY_LINK_HINT)}
           value={job?.checked} total={job?.total} /> : null}
-        {problem ? <Note tone="error" title="这一次没有完成">{problem}</Note> : null}
+        {problem ? <Note tone="error" title={uiText("这一次没有完成")}>{problem}</Note> : null}
       </div>
 
       {rows.length ? (
         <div className="flex flex-col gap-3">
-          <FieldLabel>查找结果</FieldLabel>
+          <FieldLabel>{uiText("查找结果")}</FieldLabel>
           {rows.map((row, at) => (
             <PickRow key={`${row.line}-${at}`} row={row} at={at} hidden={hidden} unpicked={unpicked}
               onPick={(key, on) => {
@@ -369,13 +374,13 @@ export function AddSource({ data, credentials, readOnly, toast }: AddSourceProps
           ))}
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="secondary" size="small"
-              onClick={() => dismiss()}>关闭</Button>
+              onClick={() => dismiss()}>{uiText("关闭")}</Button>
             <Button variant="primary" size="small" disabled={readOnly || !picked.length}
               {...busyProps(register.isPending)}
-              onClick={() => register.mutate(picked)}>{`添加选中（${picked.length}）`}</Button>
+              onClick={() => register.mutate(picked)}>{uiText("添加选中（{value0}）", { value0: String(picked.length) })}</Button>
             {register.isPending ? (
               <span role="status" className="text-body-2-regular text-text-secondary">
-                {`添加中… ${added}/${picked.length}`}
+                {uiText("添加中… {value0}/{value1}", { value0: String(added), value1: String(picked.length) })}
               </span>
             ) : null}
           </div>
@@ -384,10 +389,10 @@ export function AddSource({ data, credentials, readOnly, toast }: AddSourceProps
 
       {guesses.length ? (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-body-2-regular text-text-secondary">猜你喜欢</span>
+          <span className="text-body-2-regular text-text-secondary">{uiText("猜你喜欢")}</span>
           {guesses.map((guess) => (
             <Button key={guess.name} variant="secondary" size="small" disabled={readOnly}
-              title={`浏览历史里出现 ${guess.visits} 次${guess.origin ? ` · ${guess.origin}` : ''}`}
+              title={uiText("浏览历史里出现 {value0} 次{value1}", { value0: String(guess.visits), value1: String(guess.origin ? ` · ${guess.origin}` : '') })}
               onClick={() => search(guess.name)}>{guess.name}</Button>
           ))}
         </div>

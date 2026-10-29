@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { icon } from '@peach/legacy/core';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import './media-carousel.css';
@@ -10,6 +11,7 @@ export function MediaCarousel({ items, position, onSelect, below = false, render
   items: readonly CarouselMedia[]; position: number; onSelect(index: number): void;
   below?: boolean; renderThumbnail?(item: CarouselMedia): ReactNode;
 }) {
+  const uiText = useUiTranslation();
   const root = useRef<HTMLDivElement>(null);
   const mixed = items.some(item => item.video);
   const hasThumbnails = !!renderThumbnail;
@@ -65,15 +67,15 @@ export function MediaCarousel({ items, position, onSelect, below = false, render
   const unit = mixed ? '项媒体' : '张图片';
   const indicator = (item: CarouselMedia, index: number) => <button key={item.index} type="button" data-follow-image-item={item.index}
     data-carousel-video={item.video ? '' : undefined} aria-current={index === position ? 'true' : 'false'}
-    aria-label={item.label || `第 ${index + 1} 张，共 ${items.length} 张`} title={item.label || `第 ${index + 1} 张`}
+    aria-label={item.label || uiText("第 {value0} 张，共 {value1} 张", { value0: String(index + 1), value1: String(items.length) })} title={item.label || uiText("第 {value0} 张", { value0: String(index + 1) })}
     onClick={() => onSelect(item.index)}>{item.video ? <span dangerouslySetInnerHTML={{ __html: icon('play') }} /> : null}</button>;
   return <div ref={root} data-media-carousel="" data-carousel-below={below ? '' : undefined}
     data-carousel-video-active={items[position]?.video ? '' : undefined}>
-    {!items[position]?.video ? <><button type="button" data-follow-image-step="-1" data-follow-image-arrow="prev" aria-label={mixed ? '上一项媒体' : '上一张图片'} title="上一张"
+    {!items[position]?.video ? <><button type="button" data-follow-image-step="-1" data-follow-image-arrow="prev" aria-label={mixed ? uiText("上一项媒体") : uiText("上一张图片")} title={uiText("上一张")}
       onClick={() => step(-1)} dangerouslySetInnerHTML={{ __html: icon('chevron-left') }} />
-    <button type="button" data-follow-image-step="1" data-follow-image-arrow="next" aria-label={mixed ? '下一项媒体' : '下一张图片'} title="下一张"
+    <button type="button" data-follow-image-step="1" data-follow-image-arrow="next" aria-label={mixed ? uiText("下一项媒体") : uiText("下一张图片")} title={uiText("下一张")}
       onClick={() => step(1)} dangerouslySetInnerHTML={{ __html: icon('chevron-right') }} /></> : null}
-    {renderThumbnail ? <div data-media-thumbnails="" role="group" aria-label="媒体缩略图">{items.map((item, index) =>
+    {renderThumbnail ? <div data-media-thumbnails="" role="group" aria-label={uiText("媒体缩略图")}>{items.map((item, index) =>
       <MediaThumbnail key={item.index} item={item} selected={index === position} onSelect={onSelect} render={renderThumbnail} />)}</div> : null}
     <div data-media-indicator=""><div data-follow-image-dots="" role="group" aria-label={`${items.length} ${unit}`}>
       {items.map((item, index) => indicator(item, index))}
@@ -85,6 +87,7 @@ export function MediaCarousel({ items, position, onSelect, below = false, render
 function MediaThumbnail({ item, selected, onSelect, render }: {
   item: CarouselMedia; selected: boolean; onSelect(index: number): void; render(item: CarouselMedia): ReactNode;
 }) {
+  const uiText = useUiTranslation();
   const node = useRef<HTMLButtonElement>(null);
   const [visible, setVisible] = useState(typeof IntersectionObserver === 'undefined');
   useEffect(() => {
@@ -96,7 +99,7 @@ function MediaThumbnail({ item, selected, onSelect, render }: {
     return () => observer.disconnect();
   }, [visible]);
   return <button ref={node} type="button" data-media-thumbnail={item.index} aria-current={selected ? 'true' : 'false'}
-    aria-label={`切换到${item.label || `第 ${item.index + 1} 张`}`} onClick={() => onSelect(item.index)}>
+    aria-label={uiText("切换到{value0}", { value0: String(item.label || uiText("第 {value0} 张", { value0: String(item.index + 1) })) })} onClick={() => onSelect(item.index)}>
     {visible ? render(item) : <span className="block h-full w-full skeleton-sheen" />}
     {item.video ? <span data-media-thumbnail-play="" aria-hidden dangerouslySetInnerHTML={{ __html: icon('play') }} /> : null}
   </button>;

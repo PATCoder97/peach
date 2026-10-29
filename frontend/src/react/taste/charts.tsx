@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 口味页的三张图：口味维度的雷达与排行条、创作者线索的流向图。浏览活跃的两张热力图与
  * 统计页共用 `../charts/heat-card.tsx`。
  *
@@ -118,6 +119,7 @@ export function RankedBars({ rows, label }: { rows: RankRow[]; label: string }) 
 
 /** 创作者线索的来源流向。指一条流或一个节点，读数换成它。 */
 export function CreatorSankey({ flows }: { flows: CreatorFlow[] | undefined }) {
+  const uiText = useUiTranslation();
   const [shown, setShown] = useState<{ value: number; label: string; node: number | null } | null>(null);
   const graph = flowGraph(flows);
   if (!graph) return null;
@@ -129,10 +131,10 @@ export function CreatorSankey({ flows }: { flows: CreatorFlow[] | undefined }) {
       : shown.label === key);
   return (
     <section className={CHART_CARD}>
-      <ChartHead title="创作者线索来源" figure={(shown ? shown.value : graph.total).toLocaleString()}
+      <ChartHead title={uiText("创作者线索来源")} figure={(shown ? shown.value : graph.total).toLocaleString()}
         note={shown ? shown.label : '条线索'} />
       {/* 两侧各留一截给节点名，画布窄于 640 时字缩到读不清：手机上换成按线索数排的一列流向。 */}
-      <ol aria-label="来源网站与创作者线索" className="flex flex-col sm:hidden">
+      <ol aria-label={uiText("来源网站与创作者线索")} className="flex flex-col sm:hidden">
         {[...graph.links].sort((a, b) => b.value - a.value).map((link) => (
           <li key={link.key}
             className="flex items-baseline justify-between gap-3 border-b border-separator-border py-2 text-body-2-regular text-text-primary last:border-b-0">
@@ -143,12 +145,12 @@ export function CreatorSankey({ flows }: { flows: CreatorFlow[] | undefined }) {
       </ol>
       <div className="min-w-0 max-sm:hidden">
         <svg viewBox={`0 0 ${FLOW_VIEWBOX.width} ${graph.height}`} fill="none"
-          role="img" aria-label="来源网站与创作者线索"
+          role="img" aria-label={uiText("来源网站与创作者线索")}
           className="block h-auto w-full" onPointerLeave={() => setShown(null)}>
           <g>
             {graph.links.map((link) => (
               <path key={link.key} d={link.d} strokeWidth={link.width} tabIndex={0} role="img"
-                aria-label={`${link.label}：${link.value} 条线索`}
+                aria-label={uiText("{value0}：{value1} 条线索", { value0: String(link.label), value1: String(link.value) })}
                 fillOpacity={0} strokeOpacity={linkLit(link, link.label) ? 0.55 : 0.08}
                 className={`outline-none transition-opacity ${FLOW_STROKE[link.color]}`}
                 onPointerEnter={() => setShown({ value: link.value, label: link.label, node: null })}
@@ -159,7 +161,7 @@ export function CreatorSankey({ flows }: { flows: CreatorFlow[] | undefined }) {
           <g>
             {graph.nodes.map((item) => (
               <g key={item.id} tabIndex={0} role="img"
-                aria-label={`${item.name}：${item.value} 条线索`}
+                aria-label={uiText("{value0}：{value1} 条线索", { value0: String(item.name), value1: String(item.value) })}
                 className="outline-none focus-visible:opacity-100"
                 onPointerEnter={() => setShown(
                   { value: item.value, label: item.name, node: item.index })}
@@ -183,7 +185,7 @@ export function CreatorSankey({ flows }: { flows: CreatorFlow[] | undefined }) {
         </svg>
       </div>
       <footer className="flex justify-between gap-3 text-caption-1-regular text-text-secondary max-sm:hidden">
-        <span>来源网站</span><span>创作者 · 线索占比</span>
+        <span>{uiText("来源网站")}</span><span>{uiText("创作者 · 线索占比")}</span>
       </footer>
     </section>
   );

@@ -4,6 +4,32 @@ Peach 的 Docker 镜像用于单人 VPS 与 NAS，通过浏览器管理，镜像
 
 Docker 不使用桌面托盘。在网页配置中添加媒体目录时，只需填写容器内实际目录，例如 `/media`；Peach 自动保存所需的路径配置。Windows 安装包、macOS 源码运行和 Docker 的入口分别见 [README](../README.md#下载与使用)。
 
+## 将分支镜像推送到自己的 Docker Hub
+
+在 Docker Hub 创建自己的 `peach` 仓库。在 GitHub 仓库的 Settings → Secrets and variables → Actions 中添加变量 `DOCKERHUB_USERNAME` 和 Secret `DOCKERHUB_TOKEN`；令牌须有目标仓库的写权限。用户名也支持存为同名 Secret；两处都有时优先使用变量。
+
+### 版本标签自动发布
+
+在自己的分叉仓库中，将 `vX.Y.Z` 格式的 Git 标签推送到 GitHub，即自动构建标签指向的源码、验收临时容器，并推送 `<DOCKERHUB_USERNAME>/peach:X.Y.Z`。例如 `v0.51.1` 对应 `peach:0.51.1`。GitHub 网页创建并发布指向该提交的新版本标签也可触发，无需手动运行 Actions。
+
+标签指向的提交须已包含此工作流和要发布的界面改动；发布英语与越南语界面时，两部分改动都须先纳入该提交。工作流使用标签实际源码，不会自动改用另一条分支。普通 PR 和主线推送只做验收。
+
+分叉仓库的标签发布不启动完整桌面发行流程；主仓库的版本号与 `edge` 继续通过 Release 验收并发布。
+
+### 手动发布分支
+
+GitHub 默认分支须已有带 `workflow_dispatch` 的 `docker.yml`，才能使用手动入口。进入 Actions → Docker → Run workflow，选择包含个人镜像推送功能的工作流分支，并填写：
+
+| 输入 | 值 |
+| --- | --- |
+| `source_ref` | 要构建的源码分支，例如 `agent/codex/english-vietnamese`；留空使用所选工作流分支 |
+| `publish` | 勾选后推送；不勾选只构建与验收 |
+| `image_tag` | 个人镜像标签，例如 `vi-en` |
+
+工作流构建 `linux/amd64` 镜像，并用临时容器验收。验收成功后才登录 Docker Hub，将同一镜像推送到 `<DOCKERHUB_USERNAME>/peach:<image_tag>`。Actions 运行摘要显示镜像名、实际源码提交与拉取命令；失败时不代表镜像已发布。自动 PR 和主线检查只做验收。
+
+使用自己的镜像部署时，将 `compose.yaml` 的 `image` 改为上述完整镜像名。使用独立测试数据卷验收分支版本，再决定是否更新已有部署；保留原数据卷和媒体挂载。
+
 ## 数据与媒体
 
 NAS 的 SMB 共享也可作为[SMB 媒体来源](SMB.md)直接连接，按账号权限读写，无需挂入媒体目录；Peach 数据卷仍单独保留。

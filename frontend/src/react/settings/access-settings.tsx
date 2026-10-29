@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 本机访问密码，由 BoardUI 原版组件组合；表单值只留在提交期间的组件内存中。
  *
  * 字段是 BoardUI `Input`（React Aria TextField），开关是 BoardUI `Checkbox`，提交键是 BoardUI `Button`；
@@ -24,6 +25,7 @@ const HELP: Partial<Record<AccessState['mode'], string>> = {
 };
 
 export function AccessSettings({ initial, receipt }: AccessSettingsProps) {
+  const uiText = useUiTranslation();
   const [state, setState] = useState(initial);
   const [current, setCurrent] = useState('');
   const [password, setPassword] = useState('');
@@ -62,33 +64,33 @@ export function AccessSettings({ initial, receipt }: AccessSettingsProps) {
   const help = HELP[state.mode];
   const editable = state.mode !== 'locked';
   return (
-    <Section title="访问密码" onSubmit={submit}>
+    <Section title={uiText("访问密码")} onSubmit={submit}>
       <div ref={body}>
         <Stack>
           {help ? <Help>{help}</Help> : null}
           {state.mode === 'open'
-            ? <Note tone="warning" title="未设置访问密码">能连接到 Peach 的设备打开地址就能看馆藏，不需要登录。</Note>
+            ? <Note tone="warning" title={uiText("未设置访问密码")}>{uiText("能连接到 Peach 的设备打开地址就能看馆藏，不需要登录。")}</Note>
             : null}
           {state.mode === 'password' || state.mode === 'legacy'
-            ? <Checkbox isSelected={disable} onChange={setDisable}>关闭访问密码</Checkbox>
+            ? <Checkbox isSelected={disable} onChange={setDisable}>{uiText("关闭访问密码")}</Checkbox>
             : null}
           {state.mode === 'password'
-            ? <Input id="access-current" type="password" label="当前访问密码" autoComplete="current-password" maxLength={256}
+            ? <Input id="access-current" type="password" label={uiText("当前访问密码")} autoComplete="current-password" maxLength={256}
                 value={current} onChange={setCurrent} isRequired validationBehavior="aria"
-                isInvalid={Boolean(fields.current_password)} hint={fields.current_password} />
+                isInvalid={Boolean(fields.current_password)} hint={fields.current_password ? uiText(fields.current_password) : undefined} />
             : null}
           {editable && !disable
-            ? <PasswordPair label={state.mode === 'password' ? '新访问密码' : '设置访问密码'}
+            ? <PasswordPair label={state.mode === 'password' ? uiText("新访问密码") : uiText("设置访问密码")}
                 password={password} confirmation={confirmation} onPassword={setPassword} onConfirmation={setConfirmation}
                 passwordError={fields.password} confirmationError={fields.confirmation}
-                passwordHint="至少 8 个字符。保存后其他设备需要重新登录。" />
+                passwordHint={uiText("至少 8 个字符。保存后其他设备需要重新登录。")} />
             : null}
-          {disable ? <Note tone="warning" title="访问范围">保存后，能连接到 Peach 的设备将直接访问馆藏。</Note> : null}
+          {disable ? <Note tone="warning" title={uiText("访问范围")}>{uiText("保存后，能连接到 Peach 的设备将直接访问馆藏。")}</Note> : null}
           {action.error ? <ErrorText>{action.error}</ErrorText> : null}
         </Stack>
       </div>
       {editable
-        ? <Footer><Button type="submit" {...busyProps(action.busy === 'save')}>保存配置</Button></Footer>
+        ? <Footer><Button type="submit" {...busyProps(action.busy === 'save')}>{uiText("保存配置")}</Button></Footer>
         : null}
     </Section>
   );

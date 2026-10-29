@@ -1,12 +1,13 @@
 /* 前端底层：DOM 取元素、请求、转义、格式化与路由常量。
  * Application 与 React 页面直接引用共享源码，LOC、fmtDur 等语义契约只有一份。
- * 本层不引入其他前端模块，避免被所有域引用的基础层反向依赖。
+ * 格式化只依赖纯语言词表，不引入应用与界面模块。
  * route() 留在应用导航域，因为它还要同步标题与界面动作。 */
 import { entityLinkId, registerEntityLink, registerResponseEntities } from './entity-links';
 import { SOURCE_LABELS } from './media-sources';
 import { requestErrorMessage } from './request-error';
 import { iconGeometry } from './icon-geometry';
 import { libraryScopedPath } from './library-scope';
+import { translate as t } from '../i18n';
 export { registerEntityLink, registerResponseEntities } from './entity-links';
 export { requestErrorMessage } from './request-error';
 const $=(s:string)=>document.querySelector(s);
@@ -164,7 +165,7 @@ const realDuration=(value:unknown)=>{const n=Number(value);return Number.isFinit
 /** 秒数格式化成 `h:mm:ss`／`m:ss`，48 小时起写成 `N 天 N 小时`；`0`、负数与非有限值都是 `—`
  *  （probe 的硬失败哨兵）。 */
 const fmtDur:(seconds:number|null|undefined)=>string=(s:any)=>{s=realDuration(s);if(!s)return'—';s=Math.round(s);
-  if(s>=48*3600){const d=Math.floor(s/86400),hours=Math.floor((s%86400)/3600);return hours?`${d} 天 ${hours} 小时`:`${d} 天`}
+  if(s>=48*3600){const d=Math.floor(s/86400),hours=Math.floor((s%86400)/3600);return hours?t('{days} 天 {hours} 小时',{days:d,hours}):t('{days} 天',{days:d})}
   const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),x=s%60;
   return h?`${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`:`${m}:${String(x).padStart(2,'0')}`};
 /** 秒数格式化成播放器时钟 `h:mm:ss`／`m:ss`；非数值当 0。 */

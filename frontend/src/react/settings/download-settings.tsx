@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 「云下载」：把磁力交给 115 或 PikPak 离线下载，文件落在已挂载的网盘目录，由推送发现入库。
  *
  * 两张卡。第一张是地址、令牌、目标目录与等待上限：115 走 CloudDrive2 的 gRPC，令牌在
@@ -91,6 +92,7 @@ interface CardProps {
 }
 
 function DownloadForm({ state, settle, receipt, pikpakAccount }: CardProps & { pikpakAccount: boolean }) {
+  const uiText = useUiTranslation();
   const [config, setConfig] = useState<DownloadConfig>(state.config);
   const [token, setToken] = useState('');
   const [hours, setHours] = useState(String(state.config.wait_hours));
@@ -192,48 +194,48 @@ function DownloadForm({ state, settle, receipt, pikpakAccount }: CardProps & { p
   };
 
   return (
-    <Section title="云下载" onSubmit={submit}>
-      {state.problems?.length ? <Stack><Note tone="error" title="云下载配置需要检查">{state.problems.join('\n')}</Note></Stack> : null}
+    <Section title={uiText("云下载")} onSubmit={submit}>
+      {state.problems?.length ? <Stack><Note tone="error" title={uiText("云下载配置需要检查")}>{state.problems.join('\n')}</Note></Stack> : null}
       <Stack>
-        <Input label="CloudDrive2 地址" placeholder="留空自动查找" autoComplete="off" maxLength={200}
+        <Input label={uiText("CloudDrive2 地址")} placeholder={uiText("留空自动查找")} autoComplete="off" maxLength={200}
           value={config.clouddrive_address} isDisabled={!state.available}
           onChange={(value) => setConfig({ ...config, clouddrive_address: value })} />
-        <Input label="CloudDrive2 API 令牌" type="password" autoComplete="off" maxLength={400}
-          placeholder={state.token_set ? '已保存，留空不改' : '在 CloudDrive2「设置 → API 令牌」中生成'}
-          hint="需要离线任务权限。"
+        <Input label={uiText("CloudDrive2 API 令牌")} type="password" autoComplete="off" maxLength={400}
+          placeholder={state.token_set ? uiText("已保存，留空不改") : uiText("在 CloudDrive2「设置 → API 令牌」中生成")}
+          hint={uiText("需要离线任务权限。")}
           value={token} isDisabled={!state.available} onChange={setToken} />
-        {has115 ? <Input label={<SourceLabel source="115" label="115 目标目录" />} placeholder="留空时根据媒体库目录自动填写" autoComplete="off" maxLength={300}
+        {has115 ? <Input label={<SourceLabel source="115" label={uiText("115 目标目录")} />} placeholder={uiText("留空时根据媒体库目录自动填写")} autoComplete="off" maxLength={300}
           validationBehavior="aria" isInvalid={missing}
-          hint={missing ? (saveBlocked ? '先新建这个目录，或填写已有目录。' : '这个目录不存在。') : '应位于自动入库的云端路径前缀内。'}
+          hint={missing ? (saveBlocked ? '先新建这个目录，或填写已有目录。' : '这个目录不存在。') : uiText("应位于自动入库的云端路径前缀内。")}
           value={target('115')} isDisabled={!state.available} onChange={(value) => setTarget('115', value)} /> : null}
-        {hasPikPak ? <><Input label={<SourceLabel source="pikpak" label="PikPak 目标目录" />} placeholder="以 / 开头的网盘路径" autoComplete="off" maxLength={300}
-          hint="目录要已经存在。"
+        {hasPikPak ? <><Input label={<SourceLabel source="pikpak" label={uiText("PikPak 目标目录")} />} placeholder={uiText("以 / 开头的网盘路径")} autoComplete="off" maxLength={300}
+          hint={uiText("目录要已经存在。")}
           value={target('pikpak')} isDisabled={!state.available} onChange={(value) => setTarget('pikpak', value)} />
         <div className="flex flex-col gap-1">
-          <FieldLabel><SourceLabel source="pikpak" label="PikPak 根目录对应的媒体目录" /></FieldLabel>
+          <FieldLabel><SourceLabel source="pikpak" label={uiText("PikPak 根目录对应的媒体目录")} /></FieldLabel>
           {state.pikpak_roots.length ? (
-            <Select aria-label="PikPak 根目录对应的媒体目录" selectedKey={config.pikpak_root || null}
-              isDisabled={!state.available} placeholder="检查时根据媒体库目录选择"
+            <Select aria-label={uiText("PikPak 根目录对应的媒体目录")} selectedKey={config.pikpak_root || null}
+              isDisabled={!state.available} placeholder={uiText("检查时根据媒体库目录选择")}
               onSelectionChange={(key) => setConfig({ ...config, pikpak_root: key === null ? '' : String(key) })}>
               {state.pikpak_roots.map((root) => <SelectItem key={root} id={root}>{root}</SelectItem>)}
             </Select>
           ) : (
-            <Help>先在「媒体库与入库」添加 PikPak 挂载文件夹。</Help>
+            <Help>{uiText("先在「媒体库与入库」添加 PikPak 挂载文件夹。")}</Help>
           )}
         </div></> : null}
-        <Input label="等待上限（小时）" type="number" inputMode="numeric" autoComplete="off"
-          hint={`超时标为停滞；可填 1–${state.max_wait_hours} 小时。`}
+        <Input label={uiText("等待上限（小时）")} type="number" inputMode="numeric" autoComplete="off"
+          hint={uiText("超时标为停滞；可填 1–{value0} 小时。", { value0: String(state.max_wait_hours) })}
           value={hours} isDisabled={!state.available} onChange={setHours} />
       </Stack>
-      {action.busy === 'auto' ? <Stack divided><LoadingDots label="正在检查 CloudDrive2" /></Stack> : null}
+      {action.busy === 'auto' ? <Stack divided><LoadingDots label={uiText("正在检查 CloudDrive2")} /></Stack> : null}
       {report ? (
         <CheckReport report={report} detected={detected} suggested={suggested}
           create={state.available ? create : undefined} creating={action.busy === 'folder'} />
       ) : null}
       {failure || action.error ? <Stack divided><ErrorText>{failure || action.error}</ErrorText></Stack> : null}
       <Footer status={state.available ? undefined : '云下载只在允许修改数据库的设备上可用。'}>
-        <Button variant="secondary" onClick={check} disabled={!state.available} {...busyProps(action.busy === 'check')}>检查连接</Button>
-        <Button type="submit" disabled={!state.available} {...busyProps(action.busy === 'save')}>保存配置</Button>
+        <Button variant="secondary" onClick={check} disabled={!state.available} {...busyProps(action.busy === 'check')}>{uiText("检查连接")}</Button>
+        <Button type="submit" disabled={!state.available} {...busyProps(action.busy === 'save')}>{uiText("保存配置")}</Button>
       </Footer>
     </Section>
   );
@@ -263,37 +265,38 @@ function CheckReport({ report, detected, suggested, create, creating }: {
   create?: (path: string) => void;
   creating: boolean;
 }) {
+  const uiText = useUiTranslation();
   const folder = suggested.target;
   const hasFacts = Boolean(detected || folder || suggested.root || report.permissions.length || report.folder || report.quota);
   if (!hasFacts && !report.problems.length) return null;
   return (
     <Stack divided>
       {hasFacts ? <FactList>
-        {detected ? <Fact term="CloudDrive2 地址">{`探测到 ${detected}，保存配置后生效`}</Fact> : null}
+        {detected ? <Fact term={uiText("CloudDrive2 地址")}>{uiText("探测到 {value0}，保存配置后生效", { value0: String(detected) })}</Fact> : null}
         {folder?.exists ? (
-          <Fact term={<SourceLabel source="115" label="115 目标目录" />}>
-            {suggested.saved ? `已根据媒体库目录填入 ${folder.path}` : `根据媒体库目录填入 ${folder.path}，保存配置后生效`}
+          <Fact term={<SourceLabel source="115" label={uiText("115 目标目录")} />}>
+            {suggested.saved ? uiText("已根据媒体库目录填入 {value0}", { value0: String(folder.path) }) : uiText("根据媒体库目录填入 {value0}，保存配置后生效", { value0: String(folder.path) })}
           </Fact>
         ) : null}
         {folder && !folder.exists ? (
-          <Fact term={<SourceLabel source="115" label="115 目标目录" />}>
-            {`${folder.path} 不存在`}
-            {create ? <Button variant="secondary" size="small" onClick={() => create(folder.path)} {...busyProps(creating)}>新建这个目录</Button> : null}
+          <Fact term={<SourceLabel source="115" label={uiText("115 目标目录")} />}>
+            {uiText("{value0} 不存在", { value0: String(folder.path) })}
+            {create ? <Button variant="secondary" size="small" onClick={() => create(folder.path)} {...busyProps(creating)}>{uiText("新建这个目录")}</Button> : null}
           </Fact>
         ) : null}
-        {suggested.root ? <Fact term={<SourceLabel source="pikpak" label="PikPak 根目录" />}>{`根据媒体库目录填入 ${suggested.root}，保存配置后生效`}</Fact> : null}
+        {suggested.root ? <Fact term={<SourceLabel source="pikpak" label={uiText("PikPak 根目录")} />}>{uiText("根据媒体库目录填入 {value0}，保存配置后生效", { value0: String(suggested.root) })}</Fact> : null}
         {report.permissions.length ? (
-          <Fact term="离线权限">
+          <Fact term={uiText("离线权限")}>
             {report.missing.length
-              ? report.missing.map(permission => <Chip key={permission} variant="caption" color="yellow">{`缺 ${permission}`}</Chip>)
-              : <Chip variant="caption" color="lime">齐全</Chip>}
+              ? report.missing.map(permission => <Chip key={permission} variant="caption" color="yellow">{uiText("缺 {value0}", { value0: String(permission) })}</Chip>)
+              : <Chip variant="caption" color="lime">{uiText("齐全")}</Chip>}
           </Fact>
         ) : null}
         {report.folder ? (
-          <Fact term="目标目录">{report.folder.can_offline ? `${report.folder.path} 可以离线下载` : `${report.folder.path} 不支持离线下载`}</Fact>
+          <Fact term={uiText("目标目录")}>{report.folder.can_offline ? uiText("{value0} 可以离线下载", { value0: String(report.folder.path) }) : uiText("{value0} 不支持离线下载", { value0: String(report.folder.path) })}</Fact>
         ) : null}
         {report.quota ? (
-          <Fact term={<SourceLabel source="115" label="115 离线配额" />}>{`本月还剩 ${report.quota.left} 条，共 ${report.quota.total} 条`}</Fact>
+          <Fact term={<SourceLabel source="115" label={uiText("115 离线配额")} />}>{uiText("本月还剩 {value0} 条，共 {value1} 条", { value0: String(report.quota.left), value1: String(report.quota.total) })}</Fact>
         ) : null}
       </FactList> : null}
       {report.problems.map((problem) => <ErrorText key={problem}>{problem}</ErrorText>)}
@@ -308,6 +311,7 @@ function PikPakAccount({ state, settle, receipt, username, setUsername }: CardPr
   username: string;
   setUsername(value: string): void;
 }) {
+  const uiText = useUiTranslation();
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [captcha, setCaptcha] = useState('');
@@ -379,37 +383,33 @@ function PikPakAccount({ state, settle, receipt, username, setUsername }: CardPr
 
   const passwordForm = (
     <>
-      <Input label="账号" placeholder="邮箱或手机号" autoComplete="username" maxLength={200}
+      <Input label={uiText("账号")} placeholder={uiText("邮箱或手机号")} autoComplete="username" maxLength={200}
         value={username} isDisabled={!state.available} onChange={setUsername} />
-      <Input label="密码" type="password" autoComplete="current-password" maxLength={200}
+      <Input label={uiText("密码")} type="password" autoComplete="current-password" maxLength={200}
         value={password} isDisabled={!state.available} onChange={setPassword} />
-      <Checkbox isSelected={remember} isDisabled={!state.available} onChange={setRemember}>
-        保存密码，登录过期时自动重新登录
-      </Checkbox>
+      <Checkbox isSelected={remember} isDisabled={!state.available} onChange={setRemember}>{uiText("保存密码，登录过期时自动重新登录")}</Checkbox>
       {captcha ? (
-        <Note tone="warning" title="需要人机验证"
-          extra={<div className="pt-2"><ExternalLink href={captcha}>打开 PikPak 验证页</ExternalLink></div>}>
-          在浏览器里完成验证后，回到这里再点一次「登录」。
-        </Note>
+        <Note tone="warning" title={uiText("需要人机验证")}
+          extra={<div className="pt-2"><ExternalLink href={captcha}>{uiText("打开 PikPak 验证页")}</ExternalLink></div>}>{uiText("在浏览器里完成验证后，回到这里再点一次「登录」。")}</Note>
       ) : null}
     </>
   );
   const passwordLogin = (
-    <Button type="submit" variant="primary" disabled={!state.available || waiting} {...busyProps(action.busy === 'login')}>登录</Button>
+    <Button type="submit" variant="primary" disabled={!state.available || waiting} {...busyProps(action.busy === 'login')}>{uiText("登录")}</Button>
   );
   const outcomeFailed = browser.state === 'timeout' || browser.state === 'failed';
 
   return (
-    <Section title="PikPak 账号" icon={<PikPakIcon />} onSubmit={login}
+    <Section title={uiText("PikPak 账号")} icon={<PikPakIcon />} onSubmit={login}
       aside={<StatusLabel tone={account.logged_in ? 'success' : waiting ? 'progress' : outcomeFailed ? 'error' : 'neutral'}>
-        {account.logged_in ? '已登录' : waiting ? '等待登录' : outcomeFailed ? '登录未完成' : '待登录'}</StatusLabel>}>
+        {account.logged_in ? uiText("已登录") : waiting ? uiText("等待登录") : outcomeFailed ? uiText("登录未完成") : uiText("待登录")}</StatusLabel>}>
       {account.logged_in ? (
         <FactList>
-          <Fact term="账号">{account.username || '已登录'}</Fact>
+          <Fact term={uiText("账号")}>{account.username || uiText("已登录")}</Fact>
           {account.method === 'browser' ? (
-            <Fact term="登录方式">浏览器登录，由 Peach 续期</Fact>
+            <Fact term={uiText("登录方式")}>{uiText("浏览器登录，由 Peach 续期")}</Fact>
           ) : (
-            <Fact term="密码">{account.remember ? '已保存，登录过期时自动重新登录' : '未保存，登录过期后需要回到这里重新登录'}</Fact>
+            <Fact term={uiText("密码")}>{account.remember ? uiText("已保存，登录过期时自动重新登录") : uiText("未保存，登录过期后需要回到这里重新登录")}</Fact>
           )}
         </FactList>
       ) : (
@@ -420,14 +420,14 @@ function PikPakAccount({ state, settle, receipt, username, setUsername }: CardPr
       )}
       {failure || action.error ? <Stack divided><ErrorText>{failure || action.error}</ErrorText></Stack> : null}
       <Footer status={!account.logged_in && waiting
-        ? <LoadingDots label={browser.message || '等你在浏览器窗口里登录 PikPak'} /> : null}>
+        ? <LoadingDots label={browser.message || uiText("等你在浏览器窗口里登录 PikPak")} /> : null}>
         {account.logged_in ? (
-          <Button variant="secondary" onClick={logout} disabled={!state.available} {...busyProps(action.busy === 'logout')}>登出</Button>
+          <Button variant="secondary" onClick={logout} disabled={!state.available} {...busyProps(action.busy === 'logout')}>{uiText("登出")}</Button>
         ) : <>{!browser.available ? null : waiting ? (
-          <Button variant="secondary" type="button" onClick={cancelBrowser} {...busyProps(action.busy === 'cancel')}>取消</Button>
+          <Button variant="secondary" type="button" onClick={cancelBrowser} {...busyProps(action.busy === 'cancel')}>{uiText("取消")}</Button>
         ) : (
           <Button variant="secondary" type="button" onClick={openBrowser} disabled={!state.available}
-            {...busyProps(action.busy === 'browser')}>用浏览器登录</Button>
+            {...busyProps(action.busy === 'browser')}>{uiText("用浏览器登录")}</Button>
         )}{passwordLogin}</>}
       </Footer>
     </Section>

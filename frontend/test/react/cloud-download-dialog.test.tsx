@@ -7,8 +7,10 @@ import { CloudDownloadDialog, type DownloadPrefill } from '../../src/react/activ
 import type { DownloadsSnapshot, DownloadSubmitResult, DownloadTask } from '../../src/react/bundle';
 import { queryClient } from '../../src/react/query';
 import { buttonNamed, choose, mount, section, settle, submit, type } from './render';
+import { LOCALE_KEY, setLocale } from '../../src/i18n';
 
 afterEach(() => queryClient.clear());
+afterEach(async () => { await act(async () => setLocale('zh-CN')); localStorage.removeItem(LOCALE_KEY) });
 
 const task = (patch: Partial<DownloadTask> = {}): DownloadTask => ({
   id: 1, info_hash: 'a'.repeat(40), provider: '115', provider_label: '115', source_uri: 'magnet:?xt=urn:btih:' + 'a'.repeat(40),
@@ -65,6 +67,28 @@ const field = (root: HTMLElement, label: string) =>
     ?.closest('[data-input-size]')?.querySelector('input') ?? null;
 
 const MAGNET = 'magnet:?xt=urn:btih:' + 'b'.repeat(40);
+
+it('弹层切换英语和越南语时更新控件名称，保留输入、馆藏标题和原始路径', async () => {
+  const posts = serve(snapshot(), { ok: true, outcome: 'submitted', task: task() });
+  await act(async () => setLocale('en'));
+  const { page } = await open({ code: 'ABC-123', title: '技术详情', origin: 'asset:12' });
+  const magnet = field(page, 'Magnet link');
+  expect(magnet).not.toBeNull();
+  await type(magnet, MAGNET);
+  expect(page.querySelector('[aria-label="Close resource panel"]')).not.toBeNull();
+  expect(field(page, 'Destination folder')?.value).toBe('/115/云下载');
+  await act(async () => setLocale('vi'));
+  expect(field(page, 'Liên kết magnet')).toBe(magnet);
+  expect(magnet?.value).toBe(MAGNET);
+  expect(page.querySelector('[aria-label="Đóng bảng nguồn tải"]')).not.toBeNull();
+  expect(field(page, 'Thư mục đích')?.value).toBe('/115/云下载');
+  expect(page.textContent).toContain('ABC-123 · 技术详情');
+  await submit(section(page, 'Gửi yêu cầu tải xuống'));
+  await settle();
+  expect(posts).toEqual([{
+    magnet: MAGNET, provider: '115', target: '/115/云下载', code: 'ABC-123', title: '技术详情', origin: 'asset:12',
+  }]);
+});
 
 it('带着番号与标题打开：标题行写番号与片名，搜索框与番号框已填，提交带上渠道、目录与来处', async () => {
   const posts = serve(snapshot(), { ok: true, outcome: 'submitted', task: task() });

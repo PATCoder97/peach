@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 复核卡片中段那一框证据：来源图片、原视频入口、创作者入口、身份证据、作品样本九宫格。
  *
  * 看这几帧、然后读这一句，是同一件事的两半，所以它们合成卡片中段那一个框。候选表单和
@@ -26,6 +27,7 @@ export function SourceImage({ url }: { url?: string }) {
 }
 
 function RequestedSourceImage({ source }: { source: string }) {
+  const uiText = useUiTranslation();
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
   useEffect(() => {
     if (status !== 'loading') return;
@@ -35,19 +37,18 @@ function RequestedSourceImage({ source }: { source: string }) {
   return (
     <div className="relative flex h-review-image items-center justify-center overflow-hidden rounded-surface bg-background-secondary-default">
       {status === 'loading' ? <span role="status" className="absolute flex items-center gap-2 text-body-2-regular text-text-secondary">
-        <span dangerouslySetInnerHTML={{ __html: spinnerHtml('正在加载图片') }} />正在加载图片
-      </span> : null}
+        <span dangerouslySetInnerHTML={{ __html: spinnerHtml('正在加载图片') }} />{uiText("正在加载图片")}</span> : null}
       {source && (status === 'loading' || status === 'ready')
-        ? <img src={source} alt="来源提供的备选图片" referrerPolicy="no-referrer" decoding="async"
+        ? <img src={source} alt={uiText("来源提供的备选图片")} referrerPolicy="no-referrer" decoding="async"
             className={`size-full object-contain ${status === 'loading' ? 'invisible' : ''}`} onLoad={() => setStatus('ready')}
             onError={() => setStatus('failed')} />
         : source ? <div className="flex flex-col items-center gap-2">
-            {status === 'failed' ? <span className="text-body-2-regular text-text-secondary">未取得来源图片</span> : null}
-            <Button variant="secondary" size="small" aria-label={status === 'failed' ? '立即重试加载来源图片' : undefined}
+            {status === 'failed' ? <span className="text-body-2-regular text-text-secondary">{uiText("未取得来源图片")}</span> : null}
+            <Button variant="secondary" size="small" aria-label={status === 'failed' ? uiText("立即重试加载来源图片") : undefined}
               onClick={() => setStatus('loading')}>
-              {status === 'failed' ? '立即重试' : '查看来源图片'}
+              {status === 'failed' ? uiText("立即重试") : uiText("查看来源图片")}
             </Button>
-          </div> : <span className="text-body-2-regular text-text-secondary">未取得来源图片</span>}
+          </div> : <span className="text-body-2-regular text-text-secondary">{uiText("未取得来源图片")}</span>}
     </div>
   );
 }
@@ -56,6 +57,7 @@ function RequestedSourceImage({ source }: { source: string }) {
 export function OriginAsset(
   { asset, openItem }: { asset: ReviewAsset; openItem(id: number): void },
 ) {
+  const uiText = useUiTranslation();
   const name = asset.name || '';
   return (
     <div className="flex min-w-0 items-center gap-3">
@@ -63,15 +65,15 @@ export function OriginAsset(
         className="flex aspect-card-cover w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2lg bg-background-tertiary-default outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring">
         {asset.preview_url
           ? <img src={asset.preview_url} alt="" loading="lazy" className="size-full object-cover" />
-          : <span className="text-caption-1-regular text-text-secondary">无封面</span>}
-        <VisuallyHidden>{`打开原视频 ${name}`}</VisuallyHidden>
+          : <span className="text-caption-1-regular text-text-secondary">{uiText("无封面")}</span>}
+        <VisuallyHidden>{uiText('打开原视频 {name}', { name })}</VisuallyHidden>
       </button>
       <div className="flex min-w-0 flex-col items-start gap-1">
         <b title={name} className="w-full truncate text-body-medium text-text-primary">
-          {asset.code || name || '原视频'}
+          {asset.code || name || uiText("原视频")}
         </b>
         <Button variant="secondary" size="small" leadingIcon={RiPlayLine}
-          onClick={() => openItem(asset.id)}>打开原视频</Button>
+          onClick={() => openItem(asset.id)}>{uiText("打开原视频")}</Button>
       </div>
     </div>
   );
@@ -88,10 +90,11 @@ export function EntityHead(
     openEntity(kind: string, name: string): void;
   },
 ) {
+  const uiText = useUiTranslation();
   return (
     <div className="flex min-w-0 items-center gap-3">
       {/* `card-art` 的 `avatarInner` 是唯一那份「有图走图、没图退首字母」的实现，页面不重画一遍。 */}
-      <button type="button" aria-label={`打开创作者页：${name}`} onClick={() => openEntity(kind, name)}
+      <button type="button" aria-label={uiText("打开创作者页：{value0}", { value0: String(name) })} onClick={() => openEntity(kind, name)}
         className={`relative inline-grid size-11 shrink-0 cursor-pointer place-items-center overflow-hidden rounded-full bg-background-secondary-default text-caption-1-medium text-text-secondary outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring ${LEGACY_AVATAR_IMG}`}
         dangerouslySetInnerHTML={{ __html: avatar }} />
       <div className="flex min-w-0 flex-col items-start">
@@ -100,7 +103,7 @@ export function EntityHead(
           {name}
         </button>
         {works
-          ? <small className="tabular-nums text-body-2-regular text-text-secondary">{`${works.toLocaleString()} 部作品`}</small>
+          ? <small className="tabular-nums text-body-2-regular text-text-secondary">{uiText("{value0} 部作品", { value0: String(works.toLocaleString()) })}</small>
           : null}
       </div>
     </div>
@@ -118,26 +121,27 @@ export function IdentityEvidence(
     note: string;
   },
 ) {
+  const uiText = useUiTranslation();
   const profile = webUrl(row.profile_url || '');
   const samples = (row.preview_assets || []).slice(0, 6);
   const works = Math.max(0, Number(row.video_count || row.videos || 0));
   return (
     <section className="flex flex-col gap-3">
-      <h5 className="text-body-medium text-text-primary">{`待确认人物：${row.babepedia_name || '未标注'}`}</h5>
+      <h5 className="text-body-medium text-text-primary">{uiText("待确认人物：{value0}", { value0: String(row.babepedia_name || uiText("未标注")) })}</h5>
       <div className="flex flex-wrap items-center gap-2">
         {profile
           ? <ButtonLink variant="secondary" size="small" trailingIcon={RiExternalLinkLine}
-              href={profile} target="_blank" rel="noopener noreferrer">来源资料</ButtonLink>
+              href={profile} target="_blank" rel="noopener noreferrer">{uiText("来源资料")}</ButtonLink>
           : null}
         <Button variant="secondary" size="small"
           onClick={() => openEntity('creator', row.creator || '')}>
-          {`查看全部 ${works.toLocaleString()} 部作品`}
+          {uiText("查看全部 {value0} 部作品", { value0: String(works.toLocaleString()) })}
         </Button>
       </div>
       <SourceImage url={row.preview_url} />
-      <p className="text-body-2-regular text-text-secondary">通过后记录身份判断。</p>
+      <p className="text-body-2-regular text-text-secondary">{uiText("通过后记录身份判断。")}</p>
       {samples.length ? <>
-        <h5 className="text-body-medium text-text-primary">本地作品样本</h5>
+        <h5 className="text-body-medium text-text-primary">{uiText("本地作品样本")}</h5>
         <ul className="flex flex-col gap-1">
           {samples.map((asset) => (
             <li key={asset.id} className="flex min-w-0 items-center gap-2">
@@ -145,13 +149,13 @@ export function IdentityEvidence(
                 onClick={() => openItem(asset.id)}>
                 <span title={asset.name} className="block max-w-full truncate">{asset.name}</span>
               </Button>
-              <Button variant="ghost" size="small" aria-label={`打开 ${asset.name} 的文件位置`}
+              <Button variant="ghost" size="small" aria-label={uiText("打开 {value0} 的文件位置", { value0: String(asset.name) })}
                 {...busyProps(revealing === asset.id)}
-                onClick={() => onReveal(asset.id)}>文件位置</Button>
+                onClick={() => onReveal(asset.id)}>{uiText("文件位置")}</Button>
             </li>
           ))}
         </ul>
-      </> : <p className="text-body-2-regular text-text-secondary">暂无本地作品样本，打开全部作品核对。</p>}
+      </> : <p className="text-body-2-regular text-text-secondary">{uiText("暂无本地作品样本，打开全部作品核对。")}</p>}
       {note ? <p role="status" className="text-body-2-regular text-text-error-primary">{note}</p> : null}
     </section>
   );
@@ -167,6 +171,7 @@ export function AssetPicker(
     locked: boolean;
   },
 ) {
+  const uiText = useUiTranslation();
   const [anchor, setAnchor] = useState<number | null>(null);
   const chosen = new Set(picked);
   const toggle = (index: number, range: boolean) => {
@@ -185,7 +190,7 @@ export function AssetPicker(
   return (
     <div className="flex flex-col gap-2">
       <SelectionActions prefix={<span className="tabular-nums text-body-2-regular text-text-secondary">
-          {`已选 ${chosen.size} / ${assets.length}`}
+          {uiText("已选 {value0} / {value1}", { value0: String(chosen.size), value1: String(assets.length) })}
         </span>} actions={[
           { label: '全选', disabled: locked, onPress: () => onPicked(assets.map(asset => asset.id)) },
           { label: '清空', disabled: locked, onPress: () => onPicked([]) },

@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 热力图：统计页的播放时间与口味页的浏览时间共用。
  *
  * Recharts 没有热力图，EvilCharts 的 Recharts 分支也没有，所以格子仍是自绘的 SVG：一格一个
@@ -10,6 +11,7 @@ import type { ReactNode } from 'react';
 import { CHART_CARD, ChartEmpty, ChartHead } from './chart-card';
 import { TIP_SURFACE, TIP_SWATCH, TipRow } from './chart-tip';
 import { dayCalendar, hourGrid, WEEKDAYS, type ActivityCounts, type HeatCell } from './heat';
+import { formatNumber } from '../../i18n/format';
 
 const SIZE = 14;
 const STEP = 17;
@@ -32,13 +34,14 @@ function HeatTooltip(
   { cell, series, tone, left, top, anchor }:
   { cell: HeatCell; series: string; tone: HeatTone; left: number; top: number; anchor: keyof typeof ANCHOR },
 ) {
+  const uiText = useUiTranslation();
   return (
     <div aria-hidden
       // oxlint-disable-next-line shadcn/no-inline-styles -- 浮层跟着指到的那一格走，位置是运行期算出的百分比
       style={{ left: `${left}%`, top: `${top}%` }}
       className={`pointer-events-none absolute z-10 -mt-2 -translate-y-full ${TIP_SURFACE} ${ANCHOR[anchor]}`}>
       <div className="font-medium text-foreground">{cell.label}</div>
-      <TipRow name={series} value={cell.count} swatch={<i className={`${TIP_SWATCH} ${TONES[tone].dot}`} />} />
+      <TipRow name={uiText(series)} value={cell.count} swatch={<i className={`${TIP_SWATCH} ${TONES[tone].dot}`} />} />
     </div>
   );
 }
@@ -54,6 +57,7 @@ export function HeatCard(
     columns: number; rows: number; axis?: ReactNode; footer: ReactNode; tone: HeatTone;
   },
 ) {
+  const uiText = useUiTranslation();
   const [shown, setShown] = useState(-1);
   const left = axis ? 30 : 0;
   const top = axis ? 18 : 0;
@@ -69,19 +73,19 @@ export function HeatCard(
   const edge = pin ? { start: pin.x, center: pin.x + SIZE / 2, end: pin.x + SIZE }[anchor] : 0;
   return (
     <section className={CHART_CARD}>
-      <ChartHead title={title} figure={(cell ? cell.count : total).toLocaleString()}
-        note={cell ? cell.label : words.unit} />
+      <ChartHead title={uiText(title)} figure={formatNumber(cell ? cell.count : total)}
+        note={cell ? cell.label : uiText(words.unit)} />
       {/* 带坐标轴的星期 × 小时有 24 列，压到 320 以下格子和字都读不清，宁可在卡里横滚；
           每日那张只有 13 列，跟着卡片缩，最近几天不会藏到右边看不见的地方。 */}
       <div className="relative">
         <div className="min-w-0 overflow-x-auto">
-          <svg role="img" aria-label={title} onPointerLeave={() => setShown(-1)}
+          <svg role="img" aria-label={uiText(title)} onPointerLeave={() => setShown(-1)}
             viewBox={`0 0 ${width} ${height}`} className={axis ? 'block h-auto min-w-80 w-full' : 'block h-auto w-full'}>
             {axis}
             {cells.map((item, index) => {
               const { x, y } = at(index);
               return (
-                <rect key={item.key} tabIndex={0} role="img" aria-label={`${item.label}，${item.count} ${words.cellUnit}`}
+                <rect key={item.key} tabIndex={0} role="img" aria-label={`${item.label}${uiText('，')}${formatNumber(item.count)} ${uiText(words.cellUnit)}`}
                   x={x} y={y} width={SIZE} height={SIZE} rx={3} fillOpacity={item.share || 1}
                   opacity={shown >= 0 && shown !== index ? 0.4 : 1}
                   className={item.share
@@ -106,18 +110,21 @@ export function HeatCard(
 }
 
 /** 星期 × 小时的坐标：左边一列星期，顶上每隔两小时一个钟点。 */
-const HOUR_AXIS = (
+function HourAxis() {
+  const uiText = useUiTranslation();
+  return (
   <>
     {WEEKDAYS.map((name, day) => (
       <text key={name} x={0} y={18 + day * STEP + 7} dominantBaseline="middle"
-        className="fill-text-secondary text-caption-1-regular">{name}</text>
+        className="fill-text-secondary text-caption-1-regular">{uiText(name)}</text>
     ))}
     {Array.from({ length: 24 }, (_, hour) => (hour % 2 ? null : (
       <text key={hour} x={30 + hour * STEP} y={8} dominantBaseline="middle"
         className="fill-text-secondary text-caption-1-regular">{hour}</text>
     )))}
   </>
-);
+  );
+}
 
 /** 一份活跃计数的两张热力图：星期 × 小时，和最近 91 天。
  *
@@ -129,6 +136,7 @@ export function ActivityHeat(
     words: HeatWords; tone: HeatTone; empty: string;
   },
 ) {
+  const uiText = useUiTranslation();
   const hours = hourGrid(activity);
   const days = dayCalendar(activity);
   if (!days.cells.length) return <ChartEmpty title={title}>{empty}</ChartEmpty>;
@@ -137,8 +145,8 @@ export function ActivityHeat(
   return (
     <div className="inline-grid w-full items-start gap-5 lg:grid-cols-2">
       <HeatCard title={title} words={words} tone={tone}
-        cells={hours.cells} total={hours.total} columns={24} rows={7} axis={HOUR_AXIS}
-        footer={<><span>星期 × 小时</span><span>{activity?.timezone || 'UTC+08:00'}</span></>} />
+        cells={hours.cells} total={hours.total} columns={24} rows={7} axis={<HourAxis />}
+        footer={<><span>{uiText("星期 × 小时")}</span><span>{activity?.timezone || 'UTC+08:00'}</span></>} />
       <HeatCard title={dailyTitle} words={words} tone={tone}
         cells={days.cells} total={days.total} columns={13} rows={7}
         footer={<><span>{days.start}</span><span>{days.end}</span></>} />

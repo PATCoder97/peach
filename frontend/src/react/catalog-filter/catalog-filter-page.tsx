@@ -1,3 +1,6 @@
+import { useTranslation as useUiTranslation } from "../i18n";
+import { translate as t } from '../../i18n/index';
+import { useTranslation } from '../i18n';
 /* 首页上方那一整块：两排头像（女优、厂牌），加一块两排的玻璃浮层（上排四枚视图与标签，下排读数、
  * 换一批、卡片版式与排序键），再加正文里网格上面那条交集条。
  *
@@ -44,6 +47,8 @@ export function CatalogFilterPage(props: CatalogFilterProps) {
 
 /** 玻璃浮层两排：上排四枚视图与标签，下排读数、换一批、版式与排序键。 */
 function Glass(props: CatalogFilterProps) {
+  const uiText = useUiTranslation();
+  useTranslation();
   const { actions, helpers } = props;
   const pane = useRef<HTMLSpanElement>(null);
   const viewRow = useRef<HTMLDivElement>(null);
@@ -83,19 +88,19 @@ function Glass(props: CatalogFilterProps) {
   useLayoutEffect(() => { popBadges(tagRow.current, 'tagbar') }, [tags]);
 
   return (
-    <FilterGlassRows label="筛选与排序" topLabel="视图与标签"
+    <FilterGlassRows label={t("筛选与排序")} topLabel={uiText("视图与标签")}
       attrs={{ 'data-filter-frame': '', 'data-catalog-frame': '', ...(singleRow ? { 'data-single-row': '' } : {}) }}
       className="mx-4" topClassName="gap-1.5 overflow-visible" bottomClassName={props.trash ? 'hidden' : 'min-h-12'}
       bottomRef={bottomRow} busy={props.count === null || props.refreshing}
       panes={<span ref={pane} data-view-glide="" aria-hidden="true" />}
       top={
         <div ref={scroll} data-catalog-scroll="">
-          <div ref={viewRow} role="group" aria-label="视图" data-catalog-views="" onPointerLeave={glide.leave}>
+          <div ref={viewRow} role="group" aria-label={t("视图")} data-catalog-views="" onPointerLeave={glide.leave}>
             {props.views.map((view) => (
               <a key={view.k} href={view.href} data-catalog-view={view.k} data-entity-press=""
                 aria-pressed={props.state === view.k} onPointerEnter={glide.hover}
                 onClick={(event) => { event.preventDefault(); actions.setView(view.k) }}>
-                {view.label}
+                {uiText(view.label)}
               </a>
             ))}
             <span data-entity-sep="" aria-hidden="true" />
@@ -229,9 +234,10 @@ function Head({ count, refreshing, layout, sorts, actions }: CatalogFilterProps)
 
 /** 读数：`1,234 个符合 · 显示 24`。等这一趟取数时换成一条宽度定死的微光，180ms 内就到手的一帧都不露。 */
 function Readout({ count }: { count: CatalogFilterProps['count'] }) {
+  const uiText = useUiTranslation();
   const readout = useRef<HTMLSpanElement>(null);
   const skeleton = useRef<HTMLSpanElement>(null);
-  const text = count ? `${count.total.toLocaleString()} 个符合 · 显示 ${count.shown.toLocaleString()}` : '';
+  const text = count ? uiText('{total} 个符合 · 显示 {shown}', { total: count.total.toLocaleString(), shown: count.shown.toLocaleString() }) : '';
   useLayoutEffect(() => {
     if (count === false) return;
     if (!count) { fitSkeleton(skeleton.current); return }

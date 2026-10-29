@@ -1,3 +1,5 @@
+import { translate as t } from '../../../i18n/index';
+import { useTranslation } from '../../i18n';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/base/buttons/button';
@@ -8,6 +10,7 @@ import { describeFailure, restoreSetup, SetupRequestError, type SetupDone } from
 import { SetupShell } from './setup-scene';
 
 export function SetupRestore({ onDone, onBack }: { onDone: (done: SetupDone) => void; onBack: () => void }) {
+  const uiText = useTranslation();
   const [path, setPath] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -30,19 +33,19 @@ export function SetupRestore({ onDone, onBack }: { onDone: (done: SetupDone) => 
   return (
     <SetupShell step="restore">
     <form data-setup-form-panel="" onSubmit={submit} noValidate aria-labelledby="auth-card-title">
-      <div data-setup-top=""><span className="text-body-2-regular text-text-secondary">连接已有数据</span></div>
+      <div data-setup-top=""><span className="text-body-2-regular text-text-secondary">{t("连接已有数据")}</span></div>
       <div data-setup-step-scroll=""><div data-setup-step-content="">
       <header data-setup-step-heading="">
-        <h1 id="auth-card-title" ref={heading} tabIndex={-1} className="text-title-1-semibold text-text-primary">使用已有数据</h1>
-        <p className="text-body-regular text-text-secondary">连接 Peach 数据目录，继续使用原来的配置与馆藏。</p>
+        <h1 id="auth-card-title" ref={heading} tabIndex={-1} className="text-title-1-semibold text-text-primary">{t("使用已有数据")}</h1>
+        <p className="text-body-regular text-text-secondary">{t("连接 Peach 数据目录，继续使用原来的配置与馆藏。")}</p>
       </header>
-      <div><Input label="已有数据目录" value={path} onChange={setPath} isRequired autoComplete="off" spellCheck="false"
+      <div><Input label={t("已有数据目录")} value={path} onChange={setPath} isRequired autoComplete="off" spellCheck="false"
         validationBehavior="aria" isInvalid={Boolean(error)}
-        hint={error ? <span role="alert">{error}</span> : '选择包含 config.toml 和 database 文件夹的数据目录。'} /></div>
+        hint={error ? <span role="alert">{uiText(error)}</span> : t("选择包含 config.toml 和 database 文件夹的数据目录。")} /></div>
       </div></div>
       <footer data-setup-footer="" data-copy-interact>
-        <Button variant="ghost" onClick={() => { if (!busy) onBack(); }} aria-disabled={busy || undefined}>返回首次设置</Button>
-        <Button type="submit" {...busyProps(busy)}>{busy ? '正在连接数据目录…' : '使用此目录'}</Button>
+        <Button variant="ghost" onClick={() => { if (!busy) onBack(); }} aria-disabled={busy || undefined}>{t("返回首次设置")}</Button>
+        <Button type="submit" {...busyProps(busy)}>{busy ? t("正在连接数据目录…") : t("使用此目录")}</Button>
       </footer>
     </form>
     </SetupShell>

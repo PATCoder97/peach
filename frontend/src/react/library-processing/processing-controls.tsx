@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { Button } from '@/components/base/buttons/button';
 import { RiPauseLine, RiPlayLine } from '@remixicon/react';
 
@@ -14,6 +15,7 @@ import {
 export function ProcessingControls({ state, disabled = false }: {
   state: LibraryProcessingData; disabled?: boolean;
 }) {
+  const uiText = useUiTranslation();
   const action = useAction();
   const active = processingActive(state);
   const stopping = state.status === 'stopping';
@@ -42,7 +44,7 @@ export function ProcessingControls({ state, disabled = false }: {
       {active ? <Button size="small" variant="secondary" disabled={disabled || !state.job_id || stopping}
         {...busyProps(action.busy === 'cancel')} onClick={() => {
           if (state.job_id) change({action:'cancel',job_id:state.job_id});
-        }}>{stopping ? '正在停止' : '停止任务'}</Button> : null}
+        }}>{stopping ? uiText("正在停止") : uiText("停止任务")}</Button> : null}
     </div>
     {action.error ? <p role="alert" className="text-caption-1-regular text-text-error-primary">{action.error}</p> : null}
   </div>;

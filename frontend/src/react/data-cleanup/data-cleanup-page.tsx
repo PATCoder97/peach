@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 数据管理页：库里已经有的东西怎么收拾。
  *
  * 照 Board 的 dashboard 模板排：顶上一排读数卡，每张是一条内容在库里的经过、兼那一页的入口；
@@ -62,6 +63,7 @@ const refreshReadings = () => {
 };
 
 export function DataCleanupPage({ toast, failure, open }: DataCleanupProps) {
+  const uiText = useUiTranslation();
   const review = useQuery({ queryKey: REVIEW_COUNTS_KEY, queryFn: ({ signal }) => fetchReviewCounts(signal) });
   const quality = useQuery({ queryKey: QUALITY_GOALS_KEY, queryFn: ({ signal }) => fetchQualityGoals(signal) });
   const duplicates = useQuery({ queryKey: DUPLICATES_KEY, queryFn: ({ signal }) => fetchDuplicates(signal) });
@@ -73,22 +75,22 @@ export function DataCleanupPage({ toast, failure, open }: DataCleanupProps) {
   return (
     <Page>
       <div className={PLAIN_STAT_STRIP}>
-        <EntryCard section="review" label="人工复核" icon={REVIEW} open={open}
+        <EntryCard section="review" label={uiText("人工复核")} icon={REVIEW} open={open}
           value={reading(review, reviewSummary)} />
-        <EntryCard section="quality" label="高清版" icon={QUALITY} open={open}
+        <EntryCard section="quality" label={uiText("高清版")} icon={QUALITY} open={open}
           value={reading(quality, (data) => ({ figure: `${Number(data.total || 0).toLocaleString()} 个待升级` }))} />
-        <EntryCard section="duplicates" label="重复文件" icon={DUPLICATES} open={open}
+        <EntryCard section="duplicates" label={uiText("重复文件")} icon={DUPLICATES} open={open}
           value={reading(duplicates, (data) => (Number(data.total || 0)
             ? {
                 figure: `${Number(data.total).toLocaleString()} 组 · ${Number(data.files || 0).toLocaleString()} 个文件`,
                 meta: `可回收 ${fmtSize(data.reclaimable || 0)}`,
               }
             : { figure: '没有重复内容' }))} />
-        <EntryCard section="ads" label="垃圾文件" icon={JUNK} open={open}
+        <EntryCard section="ads" label={uiText("垃圾文件")} icon={JUNK} open={open}
           value={reading(junk, (data) => ({
             figure: `${Number(data.pending_total || 0).toLocaleString()} 个待判断`, meta: junkBreakdown(data),
           }))} />
-        <EntryCard section="trash" label="回收站" icon={TRASH} open={open}
+        <EntryCard section="trash" label={uiText("回收站")} icon={TRASH} open={open}
           value={reading(trash, (data) => ({
             figure: `${Number(data.total || 0).toLocaleString()} 项在回收站`,
             meta: data.total ? `占用 ${fmtSize(data.bytes || 0)}` : '',

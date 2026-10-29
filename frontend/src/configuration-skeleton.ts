@@ -1,3 +1,4 @@
+import { translate as t } from './i18n';
 /* 配置页的骨架：整页静态骨架（React 包与 `/api/configuration` 回来之前）与各分区自己取数时的
  * 分区骨架都由这里的构件拼，按终态的结构画：列表画成行，表单画成「标签 + 输入框」，开关行画成
  * 「标题 + 说明 + 开关」，底栏画禁用的键。
@@ -79,26 +80,26 @@ const button = (label: string, variant: 'primary' | 'secondary' = 'primary', siz
 const footer = (content: string, status = '') => `<div class="-ml-3 flex flex-wrap items-center justify-end gap-3 rounded-b-2xl border-t border-separator-border bg-card-footer px-3 py-3">${status ? `<div class="mr-auto min-w-0 text-body-2-regular text-text-secondary">${status}</div>` : ''}${content}</div>`;
 const stack = (content: string, divided = false) => `<div class="flex flex-col gap-4 ${divided ? 'border-t border-separator-border ' : ''}py-4 pr-3">${content}</div>`;
 const heading = (name: string, aside: string, mark: boolean) => {
-  const label = `<p class="w-full px-3 text-body-2-medium text-text-secondary">${mark ? `<span class="inline-flex items-center gap-1.5">${icon()}${name}</span>` : name}</p>`;
+  const label = `<p class="w-full px-3 text-body-2-medium text-text-secondary">${mark ? `<span class="inline-flex items-center gap-1.5">${icon()}${t(name)}</span>` : t(name)}</p>`;
   return aside ? `<div class="flex w-full flex-wrap items-center justify-between gap-2"><div class="min-w-40 flex-1">${label}</div><div class="flex min-w-0 max-w-full">${aside}</div></div>` : label;
 };
 const section = (name: string, content: string, actions = '', { aside = '', status = '', mark = false } = {}) =>
-  `<section aria-label="${name}" class="flex w-full flex-col gap-2 wrap-anywhere">${heading(name, aside, mark)}<div class="flex w-full flex-col rounded-2xl bg-background-secondary-default pl-3">${content}${actions ? footer(actions, status) : ''}</div></section>`;
-const controlRow = (label: string, description: string, control: string) => `<div class="flex min-h-[52px] w-full items-center justify-between gap-4 py-2.5 pr-2.5 border-b border-separator-border last:border-b-0"><div class="flex min-w-0 flex-col"><p class="text-body-regular text-text-primary">${label}</p>${description ? `<p class="text-body-2-regular text-text-secondary">${description}</p>` : ''}</div>${control}</div>`;
+  `<section aria-label="${esc(t(name))}" class="flex w-full flex-col gap-2 wrap-anywhere">${heading(name, aside, mark)}<div class="flex w-full flex-col rounded-2xl bg-background-secondary-default pl-3">${content}${actions ? footer(actions, status) : ''}</div></section>`;
+const controlRow = (label: string, description: string, control: string) => `<div class="flex min-h-[52px] w-full items-center justify-between gap-4 py-2.5 pr-2.5 border-b border-separator-border last:border-b-0"><div class="flex min-w-0 flex-col"><p class="text-body-regular text-text-primary">${t(label)}</p>${description ? `<p class="text-body-2-regular text-text-secondary">${t(description)}</p>` : ''}</div>${control}</div>`;
 const row = (label: string, description = '', control = 'ui-configuration-skeleton-toggle') => controlRow(label, description, `<span class="skeleton ${control}"></span>`);
 /* 只读一句读数的行（「每 3 个月」）：右边是一段文字宽的占位，行高同开关行。 */
 const valueRow = (label: string, width = '4em') => controlRow(label, '', text(width));
-const help = (content: string) => `<p class="text-body-2-regular text-text-secondary">${content}</p>`;
-const fieldLabel = (label: string) => `<p class="text-body-medium text-text-primary">${label}</p>`;
-const inputField = (label: string, hint = '') => `<div class="flex w-full flex-col items-start gap-1"><span class="flex items-center gap-0.5 text-body-medium text-text-primary">${label}</span>${input()}${hint ? `<span class="pt-px text-caption-1-medium text-text-secondary">${hint}</span>` : ''}</div>`;
+const help = (content: string) => `<p class="text-body-2-regular text-text-secondary">${t(content)}</p>`;
+const fieldLabel = (label: string) => `<p class="text-body-medium text-text-primary">${t(label)}</p>`;
+const inputField = (label: string, hint = '') => `<div class="flex w-full flex-col items-start gap-1"><span class="flex items-center gap-0.5 text-body-medium text-text-primary">${t(label)}</span>${input()}${hint ? `<span class="pt-px text-caption-1-medium text-text-secondary">${t(hint)}</span>` : ''}</div>`;
 const selectField = (label: string) => `<div class="flex flex-col gap-1">${fieldLabel(label)}${islandSelect(text('8em'))}</div>`;
-const check = (label: string) => `<span class="flex items-center gap-2 text-body-regular text-text-primary">${block('16px', '16px')}${label}</span>`;
-const marked = (label: string) => `<span class="inline-flex items-center gap-1">${icon()}${label}</span>`;
+const check = (label: string) => `<span class="flex items-center gap-2 text-body-regular text-text-primary">${block('16px', '16px')}${t(label)}</span>`;
+const marked = (label: string) => `<span class="inline-flex items-center gap-1">${icon()}${t(label)}</span>`;
 /** 折叠行（`Disclosure` 的 summary）：箭头与名字；展开时箭头转下。 */
-const summary = (label: string, open = false) => `<span class="flex w-fit items-center gap-1 text-body-2-medium text-text-secondary">${islandGlyph('chevron-right', `size-(--icon-inline) shrink-0${open ? ' rotate-90' : ''}`)}${label}</span>`;
+const summary = (label: string, open = false) => `<span class="flex w-fit items-center gap-1 text-body-2-medium text-text-secondary">${islandGlyph('chevron-right', `size-(--icon-inline) shrink-0${open ? ' rotate-90' : ''}`)}${t(label)}</span>`;
 /* 读数一行一条；缺工具的 FFmpeg、untrunc 两行是一段说明加一条下载链接，画成三行字。 */
 const DEPENDENCY_FACTS = new Set(['FFmpeg', 'untrunc']);
-const facts = (terms: string[]) => `<dl class="ui-settings-facts flex flex-col">${terms.map(term => `<div class="flex min-h-11 items-center justify-between gap-4 border-b border-separator-border py-2.5 pr-3 last:border-b-0"><dt class="flex max-w-1/2 min-w-0 shrink-0 items-center gap-2 text-body-regular text-text-secondary">${term}</dt><dd class="flex min-w-0 flex-wrap items-center justify-end gap-2 text-body-regular text-text-primary">${DEPENDENCY_FACTS.has(term) ? text('100%') + text('80%') + text('6em') : text('6em')}</dd></div>`).join('')}</dl>`;
+const facts = (terms: string[]) => `<dl class="ui-settings-facts flex flex-col">${terms.map(term => `<div class="flex min-h-11 items-center justify-between gap-4 border-b border-separator-border py-2.5 pr-3 last:border-b-0"><dt class="flex max-w-1/2 min-w-0 shrink-0 items-center gap-2 text-body-regular text-text-secondary">${t(term)}</dt><dd class="flex min-w-0 flex-wrap items-center justify-end gap-2 text-body-regular text-text-primary">${DEPENDENCY_FACTS.has(term) ? text('100%') + text('80%') + text('6em') : text('6em')}</dd></div>`).join('')}</dl>`;
 
 /* ---------- 来源凭据：站点清单是静态登记 ---------- */
 
@@ -142,7 +143,7 @@ export function credentialsSkeleton(): string {
     ['不需要凭据', rows.filter(row => row.requirement === 'none')],
     ['暂不支持', rows.filter(row => row.requirement === 'blocked')],
   ] as const;
-  const body = groups.filter(([, items]) => items.length).map(([name, items]) => `<div class="flex flex-col gap-2"><h4 class="text-body-medium text-text-secondary">${name}</h4><div class="min-w-0 border border-separator-border bg-background-primary-default rounded-surface flex flex-col overflow-hidden">${items.map(credentialRow).join('')}</div></div>`).join('');
+  const body = groups.filter(([, items]) => items.length).map(([name, items]) => `<div class="flex flex-col gap-2"><h4 class="text-body-medium text-text-secondary">${t(name)}</h4><div class="min-w-0 border border-separator-border bg-background-primary-default rounded-surface flex flex-col overflow-hidden">${items.map(credentialRow).join('')}</div></div>`).join('');
   return section('来源凭据', stack(`<div class="flex flex-col gap-4">${body}</div>`), '', { aside: pending ? text('5em') : '' });
 }
 
@@ -162,8 +163,8 @@ export function javBrowserSkeleton(): string {
   const shape = rememberedShape('javBrowser');
   const enabled = on(shape?.enabled);
   const status = '<div class="min-w-0 bg-background-primary-default rounded-2xl shadow-card p-5 border border-border-button-default flex flex-col gap-3">'
-    + `<div class="flex flex-wrap items-center justify-between gap-3"><span class="text-body-medium text-text-primary">Peach 用户脚本</span>${text('4em')}</div>`
-    + `<div class="flex flex-wrap items-center justify-between gap-3"><span class="text-body-regular text-text-secondary">浏览器添加</span>${chip()}</div>`
+    + `<div class="flex flex-wrap items-center justify-between gap-3"><span class="text-body-medium text-text-primary">${t("Peach 用户脚本")}</span>${text('4em')}</div>`
+    + `<div class="flex flex-wrap items-center justify-between gap-3"><span class="text-body-regular text-text-secondary">${t("浏览器添加")}</span>${chip()}</div>`
     + `<p class="text-caption-1-regular text-text-secondary">${text('70%')}</p>`
     + `<div class="flex flex-wrap items-center gap-2">${button('重新检测', 'secondary')}</div></div>`;
   return section('浏览器添加 JAV', stack(`<div class="flex min-w-0 flex-col gap-4">${status}${selectField('浏览器添加的下载渠道')}`
@@ -174,7 +175,7 @@ export function javBrowserSkeleton(): string {
 /* ---------- CloudDrive 代理：账号数随配置 ---------- */
 
 const proxyEditor = (label: string, proxy: boolean) => `<div class="flex min-w-0 flex-col gap-3">${fieldLabel(label)}${islandSelect(text('6em'))}`
-  + (proxy ? `<div class="flex flex-wrap gap-3"><div class="min-w-40 flex-1">${inputField(`${label}地址`)}</div><div class="w-full sm:w-28">${inputField(`${label}端口`)}</div></div>${summary('代理认证')}` : '') + '</div>';
+  + (proxy ? `<div class="flex flex-wrap gap-3"><div class="min-w-40 flex-1">${inputField(`${t(label)}地址`)}</div><div class="w-full sm:w-28">${inputField(`${t(label)}端口`)}</div></div>${summary('代理认证')}` : '') + '</div>';
 
 export function cloudProxySkeleton(): string {
   const shape = rememberedShape('cloudProxy');
@@ -190,7 +191,7 @@ export function cloudProxySkeleton(): string {
 /* ---------- 媒体库与入库 ---------- */
 
 const field = (label: string, control: string, className: string) =>
-  `<div class="flex min-w-0 flex-col gap-1 ${className}"><span class="flex items-center gap-0.5 text-body-medium text-text-primary" aria-hidden="true">${label}</span>${control}</div>`;
+  `<div class="flex min-w-0 flex-col gap-1 ${className}"><span class="flex items-center gap-0.5 text-body-medium text-text-primary" aria-hidden="true">${t(label)}</span>${control}</div>`;
 const folderRow = (libraries: number) => `<div data-folder-row class="@container flex flex-col gap-2 rounded-2lg border border-separator-border bg-background-primary-default p-3">
     <div class="flex items-start gap-2"><span class="min-w-0 flex-1">${input()}</span>${islandButton({ glyph: 'folder-search', variant: 'secondary', attrs: wait })}</div>
     <div class="flex flex-wrap items-end gap-2"><div class="flex w-full flex-wrap items-start gap-2">${field('来源', islandSelect(text('6em')), 'w-full @lg:w-60')}${field('读取策略', islandSelect(text('4em')), 'w-full @lg:w-32')}${libraries > 1 ? field('移到媒体库', islandSelect(text('4em')), 'w-full @lg:w-48') : ''}</div></div>
@@ -201,9 +202,9 @@ const libraryBlock = (folders: number, libraries: number) => `<div data-library-
     <div data-library-folders>${folderRow(libraries).repeat(folders)}<div class="flex">${islandButton({ label: '添加文件夹', variant: 'secondary', attrs: wait })}</div></div></div>`;
 /* 说明区是固定文字：常显那一句照原文写，对比表收着，只画它的展开行。 */
 const legend = `<div data-policy-legend class="flex flex-col gap-1"><p class="text-body-2-regular text-text-secondary">${POLICY_SUMMARY}</p>`
-  + '<span class="flex items-center gap-1 text-body-2-medium text-text-secondary">三种处理方式对比</span></div>';
-const cloudHelp = '<p class="text-body-2-regular text-text-secondary">读取策略选「代理保护」时，会限制自动读取视频。</p>'
-  + '<div class="flex flex-col gap-3"><span class="flex items-center gap-1 text-body-2-medium text-text-secondary">CloudDrive 设置帮助</span></div>';
+  + `<span class="flex items-center gap-1 text-body-2-medium text-text-secondary">${t("三种处理方式对比")}</span></div>`;
+const cloudHelp = `<p class="text-body-2-regular text-text-secondary">${t("读取策略选「代理保护」时，会限制自动读取视频。")}</p>`
+  + `<div class="flex flex-col gap-3"><span class="flex items-center gap-1 text-body-2-medium text-text-secondary">${t("CloudDrive 设置帮助")}</span></div>`;
 
 /** 每个媒体库几个文件夹：上次的记录，没有时一组一个文件夹。 */
 export function mediaSkeletonShape(shape = rememberedShape('media')): MediaShape {
@@ -218,7 +219,7 @@ export function discoverySkeleton(): string {
   const cloud = enabled && on(shape?.cloud);
   const webhook = cloud && on(shape?.webhook);
   const prefixRow = `<div class="flex items-start gap-2"><span class="min-w-0 flex-1">${input()}</span>${islandSelect(text('4em'), { prefix: '对应目录' })}${islandButton({ glyph: 'trash', variant: 'secondary', attrs: wait })}</div>`;
-  return section('自动发现新文件', stack(`<div class="flex flex-wrap items-center gap-2"><span class="text-body-regular text-text-secondary">本机监视</span>${chip()}</div>`)
+  return section('自动发现新文件', stack(`<div class="flex flex-wrap items-center gap-2"><span class="text-body-regular text-text-secondary">${t("本机监视")}</span>${chip()}</div>`)
     + row('发现新文件后自动入库', enabled ? text('10em') : '') + row('监视本机文件夹', enabled && on(shape?.watchLocal) ? text('12em') : '')
     + row('接收 CloudDrive2 通知') + (cloud ? controlRow('Webhook 配置', text('20em'), '') : '')
     + (webhook ? stack(summary('查看配置'), true) : '')
@@ -337,7 +338,7 @@ const maintenance = () => {
     button('更改位置', 'secondary') + button(storageRows ? '重新统计' : '统计占用'))
     + (reporting || sharing ? section('数据上传', reporting + sharing) : '')
     + section('运行信息', facts(runtime.length ? runtime : RUNTIME_FACTS))
-    + `<section aria-label="安装教程" class="w-full"><div class="flex w-full flex-col rounded-2xl bg-background-secondary-default pl-3">${controlRow('安装教程', '', button('重新打开教程', 'secondary'))}</div></section>`
+    + `<section aria-label="${t("安装教程")}" class="w-full"><div class="flex w-full flex-col rounded-2xl bg-background-secondary-default pl-3">${controlRow('安装教程', '', button('重新打开教程', 'secondary'))}</div></section>`
     + (given(shape?.uninstall) ? section('卸载 Peach', (on(shape?.uninstallHelp) ? stack(help('卸载移除 Peach 程序本身，原始媒体文件保留。')) : '')
       + row('完全卸载', '同时删除设置、本地数据库、观看记录、凭据和缓存') + stack(summary('数据目录'), true), button('卸载 Peach'), { status: text('16em') }) : '');
 };
@@ -355,6 +356,6 @@ export function configurationContentSkeleton(chosen: string): string {
 }
 
 export function configurationSkeleton(chosen = '媒体库与入库'): string {
-  const nav = `<div class="ui-board-local-nav" data-section-nav data-section-items>${Object.values(CONFIGURATION_SECTIONS).map(title => `<button type="button" tabindex="-1" aria-selected="${title === chosen}">${title}</button>`).join('')}</div>`;
+  const nav = `<div class="ui-board-local-nav" data-section-nav data-section-items>${Object.values(CONFIGURATION_SECTIONS).map(title => `<button type="button" tabindex="-1" aria-selected="${title === chosen}">${t(title)}</button>`).join('')}</div>`;
   return `<div class="peach-react"><div class="ui-configpage">${nav}<div class="flex min-w-0 flex-col gap-6">${configurationContentSkeleton(chosen)}</div></div></div>`;
 }

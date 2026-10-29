@@ -1,7 +1,8 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 「网络与访问」分组：本机端口、Peach 代理、访问密码与公网入口。 */
 import { useState, type FormEvent } from 'react';
 
-import { SettingsRow } from '@/components/application/settings/settings-rows';
+import { SettingsRow } from '../components/settings-rows';
 import { Button } from '@/components/base/buttons/button';
 
 import { apiSend } from '../../api';
@@ -29,6 +30,7 @@ export function NetworkSettings({ data, receipt, panel, issues }: ConfigurationG
 }
 
 export function PeachProxy({ initial, receipt }: { initial: PeachProxyState; receipt(message: string): void }) {
+  const uiText = useUiTranslation();
   const [saved, setSaved] = useState(initial);
   const [mode, setMode] = useState(initial.mode);
   const [address, setAddress] = useState('');
@@ -41,9 +43,9 @@ export function PeachProxy({ initial, receipt }: { initial: PeachProxyState; rec
   };
 
   return (
-    <Section id="peachProxy" title="Peach 代理" onSubmit={submit}>
+    <Section id="peachProxy" title={uiText("Peach 代理")} onSubmit={submit}>
       <Rows>
-        <SettingsRow label="连接方式">
+        <SettingsRow label={uiText("连接方式")}>
           <ProxyModeSelect mode={mode} onChange={setMode} />
         </SettingsRow>
       </Rows>
@@ -52,12 +54,12 @@ export function PeachProxy({ initial, receipt }: { initial: PeachProxyState; rec
           {mode === 'proxy'
             ? <ProxyAddressField id="peachProxyAddress" value={address} onChange={setAddress} saved={saved.proxy_saved} />
             : null}
-          {saved.needs_selection ? <Note tone="warning" title="需要选择连接方式">已有来源的代理地址不同，请选择公共连接方式。</Note> : null}
+          {saved.needs_selection ? <Note tone="warning" title={uiText("需要选择连接方式")}>{uiText("已有来源的代理地址不同，请选择公共连接方式。")}</Note> : null}
           {action.error ? <ErrorText>{action.error}</ErrorText> : null}
         </Stack>
       ) : null}
       <Footer>
-        <Button type="submit" {...busyProps(action.busy === 'save')}>保存配置</Button>
+        <Button type="submit" {...busyProps(action.busy === 'save')}>{uiText("保存配置")}</Button>
       </Footer>
     </Section>
   );

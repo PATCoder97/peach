@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ComponentProps, type FormEvent, type KeyboardEvent } from 'react';
 import { attachOverlayScrollbar, revealTexts, spinnerHtml, wireHorizontalScroller } from '@peach/legacy/ui';
 import { Button, ButtonLink } from '@/components/base/buttons/button';
@@ -31,6 +32,7 @@ export function FavoriteButton({ item }: { item: Favorite }) {
 }
 
 function FavoriteChoice({ item }: { item: Favorite }) {
+  const uiText = useUiTranslation();
   const query = useShortcuts(false);
   const initial = useRef(query.data);
   const write = useShortcutWrite();
@@ -39,28 +41,30 @@ function FavoriteChoice({ item }: { item: Favorite }) {
     : item.favorite ?? (query.data ? isFavorite(query.data.favorites || [], item) : false);
   return <span className="inline-flex min-w-0 flex-col gap-1">
     <EntityActionButton data-favorite="" aria-pressed={!!selected}
-      label={`${selected ? '取消收藏' : '收藏'}${item.name}`}
+      label={uiText(selected ? '取消收藏{value0}' : '收藏{value0}', { value0: item.name })}
       {...busyProps(write.isPending)} onClick={() => {
         if (!write.isPending) write.mutate({ action: 'favorite', ...item, on: !selected });
       }}>{write.isPending ? <span aria-hidden dangerouslySetInnerHTML={{ __html: spinnerHtml('') }} /> : <Star />}</EntityActionButton>
     {write.isError ? <Note tone="error">{errorMessage(write.error)}</Note> : null}
-    {query.isError ? <Button variant="secondary" size="small" aria-label="立即重试读取收藏" onClick={() => void query.refetch()}>立即重试</Button> : null}
+    {query.isError ? <Button variant="secondary" size="small" aria-label={uiText("立即重试读取收藏")} onClick={() => void query.refetch()}>{uiText("立即重试")}</Button> : null}
   </span>;
 }
 
 /** 实体收藏、作品清单与保存筛选的管理入口。 */
 export function LibraryShortcuts({ currentHref, kind }: { currentHref?: () => string; kind?: string }) {
+  const uiText = useUiTranslation();
   const [open, setOpen] = useState(false);
   return <>
-    <span data-shortcuts-entry=""><FilterIconButton data-shortcuts-trigger="" label="我的收藏" icon={Star}
+    <span data-shortcuts-entry=""><FilterIconButton data-shortcuts-trigger="" label={uiText("我的收藏")} icon={Star}
       aria-haspopup="dialog" aria-expanded={open} onPress={() => setOpen(true)} /></span>
-    <ModalFrame isOpen={open} onOpenChange={setOpen} width="collections" label="我的收藏">
+    <ModalFrame isOpen={open} onOpenChange={setOpen} width="collections" label={uiText("我的收藏")}>
       {open ? <ShortcutContents currentHref={currentHref} kind={kind} close={() => setOpen(false)} /> : null}
     </ModalFrame>
   </>;
 }
 
 function ShortcutContents({ currentHref, kind, close }: { currentHref?: () => string; kind?: string; close(): void }) {
+  const uiText = useUiTranslation();
   const query = useShortcuts();
   const write = useShortcutWrite();
   const [name, setName] = useState('');
@@ -118,59 +122,59 @@ function ShortcutContents({ currentHref, kind, close }: { currentHref?: () => st
     && row.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
   return <div data-shortcuts-panel="">
     <div ref={head} data-shortcuts-head="">
-      <h2 className="text-title-2-semibold text-text-primary">{label}</h2>
-      <SettingsDialogClose label="关闭我的收藏" onPress={close} />
+      <h2 className="text-title-2-semibold text-text-primary">{uiText(label)}</h2>
+      <SettingsDialogClose label={uiText("关闭我的收藏")} onPress={close} />
     </div>
       <aside data-shortcuts-sidebar="" data-settings-nav="" data-glass-pane={narrow ? undefined : ''}>
-      <div ref={navigation} data-shortcuts-categories="" data-glass-pane={narrow ? '' : undefined} role="tablist" aria-label="收藏类型" onKeyDown={selectWithKeys} onPointerLeave={glide.leave}>
+      <div ref={navigation} data-shortcuts-categories="" data-glass-pane={narrow ? '' : undefined} role="tablist" aria-label={uiText("收藏类型")} onKeyDown={selectWithKeys} onPointerLeave={glide.leave}>
         <span ref={pane} data-view-glide="" data-shortcuts-glide="" aria-hidden="true" hidden />
-        <p data-shortcuts-caption="" role="presentation">我的收藏</p>
+        <p data-shortcuts-caption="" role="presentation">{uiText("我的收藏")}</p>
         {SCOPES.map(([value, label]) => {
           const Glyph = GLYPHS[value as keyof typeof GLYPHS] || Star;
           const count = value === 'filters' ? data?.filters.length || 0 : (data?.favorites || []).filter(row => value === 'all' || row.kind === value).length;
           return <button key={value} type="button" role="tab" id={`${id}-${value}`} aria-controls={`${id}-content`}
-            aria-label={label} aria-selected={scope === value} tabIndex={scope === value ? 0 : -1} onPointerEnter={glide.hover} onClick={() => setScope(value)}>
-            <Glyph aria-hidden className="size-(--icon-inline)" /><span>{label}</span><span data-shortcuts-count="">{count}</span>
+            aria-label={uiText(label)} aria-selected={scope === value} tabIndex={scope === value ? 0 : -1} onPointerEnter={glide.hover} onClick={() => setScope(value)}>
+            <Glyph aria-hidden className="size-(--icon-inline)" /><span>{uiText(label)}</span><span data-shortcuts-count="">{count}</span>
           </button>;
         })}
       </div>
-      <nav data-shortcuts-footer="" aria-label="收藏作品清单">
-        <a href="/flagged" onClick={close}><Star aria-hidden />已标记<ChevronRight aria-hidden /></a>
-        <a href="/watch-later" onClick={close}><Bookmark aria-hidden />稍后看<ChevronRight aria-hidden /></a>
+      <nav data-shortcuts-footer="" aria-label={uiText("收藏作品清单")}>
+        <a href="/flagged" onClick={close}><Star aria-hidden />{uiText("已标记")}<ChevronRight aria-hidden /></a>
+        <a href="/watch-later" onClick={close}><Bookmark aria-hidden />{uiText("稍后看")}<ChevronRight aria-hidden /></a>
       </nav>
       </aside>
       <div ref={content} data-shortcuts-content="" role="tabpanel" id={`${id}-content`} aria-labelledby={`${id}-${scope}`} tabIndex={0} className="flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto overscroll-contain">
     {query.isPending ? <div aria-busy="true" data-skeleton="" className="h-12 animate-pulse rounded-lg bg-background-secondary-default" /> : null}
-    {query.isError ? <Note tone="error" action={<Button variant="secondary" onClick={() => void query.refetch()}>立即重试</Button>}>{errorMessage(query.error)}</Note> : null}
+    {query.isError ? <Note tone="error" action={<Button variant="secondary" onClick={() => void query.refetch()}>{uiText("立即重试")}</Button>}>{errorMessage(query.error)}</Note> : null}
     {write.isError ? <Note tone="error">{errorMessage(write.error)}</Note> : null}
     {data ? scope !== 'filters' ? <>
-      <Input aria-label="搜索收藏" placeholder="搜索收藏" leadingIcon={spriteGlyph('search')} value={search} onChange={setSearch} />
-      {!rows.length ? <EmptyState size="compact" icon={Star} title={search ? '没有匹配的收藏' : (data.favorites.length ? '还没有此类收藏' : '还没有收藏')}
-        actions={search ? <Button size="small" onClick={() => setSearch('')}>清除搜索</Button>
-          : data.favorites.length ? <Button size="small" onClick={() => setScope('all')}>查看全部收藏</Button>
-          : <ButtonLink size="small" href="/" onClick={close}>浏览馆藏</ButtonLink>}>
-        {search ? '试试其他名称。' : '在资料页或标签页收藏常用内容。'}
+      <Input aria-label={uiText("搜索收藏")} placeholder={uiText("搜索收藏")} leadingIcon={spriteGlyph('search')} value={search} onChange={setSearch} />
+      {!rows.length ? <EmptyState size="compact" icon={Star} title={search ? uiText("没有匹配的收藏") : (data.favorites.length ? '还没有此类收藏' : '还没有收藏')}
+        actions={search ? <Button size="small" onClick={() => setSearch('')}>{uiText("清除搜索")}</Button>
+          : data.favorites.length ? <Button size="small" onClick={() => setScope('all')}>{uiText("查看全部收藏")}</Button>
+          : <ButtonLink size="small" href="/" onClick={close}>{uiText("浏览馆藏")}</ButtonLink>}>
+        {search ? uiText("试试其他名称。") : uiText("在资料页或标签页收藏常用内容。")}
       </EmptyState> : null}
       <div data-shortcuts-list="">{rows.map((row) => <div key={row.key} data-shortcuts-row="" className="flex min-w-0 items-center justify-between gap-3">
         <a href={favoriteHref(row)} aria-label={row.name} onClick={close} className="flex min-w-0 flex-1 items-center gap-3 text-body-regular text-text-primary">
           <FavoriteAvatar key={row.image_url} item={row} />
           <span className="flex min-w-0 flex-col gap-1"><span className="truncate">{row.name}</span>
-            <span className="text-caption-1-regular text-text-secondary">{row.scope === 'online' ? '在线标签' : LABELS[row.kind]}</span></span>
+            <span className="text-caption-1-regular text-text-secondary">{row.scope === 'online' ? uiText("在线标签") : LABELS[row.kind]}</span></span>
         </a>
-        <Button variant="secondary" size="small" aria-label={`取消收藏${row.name}`} {...busyProps(write.isPending)}
-          onClick={() => { if (!write.isPending) write.mutate({ action: 'favorite', ...row, on: false }) }}>取消收藏</Button>
+        <Button variant="secondary" size="small" aria-label={uiText("取消收藏{value0}", { value0: String(row.name) })} {...busyProps(write.isPending)}
+          onClick={() => { if (!write.isPending) write.mutate({ action: 'favorite', ...row, on: false }) }}>{uiText("取消收藏")}</Button>
       </div>)}</div>
     </> : <>
-      {!data.filters.length ? <EmptyState size="compact" icon={spriteGlyph('list-filter')} title="还没有保存的筛选"
-        actions={<ButtonLink size="small" href="/" onClick={close}>浏览馆藏</ButtonLink>}>在馆藏页保存当前条件，随时打开。</EmptyState> : null}
+      {!data.filters.length ? <EmptyState size="compact" icon={spriteGlyph('list-filter')} title={uiText("还没有保存的筛选")}
+        actions={<ButtonLink size="small" href="/" onClick={close}>{uiText("浏览馆藏")}</ButtonLink>}>{uiText("在馆藏页保存当前条件，随时打开。")}</EmptyState> : null}
       {data.filters.map((row) => <div key={row.id} className="flex min-w-0 items-center justify-between gap-2">
         <a href={row.href} onClick={close} className="min-w-0 flex-1 break-all text-body-regular text-text-primary underline">{row.name}</a>
-        <Button variant="secondary" size="small" aria-label={`删除筛选${row.name}`} {...busyProps(write.isPending)}
-          onClick={() => { if (!write.isPending) write.mutate({ action: 'delete_filter', id: row.id }) }}>删除</Button>
+        <Button variant="secondary" size="small" aria-label={uiText("删除筛选{value0}", { value0: String(row.name) })} {...busyProps(write.isPending)}
+          onClick={() => { if (!write.isPending) write.mutate({ action: 'delete_filter', id: row.id }) }}>{uiText("删除")}</Button>
       </div>)}
-      {currentHref ? <form onSubmit={submit} className="flex flex-col gap-3" aria-label="保存当前筛选">
-        <Input label="筛选名称" value={name} onChange={setName} maxLength={80} />
-        <Button type="submit" disabled={!name.trim()} {...busyProps(write.isPending)}>保存当前筛选</Button>
+      {currentHref ? <form onSubmit={submit} className="flex flex-col gap-3" aria-label={uiText("保存当前筛选")}>
+        <Input label={uiText("筛选名称")} value={name} onChange={setName} maxLength={80} />
+        <Button type="submit" disabled={!name.trim()} {...busyProps(write.isPending)}>{uiText("保存当前筛选")}</Button>
         {message ? <span role="status" className="text-body-2-regular text-text-secondary">{message}</span> : null}
       </form> : null}
     </> : null}

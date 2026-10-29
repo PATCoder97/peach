@@ -7,6 +7,7 @@
  * - `mountPlayer` 是舞台播放区与沉浸模式每一格的入口：插氛围光画布与统计角标，按作品或关注条目
  *   给片源、海报与上报，返回拆掉这一个播放器的函数。 */
 import { detailPosterUrl } from '@peach/card-art';
+import { uiTextHtml } from '../i18n/html';
 import { api, esc, fmtClock, fmtSize, icon, realDuration } from '@peach/legacy/core';
 
 import {
@@ -191,7 +192,7 @@ export async function mountDetailPlayer(
     if (!segmented) meter.sample(video);
     const bits = playerSpeedBits(player, item.id, detailStreamSession(), segmented ? null : meter);
     const rate = segmented ? fmtSpeed(bits) : fmtLoadRate(bits, bufferedAhead(video));
-    netBadge.innerHTML = `${icon('gauge')}<span class="sr-only">加载速度</span><span>${esc(rate)}</span>`;
+    netBadge.innerHTML = `${icon('gauge')}<span class="sr-only">${uiTextHtml('加载速度')}</span><span>${esc(rate)}</span>`;
   };
   const showNet = () => {
     const netBadge = session.chrome?.netBadge;

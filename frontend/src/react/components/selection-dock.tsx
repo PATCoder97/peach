@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { AnimatePresence, motion, useIsPresent } from 'motion/react';
 import { useFocusVisible } from 'react-aria';
+import { useSystemTranslation } from '../i18n';
 
 const reduceQuery = '(prefers-reduced-motion: reduce)';
 const readReduce = () => matchMedia(reduceQuery).matches;
@@ -25,6 +26,7 @@ const publishDockSpace = () => {
 };
 
 function DockSurface({ children, count, label }: Omit<SelectionDockProps, 'visible'>) {
+  const systemText = useSystemTranslation();
   const dock = useRef<HTMLDivElement>(null);
   const present = useIsPresent();
   const reduce = useSyncExternalStore(subscribeReduce, readReduce, () => false);
@@ -50,14 +52,14 @@ function DockSurface({ children, count, label }: Omit<SelectionDockProps, 'visib
     };
   }, [present]);
   return (
-    <motion.div ref={dock} role="group" aria-label={label} data-selection-dock data-glass-pane=""
+    <motion.div ref={dock} role="group" aria-label={systemText(label)} data-selection-dock data-glass-pane=""
       inert={!present} aria-hidden={!present || undefined}
       initial={instant ? false : hidden}
       animate={{ opacity: 1, transform: 'translate(-50%, 0px)' }}
       exit={{ ...hidden, transition: { duration: instant ? 0 : 0.12 } }}
       transition={{ duration: instant ? 0 : 0.16, ease: [0.23, 1, 0.32, 1] }}>
       <span role="status" className="px-2 text-body-2-regular whitespace-nowrap text-text-primary">
-        {count}
+        {systemText(count)}
       </span>
       {children}
     </motion.div>

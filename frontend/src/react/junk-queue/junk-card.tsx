@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 垃圾队列里的一张卡：上面 16:9 的预览格（没有预览时是类型字形），下面名字、类型、理由与
  * 大小，底部三颗等宽的键：打开位置、判断（不是垃圾／重新判断）、移入回收站，再一行状态。
  *
@@ -37,6 +38,7 @@ type Busy = '' | 'reveal' | JunkOperation;
 const picking = (selectMode: boolean, event: MouseEvent) => selectMode || event.shiftKey || event.ctrlKey || event.metaKey;
 
 function JunkCardView({ item, view, selected, selectMode, helpers, actions }: JunkCardProps) {
+  const uiText = useUiTranslation();
   const card = useRef<HTMLElement | null>(null);
   const [busy, setBusy] = useState<Busy>('');
   const [status, setStatus] = useState('');
@@ -84,15 +86,15 @@ function JunkCardView({ item, view, selected, selectMode, helpers, actions }: Ju
 
   const title = openable
     ? <button type="button" data-junk-title="" data-junk-open="" data-middle-truncate="" title={name}
-      onClick={clickTitle} dangerouslySetInnerHTML={{ __html: esc(name || '未命名资源') }} />
+      onClick={clickTitle} dangerouslySetInnerHTML={{ __html: esc(name || uiText('未命名资源')) }} />
     : <span data-junk-title="" data-middle-truncate="" title={name}
-      dangerouslySetInnerHTML={{ __html: esc(name || '未命名资源') }} />;
+      dangerouslySetInnerHTML={{ __html: esc(name || uiText('未命名资源')) }} />;
 
   return (
     <article ref={card} data-media-card="" data-variant="junk" data-junk-card="" data-id={item.id} data-junk-kind={kind}
       data-selected={selected ? '' : undefined} onClick={clickCard} onMouseDown={suppressShiftTextSelection}>
       <div data-media-pic="" style={{ '--card-ratio': String(16 / 9) } as CSSProperties}>
-        <span data-media-glyph=""><Icon name={glyph} /><b>{label}</b></span>
+        <span data-media-glyph=""><Icon name={glyph} /><b>{uiText(label)}</b></span>
         {preview
           ? <span data-media-art="thumb" dangerouslySetInnerHTML={{
             __html: `<img class="poster" src="${preview}" width="640" height="360" alt="" loading="lazy" data-drop="self">`,
@@ -104,24 +106,24 @@ function JunkCardView({ item, view, selected, selectMode, helpers, actions }: Ju
       <div data-junk-meta="">
         {title}
         <div data-junk-facts="">
-          <span data-junk-who="">{label}</span>
+          <span data-junk-who="">{uiText(label)}</span>
           {item.why ? <span data-junk-why="">{item.why}</span> : null}
-          <span data-junk-size="">{Number(item.size) > 0 ? fmtSize(Number(item.size)) : '大小未知'}</span>
+          <span data-junk-size="">{Number(item.size) > 0 ? fmtSize(Number(item.size)) : uiText("大小未知")}</span>
         </div>
       </div>
       <footer data-junk-actions="">
-        <button type="button" data-junk-action="reveal" title="在资源管理器中显示" aria-label="在资源管理器中显示"
+        <button type="button" data-junk-action="reveal" title={uiText("在资源管理器中显示")} aria-label={uiText("在资源管理器中显示")}
           {...busyAttrs('reveal')} onClick={reveal}>
           {busy === 'reveal' ? <span data-junk-spinner="" dangerouslySetInnerHTML={{ __html: spinnerHtml('正在定位') }} /> : <Icon name="folder-open" />}
-          <span data-junk-label="">打开位置</span>
+          <span data-junk-label="">{uiText("打开位置")}</span>
         </button>
         <button type="button" data-junk-action={decision.operation} title={decision.label} aria-label={decision.label}
           {...busyAttrs(decision.operation)} onClick={operate(decision.operation)}>
           <Icon name={decision.glyph} /><span data-junk-label="">{decision.label}</span>
         </button>
-        <button type="button" data-junk-action="dispose" title="移入回收站" aria-label="移入回收站"
+        <button type="button" data-junk-action="dispose" title={uiText("移入回收站")} aria-label={uiText("移入回收站")}
           {...busyAttrs('dispose')} onClick={operate('dispose')}>
-          <Icon name="trash" /><span data-junk-label="">移入回收站</span>
+          <Icon name="trash" /><span data-junk-label="">{uiText("移入回收站")}</span>
         </button>
         <span data-junk-state="" aria-live="polite">{status}</span>
       </footer>

@@ -11,6 +11,7 @@ import type { InfiniteData, QueryKey } from '@tanstack/react-query';
 import { firstGrapheme } from '@peach/legacy/core';
 
 import { apiGet } from '../../api';
+import { translate } from '../../i18n';
 import { TAG_PAGE_SIZE } from '../../tag-skeleton';
 import { IDENTITY_CATEGORIES } from '../../identity-filter';
 import {
@@ -228,7 +229,7 @@ export const flatItems = <T>(data: InfiniteData<IndexPage<T>> | undefined): T[] 
   data ? data.pages.flatMap((page) => page.items) : [];
 
 /** 读数：取到几条，后面还有就带一个加号。 */
-export const countText = (count: number, more: boolean) => `${count.toLocaleString()}${more ? '+' : ''} 项`;
+export const countText = (count: number, more: boolean) => translate('{count} 项', { count: `${count.toLocaleString()}${more ? '+' : ''}` });
 
 /** 一枚标签的类型色键（`../styles.css` 的 `[data-tag-cat]`）。在线那一套取上游 tag_type，
  *  加 `r34-` 前缀与本地同名的类分开：本地的 `artist` 是橙色，在线的是红色。 */

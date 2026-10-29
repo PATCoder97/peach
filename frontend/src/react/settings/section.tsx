@@ -1,3 +1,5 @@
+import { translate as t } from '../../i18n/index';
+import { useSystemTranslation, useTranslation } from '../i18n';
 /* 配置页各分区共用的组合件。
  *
  * 外框取 BoardUI 设置弹层的 `SettingsSectionLabel` + `SettingsCard`，开关行直接用 `SettingsRow`。
@@ -8,7 +10,7 @@ import type { ComponentType, FormEvent, MouseEvent, ReactNode } from 'react';
 import { RiArrowRightLine, RiArrowRightSLine, RiExternalLinkLine } from '@remixicon/react';
 import { setCollapseOpen } from '@peach/legacy/ui';
 
-import { SettingsCard, SettingsSectionLabel } from '@/components/application/settings/settings-rows';
+import { SettingsCard, SettingsSectionLabel } from '../components/settings-rows';
 import { LinkButton } from '@/components/base/buttons/link-button';
 import { cx } from '@/utils/cx';
 
@@ -26,6 +28,8 @@ interface SectionProps {
 /* 分区里的说明、报错与读数常带长 URL、堆栈和无空格路径：整个分区按 `overflow-wrap:anywhere`
    就地折断（属性会继承，行内说明、Help 与读数都跟着走），不把卡片撑出横向滚动。 */
 export function Section({ title, icon, id, aside, onSubmit, children }: SectionProps) {
+  useTranslation();
+  title = t(title);
   const label = icon ? <span className="inline-flex items-center gap-1.5">{icon}{title}</span> : title;
   const body = (
     <>
@@ -58,10 +62,10 @@ export function Stack({ divided = false, children }: { divided?: boolean; childr
 }
 
 /** 分区首次取数：画 `configuration-skeleton.ts` 里这个分区的那一份骨架，与整页骨架里这一块是同一段
- *  结构，整页骨架交给 React 时位置不动。挂载时取一次，读回之前不随渲染重算。状态名只给辅助技术。 */
+ *  结构，整页骨架交给 React 时位置不动。语言切换时同步重画等待态。状态名只给辅助技术。 */
 export function SectionSkeleton({ label, html }: { label: string; html: () => string }) {
-  const [markup] = useState(html);
-  return <div className="contents" data-skeleton="" aria-busy="true" aria-label={label} dangerouslySetInnerHTML={{ __html: markup }} />;
+  const uiText = useTranslation();
+  return <div className="contents" data-skeleton="" aria-busy="true" aria-label={uiText(label)} dangerouslySetInnerHTML={{ __html: html() }} />;
 }
 
 /** 底栏：左边一句说这颗按钮此刻意味着什么，右边是按钮。
@@ -78,11 +82,13 @@ export function Footer({ status, children }: { status?: ReactNode; children?: Re
 }
 
 export function Help({ role, children }: { role?: 'status'; children: ReactNode }) {
-  return <p role={role} className="text-body-2-regular text-text-secondary">{children}</p>;
+  const systemText = useSystemTranslation();
+  return <p role={role} className="text-body-2-regular text-text-secondary">{typeof children === 'string' ? systemText(children) : children}</p>;
 }
 
 export function ErrorText({ children }: { children: ReactNode }) {
-  return <p role="alert" className="text-body-2-regular text-text-error-primary">{children}</p>;
+  const systemText = useSystemTranslation();
+  return <p role="alert" className="text-body-2-regular text-text-error-primary">{typeof children === 'string' ? systemText(children) : children}</p>;
 }
 
 /** 字段上方的名字，外观同 BoardUI `Label`；控件自己的无障碍名称由 `aria-label` 给。 */
@@ -106,10 +112,9 @@ export function ExternalLink({ href, children, leadingIcon }: {
 
 /** 后台任务的进度在任务中心看：说明句后面跟这一颗，点了站内跳过去。 */
 export function TaskCenterLink() {
+  useTranslation();
   return (
-    <LinkButton href="/tasks" size="small" trailingIcon={RiArrowRightLine} className="self-start">
-      在任务中心查看进度
-    </LinkButton>
+    <LinkButton href="/tasks" size="small" trailingIcon={RiArrowRightLine} className="self-start">{t("在任务中心查看进度")}</LinkButton>
   );
 }
 
@@ -135,6 +140,7 @@ export function Disclosure(
   { summary, defaultOpen = false, isOpen, children, trailing = false, onOpenChange, contentClassName }:
   { summary: ReactNode; defaultOpen?: boolean; isOpen?: boolean; children: ReactNode; trailing?: boolean; onOpenChange?(open: boolean): void; contentClassName?: string },
 ) {
+  useTranslation();
   const id = useId();
   const details = useRef<HTMLDetailsElement>(null);
   const body = useRef<HTMLDivElement>(null);
@@ -166,7 +172,7 @@ export function Disclosure(
       <summary aria-expanded={open} aria-controls={id} onClick={toggle}
         className={`${trailing ? 'w-full' : 'w-fit'} flex cursor-pointer list-none items-center gap-1 rounded-sm text-body-2-medium text-text-secondary outline-none select-none hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring`}>
         {!trailing ? <RiArrowRightSLine aria-hidden className={open ? 'size-(--icon-inline) shrink-0 rotate-90 transition-transform' : 'size-(--icon-inline) shrink-0 transition-transform'} /> : null}
-        {summary}
+        {typeof summary === 'string' ? t(summary) : summary}
         {trailing ? <RiArrowRightSLine aria-hidden className={open ? 'ml-auto size-(--icon-inline) shrink-0 -rotate-90 transition-transform' : 'ml-auto size-(--icon-inline) shrink-0 rotate-90 transition-transform'} /> : null}
       </summary>
       <div ref={body} id={id} inert={!open}>

@@ -1,3 +1,7 @@
+import { translate as t } from '../i18n';
+import { uiTextHtml } from '../i18n/html';
+import { translateSystem } from '../i18n/system';
+import { esc as escapeUi } from '../core';
 import { selectionSurface, selectionDock, setSelectionMode, toggleSelection as toggleSelected } from '../react/catalog-grid/selection-controller';
 import { selectSurface } from '../shell';
 /* selection 域控制器：本域状态与动作，启动由 Application 的生命周期统一安装。 */
@@ -53,17 +57,17 @@ export function toggleFollowSelection(id,range=false) {
   }
 
 export async function runCatalogBatch(operation,button){
-  const labels={like:'喜欢',seen:'标为看过',later:'加入稍后看',dispose:'移入回收站',restore:'还原',delete:'彻底删除'};
+  const labels={like:'已喜欢 {count} 项',seen:'已标为看过 {count} 项',later:'已加入稍后看 {count} 项',dispose:'已移入回收站 {count} 项',restore:'已还原 {count} 项',delete:'已彻底删除 {count} 项'};
   const titles={like:'喜欢所选项目',seen:'标记为已看',later:'加入稍后看',dispose:'移入回收站',restore:'还原所选项目',delete:'永久删除所选项目'};
   const ids=[...selected];if(!ids.length)return;
   return confirmModal({title:titles[operation],body:`将处理选中的 ${ids.length} 项。${operation==='delete'?'文件和馆藏记录会永久删除，无法恢复。':operation==='dispose'?'馆藏记录可在回收站还原。':''}`,confirmLabel:titles[operation],danger:operation==='delete',onConfirm:async()=>{
   setActionBusy(button);
   try{const r=await api('/api/batch',{method:'POST',body:JSON.stringify({ids,operation})});
-    if(r.blocked&&r.blocked.length)throw new Error(`已永久删除 ${r.purged} 项；${r.blocked.length} 项未能删除，仍在回收站：\n`
-      +r.blocked.slice(0,5).map(x=>`${x.path}（${x.reason}）`).join('\n'));
+    if(r.blocked&&r.blocked.length)throw new Error(t('已永久删除 {purged} 项；{blocked} 项未能删除，仍在回收站：',{purged:r.purged,blocked:r.blocked.length})+'\n'
+      +r.blocked.slice(0,5).map(x=>`${x.path} (${translateSystem(x.reason)})`).join('\n'));
     setSelectMode(false,true);await reloadAfterWrite();
     const inverse=operation==='dispose'?'restore':operation==='restore'?'dispose':null;
-    receiptsState.actionReceipt(`已${labels[operation]} ${ids.length} 项`,{undo:inverse?async()=>{
+    receiptsState.actionReceipt(t(labels[operation],{count:ids.length}),{undo:inverse?async()=>{
       if(inverse==='dispose'&&r.restored_reasons){
         for(const reason of [null,'manual','junk','duplicate','missing']){
           const group=ids.filter(id=>r.restored_reasons[id]===reason);
@@ -81,15 +85,15 @@ export async function pickBatchRegion(){
   const ids=[...selected];if(!ids.length)return;
   const modal=formModal({
     title:'判定产地',
-    description:`选中的 ${ids.length} 项归为同一个产地。判定之后，刮削和自动推断不再改写产地。`,
-    body:`<div class="chips" role="group" aria-label="产地">`+selectionState.REGION_CHOICES.map(([key,label])=>
+    description:()=>t('选中的 {count} 项归为同一个产地。判定之后，刮削和自动推断不再改写产地。',{count:ids.length}),
+    body:`<div class="chips" role="group" aria-label="${escapeUi(t("产地"))}" data-i18n-aria-label="产地">`+selectionState.REGION_CHOICES.map(([key,label])=>
       `<button type="button" class="chip" aria-pressed="false" data-region-pick="${key}">
-        <span class="chip-label">${label}</span></button>`).join('')+`</div>`,
+        <span class="chip-label">${uiTextHtml(label)}</span></button>`).join('')+`</div>`,
     confirmLabel:'判定产地',
     confirmDisabled:true,
     onConfirm:async()=>{
       const picked=modal.dialog.querySelector('[data-region-pick][aria-pressed="true"]');
-      if(!picked)throw new Error('先选一个产地');
+      if(!picked)throw new Error(t('先选一个产地'));
       await api('/api/batch',{method:'POST',
         body:JSON.stringify({ids,operation:'region',region:picked.dataset.regionPick})});
       return {region:picked.dataset.regionPick,label:picked.textContent.trim()};
@@ -103,12 +107,12 @@ export async function pickBatchRegion(){
   if(!confirmed)return;
   setSelectMode(false,true);await reloadAfterWrite();
   receiptsState.actionReceipt(result.region==='none'
-    ? `已撤回 ${ids.length} 项的产地判定` : `已判为${result.label}：${ids.length} 项`);
+    ? t('已撤回 {count} 项的产地判定',{count:ids.length}) : t('已判为{region}：{count} 项',{region:result.label,count:ids.length}));
 }
 
 export async function runFollowBatch(action,button){
   const items=[...followSelected];if(!items.length)return;
-  const labels={save:'保存到数据库',seen:'标记已看',ignored:'忽略'};
+  const labels={save:'已保存到数据库 {count} 项',seen:'已标记已看 {count} 项',ignored:'已忽略 {count} 项'};
   const titles={save:'保存所选作品',seen:'标记为已看',ignored:'忽略所选作品'};
   return confirmModal({title:titles[action],body:`将处理选中的 ${items.length} 项关注作品。`,confirmLabel:titles[action],danger:false,onConfirm:async()=>{
   setActionBusy(button);
@@ -118,7 +122,7 @@ export async function runFollowBatch(action,button){
     await api(path,{method:'POST',body:JSON.stringify(body)});
     // 标记完按地址重读这一页：路由树的关注元素推一个新代次，列表重取、不重挂。
     setSelectMode(false,true);if(location.pathname==='/follow')writeShell({pageOpens:pageOpens+1});
-    receiptsState.actionReceipt(`已${labels[action]} ${items.length} 项`);
+    receiptsState.actionReceipt(t(labels[action],{count:items.length}));
   }catch(error){setActionBusy(button,false);throw error}
   finally{setActionBusy(button,false);paintSelection()}
   }});
@@ -126,7 +130,7 @@ export async function runFollowBatch(action,button){
 
 export async function runJunkBatch(operation,button){
   const ids=[...selected];if(!ids.length)return;
-  const labels={'dismiss-junk':'不是垃圾','reconsider-junk':'重新判断',dispose:'移入回收站'};
+  const labels={'dismiss-junk':'已批量标记为非垃圾：{count} 项','reconsider-junk':'已批量重新判断：{count} 项',dispose:'已批量移入回收站：{count} 项'};
   const titles={'dismiss-junk':'标记为非垃圾','reconsider-junk':'重新检查文件',dispose:'移入回收站'};
   return confirmModal({title:titles[operation],body:`将处理选中的 ${ids.length} 个文件。`,confirmLabel:titles[operation],danger:false,onConfirm:async()=>{
   setActionBusy(button);
@@ -136,7 +140,7 @@ export async function runJunkBatch(operation,button){
     setSelectMode(false,true);await loadCatalog();
     const inverse=operation==='dispose'?'restore':operation==='dismiss-junk'?'reconsider-junk':
       operation==='reconsider-junk'?'dismiss-junk':null;
-    receiptsState.actionReceipt(`已批量${labels[operation]}：${ids.length} 项`,{undo:inverse?async()=>{
+    receiptsState.actionReceipt(t(labels[operation],{count:ids.length}),{undo:inverse?async()=>{
       await api('/api/batch',{method:'POST',body:JSON.stringify({ids,operation:inverse})});
       await loadCatalog();
     }:null});

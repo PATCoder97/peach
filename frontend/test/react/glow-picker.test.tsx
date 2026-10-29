@@ -12,6 +12,7 @@ import { SETTINGS_KEY } from '../../src/appearance/settings';
 import type { ShellActions } from '../../src/react/router/shell-actions';
 import { createSettingsStore } from '../../src/settings-store';
 import { click } from './render';
+import { setLocale } from '../../src/i18n';
 
 // 首次导入会编译路由表带进来的整棵页面子树，编译等待使用独立的有限窗口。
 const REACT_IMPORT_TIMEOUT_MS = 30_000;
@@ -73,6 +74,21 @@ describe('常驻组件', () => {
 });
 
 describe('两组球', () => {
+  it('换语言只更新色名，色键、选中值和按钮节点保留', async () => {
+    setLocale('en');
+    try {
+      const { root, store } = await setup({ preset: 'ash' }, 'teal');
+      const selected = root.querySelector<HTMLButtonElement>('[data-glow-preset="ash"]')!;
+      expect(selected.getAttribute('aria-label')).toBe('Gray mist');
+      await act(async () => { setLocale('vi') });
+      expect(root.querySelector('[data-glow-preset="ash"]')).toBe(selected);
+      expect(selected.getAttribute('aria-label')).toBe('Sương xám');
+      expect(selected.getAttribute('aria-pressed')).toBe('true');
+      expect(store.value.homeGlow.preset).toBe('ash');
+      expect(store.value.accent).toBe('teal');
+    } finally { await act(async () => { setLocale('zh-CN') }) }
+  });
+
   it('上面一组是光晕预设，下面一组是十二档强调色，各自按下当前那一档', async () => {
     const { root } = await setup({ preset: 'ash' }, 'teal');
     const grids = [...root.querySelectorAll('[role="group"]')].map((grid) => grid.getAttribute('aria-label'));

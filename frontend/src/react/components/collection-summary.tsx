@@ -7,23 +7,26 @@
  * 行高照旧，数字到货时整块不改高度。`flush` 去掉块下方的间距：落在一行自己排间距的容器里时
  * （垃圾文件的计数行、`Page` 自己排间距的高清版），间距归那一层。壳铺的首屏骨架
  * （`src/island-skeleton.ts` 的 `islandSummary`）抄的是这里等待态的类名，改这里要一起改那边。 */
+import { useSystemTranslation } from '../i18n';
+
 export function CollectionSummary({ label, figure, detail = '', pending = false, flush = false }: {
   label: string; figure: string; detail?: string; pending?: boolean; flush?: boolean;
 }) {
+  const systemText = useSystemTranslation();
   return (
     <div data-collection-summary=""
       className={`${flush ? '' : 'mb-5 '}flex items-end justify-between gap-4 rounded-surface bg-background-secondary-default px-6 py-5
       max-compact:flex-col max-compact:items-start max-compact:gap-3 max-compact:p-4
       dark:bg-background-primary-default`}>
       <div className="flex min-w-0 flex-col gap-2">
-        <span className="text-body-regular text-text-secondary">{label}</span>
+        <span className="text-body-regular text-text-secondary">{systemText(label)}</span>
         <strong className="text-display-4-medium tabular-nums text-text-primary">
           {pending
             ? <span data-skeleton="count" aria-hidden className="relative inline-block h-8 w-24 rounded-2lg align-middle skeleton-sheen" />
-            : figure}
+            : systemText(figure)}
         </strong>
       </div>
-      {detail ? <p className="text-body-regular text-text-secondary">{detail}</p> : null}
+      {detail ? <p className="text-body-regular text-text-secondary">{systemText(detail)}</p> : null}
     </div>
   );
 }

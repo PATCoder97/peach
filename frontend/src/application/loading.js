@@ -1,3 +1,5 @@
+import { uiTextHtml } from '../i18n/html';
+import { translate as t } from '../i18n';
 /* loading 域控制器：本域状态与动作，启动由 Application 的生命周期统一安装。 */
 import { followState } from './follow.js';
 import { managementSkeletonHtml, pageSkeletonHtml, skeletonKeyOf } from './../management-placeholder';
@@ -28,7 +30,7 @@ export function renderCatalogLoading(label='正在读取作品'){
   count.classList.toggle('manage-static',junk);
   count.classList.toggle('junkcount',junk);
   if(junk){
-    count.setAttribute('aria-busy','true');count.setAttribute('aria-label',label);
+    count.setAttribute('aria-busy','true');count.setAttribute('aria-label',t(label));
     count.innerHTML=junkCountSkeletonHtml(junkRoute(location.search));
     fitSkeleton(count);
   }else{
@@ -132,7 +134,7 @@ followState.followContentSkeletonHtml = (media=new URLSearchParams(location.sear
   label='正在读取关注内容')=>pageSkeletonHtml(label,{cards:true,className:'follow-content-skeleton postercard-skeleton',
   gridClass:media==='images'?'followlist followphotowall':'',gridSize:photoSize()});
 followState.followSkeletonHtml = (label='正在读取关注内容')=>`<div class="peach-react"><div class="follow" data-follow-feed>
-  <div data-follow-head><h2 data-follow-title>关注</h2></div>
+  <div data-follow-head><h2 data-follow-title>${uiTextHtml("关注")}</h2></div>
   <div class="tier followauthors" data-skeleton-tier="av"></div>
   <div class="tier followworks" data-skeleton-tier="brandpill"></div>
   <div class="board-filter-frame" data-filter-frame>

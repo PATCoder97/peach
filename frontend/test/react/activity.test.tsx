@@ -18,9 +18,11 @@ import type { DownloadsSnapshot } from '../../src/react/bundle';
 import { queryClient } from '../../src/react/query';
 
 import { buttonNamed, click, mount, mountRoot, settle } from './render';
+import { LOCALE_KEY, setLocale } from '../../src/i18n';
 
 // 客户端是模块级的单例（所有 React 根共用一个），用例之间不清就互相喂数据。
 afterEach(() => queryClient.clear());
+afterEach(async () => { await act(async () => setLocale('zh-CN')); localStorage.removeItem(LOCALE_KEY) });
 
 /* Query 派发更新用的是它自己抓住的那个真 `setTimeout(0)`，假时钟推不动它：推完时钟
    断言到的还是上一帧的 DOM。用例里改成当场派发。 */
@@ -96,6 +98,29 @@ function serve(...responses: (ActivityData | null)[]) {
 }
 
 const page = () => <QueryClientProvider client={queryClient}><ActivityPage /></QueryClientProvider>;
+
+it('任务标题、状态、摘要和数字跟随语言切换，协议身份与历史数据保持原样', async () => {
+  const record = run({ status: 'succeeded', finished_at: '2026-09-11T10:04:00Z',
+    progress_label: '', result_summary: { checked: 1234 }, elapsed_seconds: 75 });
+  serve(payload({ finished: [record] }));
+  await act(async () => setLocale('vi'));
+  await prefetchTasks(new AbortController().signal);
+  const host = await mount(page());
+  const card = host.querySelector('[data-run-id="1"]');
+  expect(host.textContent).toContain('Kiểm tra nguồn đang theo dõi');
+  expect(host.textContent).toContain('Đã hoàn tất');
+  expect(host.textContent).toContain('Đã kiểm tra 1.234');
+  expect(host.textContent).toContain('1 phút 15 giây');
+  expect(host.textContent).not.toMatch(/\p{Script=Han}/u);
+  await act(async () => setLocale('en'));
+  expect(host.querySelector('[data-run-id="1"]')).toBe(card);
+  expect(host.textContent).toContain('Check followed sources');
+  expect(host.textContent).toContain('Checked 1,234');
+  expect(host.textContent).toContain('1 min 15 sec');
+  expect(record.task_label).toBe('追更检查');
+  expect(record.status).toBe('succeeded');
+  expect(record.result_summary.checked).toBe(1234);
+});
 
 it('扫描各阶段已结束且留有问题时显示部分结果状态', async () => {
   serve(payload({ finished: [run({ task_key: 'library-processing', task_label: '扫描与采集',

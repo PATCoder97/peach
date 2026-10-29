@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 一叠视频的卡片：播放列表页的每一份列表，和首页那张 Mix 卡是同一件东西。
  *
  * 封面后面压着两层纸边，说明它是一叠；悬停时逐张翻过这一叠里的画面（`use-stack-flip.ts`）。
@@ -90,14 +91,15 @@ const RING = 'relative inline-grid size-9.5 flex-none place-items-center overflo
 function Avatars({ faces, fallback, onOpenEntity }: {
   faces: readonly MixCardFace[]; fallback: string; onOpenEntity: MixCardProps['onOpenEntity'];
 }) {
+  const uiText = useUiTranslation();
   if (!faces.length) {
     return <span data-mix-initial="" aria-hidden className={`${RING} mt-0.5`}>{fallback}</span>;
   }
   return (
     <div data-mix-avatars="">
       {faces.slice(0, 5).map((face) => (
-        <button key={`${face.kind}:${face.id}`} type="button" title={`打开资料页：${face.name}`}
-          aria-label={`打开资料页：${face.name}`} onClick={() => onOpenEntity(face.kind, face.name)}
+        <button key={`${face.kind}:${face.id}`} type="button" title={uiText("打开资料页：{value0}", { value0: String(face.name) })}
+          aria-label={uiText("打开资料页：{value0}", { value0: String(face.name) })} onClick={() => onOpenEntity(face.kind, face.name)}
           className={`${RING} cursor-pointer outline-none`}
           dangerouslySetInnerHTML={{ __html: avatarInner(face.name, face, representativeOf(face.name), face.kind) }} />
       ))}
@@ -110,6 +112,7 @@ export function MixCard({
   ratio, artwork, artworkIdentity, relayoutArt, faceHtml, badge, glyph, wholeCard,
   ...data
 }: MixCardProps & Record<`data-${string}`, string>) {
+  const uiText = useUiTranslation();
   const flip = useStackFlip({ load: flipImages, canFlip });
   /* 壳在滚动、换页和开多选时按 `_stopHover` 收掉一切悬停动效，这张卡的翻页也在其中。 */
   const stop = useRef(flip.onPointerLeave);
@@ -133,7 +136,7 @@ export function MixCard({
             ? <ArtSlot artwork={artwork} identity={artworkIdentity} relayout={relayoutArt} />
             : poster
               ? <Poster key={poster} src={poster} />
-              : <span className="text-caption-1-regular tracking-caps text-text-secondary uppercase">无预览</span>}
+              : <span className="text-caption-1-regular tracking-caps text-text-secondary uppercase">{uiText("无预览")}</span>}
           <div data-mix-faces="" hidden={!flip.faces.length}>
             {flip.faces.map((src, index) => (
               <div key={src} data-mix-face={index === flip.current ? 'on' : index === flip.leaving ? 'off' : ''}>
@@ -148,7 +151,7 @@ export function MixCard({
           <span data-mix-badge=""
             className="absolute right-2.25 bottom-2.25 z-6 flex min-h-7 items-center gap-1.5 rounded-2lg px-2.25 py-1 text-caption-1-semibold text-text-white">
             <PLAY aria-hidden className="size-(--icon-inline)" />
-            {badge ?? `${count.toLocaleString()} 个视频`}
+            {badge ?? uiText("{value0} 个视频", { value0: String(count.toLocaleString()) })}
           </span>
         </div>
       </div>

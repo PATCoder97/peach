@@ -6,6 +6,9 @@
 import { apiGet } from '../../api';
 import { elapsedText, progressText } from '../activity/tasks';
 import { queryClient } from '../query';
+import { translate as t } from '../../i18n';
+import { translateSystem } from '../../i18n/system';
+import { formatNumber } from '../../i18n/format';
 
 export const LIBRARY_PROCESSING_URL = '/api/library-processing';
 
@@ -146,8 +149,9 @@ export function slowItem(state?: LibraryProcessingData): SlowItem | null {
 }
 
 export function slowItemText({ what, source }: SlowItem): string {
-  const who = `${source?.label ? `${source.label} ` : '外部来源'}迟迟没有返回${what}`;
-  return `${who}。可以先跳过这部，任务结束后再重试。`;
+  return t('{source}迟迟没有返回{what}。可以先跳过这部，任务结束后再重试。', {
+    source: source?.label ? `${source.label} ` : t('外部来源'), what: t(what),
+  });
 }
 
 /** 暂停中的任务仍占用同一份处理范围，可继续并持续读取状态。 */
@@ -163,22 +167,23 @@ export const ALL_CONTENT_URL = '/?loc=&thumb=0';
 /** 时间向分钟取整；区间两端始终使用同一单位。 */
 export function remainingTime(state: LibraryProcessingData): string {
   if (!processingActive(state)) return '';
-  if (state.status === 'stopping') return '正在停止，等待当前步骤退出；已取得的结果会保留';
-  if (state.status === 'paused') return '已暂停，继续后更新预估';
-  if (state.status === 'pausing') return '正在暂停，当前步骤结束后暂停';
-  if (state.stalled) return '等待当前文件响应，剩余时间待更新';
+  if (state.status === 'stopping') return t('正在停止，等待当前步骤退出；已取得的结果会保留');
+  if (state.status === 'paused') return t('已暂停，继续后更新预估');
+  if (state.status === 'pausing') return t('正在暂停，当前步骤结束后暂停');
+  if (state.stalled) return t('等待当前文件响应，剩余时间待更新');
   const low = state.eta_seconds_min, high = state.eta_seconds_max;
   if (low == null || high == null || !Number.isFinite(low) || !Number.isFinite(high) || low < 0 || high < low)
-    return '正在估算剩余时间…';
-  if (high < 60) return '预计剩余不到 1 分钟';
+    return t('正在估算剩余时间…');
+  if (high < 60) return t('预计剩余不到 1 分钟');
   const unit = high >= 86400 ? 86400 : high >= 3600 ? 3600 : 60;
   const label = unit === 86400 ? '天' : unit === 3600 ? '小时' : '分钟';
   const precision = unit === 60 ? 1 : 10;
   const start = Math.max(1 / precision, Math.floor(low / unit * precision) / precision);
   const end = Math.max(start, Math.ceil(high / unit * precision) / precision);
-  const span = start === end ? `${end}` : `${start}–${end}`;
-  const rough = state.eta_initial || state.eta_kind !== 'measured' ? '（粗估）' : '';
-  return `预计剩余约 ${span} ${label}${rough}${state.eta_scope ? ` · ${state.eta_scope}` : ''}`;
+  const span = start === end ? formatNumber(end) : `${formatNumber(start)}–${formatNumber(end)}`;
+  const rough = state.eta_initial || state.eta_kind !== 'measured' ? t('（粗估）') : '';
+  return t('预计剩余约 {span} {unit}{rough}{scope}', { span, unit: t(label), rough,
+    scope: state.eta_scope ? ` · ${translateSystem(state.eta_scope)}` : '' });
 }
 
 export const fetchLibraryProcessing = (signal?: AbortSignal) =>
@@ -228,26 +233,26 @@ const NOTE_LABELS: Record<string, string> = {
 export function notesLine(notes: Record<string, number>): string {
   const parts = Object.entries(notes)
     .filter(([key, count]) => NOTE_LABELS[key] && count > 0)
-    .map(([key, count]) => `${NOTE_LABELS[key]} ${count.toLocaleString()} 部`);
-  return parts.length ? `外部来源${parts.join('、')}，7 天内不再问。` : '';
+    .map(([key, count]) => t('{label} {count} 部', { label: t(NOTE_LABELS[key]!), count: formatNumber(count) }));
+  return parts.length ? t('外部来源{details}，7 天内不再问。', { details: parts.join(t('、')) }) : '';
 }
 
 /** 此刻在做什么：哪个文件、哪一步、等了多久。 */
 export function currentLine(state: LibraryProcessingData): string {
-  if (state.status === 'paused') return '已暂停';
-  if (state.status === 'pausing') return '正在暂停';
-  const action = ACTION_LABELS[state.current_action || ''] || state.stage || '正在处理';
-  const waited = state.waited_seconds ? ` · 已等待 ${elapsedText(state.waited_seconds)}` : '';
+  if (state.status === 'paused') return t('已暂停');
+  if (state.status === 'pausing') return t('正在暂停');
+  const action = translateSystem(ACTION_LABELS[state.current_action || ''] || state.stage || '正在处理');
+  const waited = state.waited_seconds ? t(' · 已等待 {time}', { time: elapsedText(state.waited_seconds) }) : '';
   return state.current_asset_name
-    ? `当前：${state.current_asset_name} · ${action}${waited}`
+    ? t('当前：{name} · {action}{waited}', { name: state.current_asset_name, action, waited })
     : action + waited;
 }
 
 /** 已知总量显示实际完成数；扫描目录期间显示持续发现的文件数。 */
 export function processingLine(state: LibraryProcessingData): string {
-  const count = state.total ? `${progressText(state.checked, state.total)} 项`
+  const count = state.total ? t('{count} 项', { count: progressText(state.checked, state.total) })
     : state.current_action === 'scanning_files' || state.stage === '扫描文件'
-      ? `已发现 ${(state.scanned || 0).toLocaleString()} 个文件` : '';
+      ? t('已发现 {count} 个文件', { count: formatNumber(state.scanned || 0) }) : '';
   return currentLine(state) + (count ? ` · ${count}` : '');
 }
 
@@ -264,13 +269,13 @@ export function issueDetails(state: LibraryProcessingData): IssueDetails | null 
   if (!issues.length) return null;
   return {
     label: state.issues_truncated
-      ? `问题清单：共 ${state.issue_count || 0} 项，展开查看前 ${issues.length} 项`
-      : `问题清单：共 ${state.issue_count || 0} 项`,
+      ? t('问题清单：共 {count} 项，展开查看前 {shown} 项', { count: state.issue_count || 0, shown: issues.length })
+      : t('问题清单：共 {count} 项', { count: state.issue_count || 0 }),
     items: issues.map((issue, at) => ({
       key: `${issue.asset_id ?? 'source'}-${at}`,
-      label: issue.title || (issue.asset_id ? `视频 ${issue.asset_id}` : '媒体来源'),
+      label: issue.title || (issue.asset_id ? t('视频 {id}', { id: issue.asset_id }) : t('媒体来源')),
       href: issue.asset_id ? `/assets/${issue.asset_id}` : '',
-      note: issue.message,
+      note: translateSystem(issue.message),
       hint: issue.path || '',
     })),
     log: state.issues_log || '',
@@ -298,10 +303,11 @@ export function announceCompletion(
     if (state.job_id) localStorage.setItem(ANNOUNCED_KEY, state.job_id);
   } catch { /* 存储不可用时照常提示，最多重复一次 */ }
   if (state.requested_stage === 'previews') {
-    toast(`视频预览已生成：${state.previews || 0} 部`);
+    toast(t('视频预览已生成：{count} 部', { count: state.previews || 0 }));
     return;
   }
-  toast(`扫描与资料采集已完成：识别 ${state.identified || 0} 个番号，`
-    + `取得 ${state.candidates || 0} 组作品资料，自动保存 ${state.auto_applied || 0} 条`
-    + (state.previews ? `，生成 ${state.previews} 部视频预览` : ''));
+  toast(t('扫描与资料采集已完成：识别 {identified} 个番号，取得 {candidates} 组作品资料，自动保存 {applied} 条{previews}', {
+    identified: state.identified || 0, candidates: state.candidates || 0, applied: state.auto_applied || 0,
+    previews: state.previews ? t('，生成 {count} 部视频预览', { count: state.previews }) : '',
+  }));
 }

@@ -6,12 +6,13 @@
  * 迟到的响应不能再往新页面上写东西。 */
 
 /** 服务端明确回了非 2xx。`status` 留给调用方区分 401／409／404 这类需要不同处置的情况。 */
-import { requestErrorMessage } from './core/request-error';
+import { requestErrorMessage, requestErrorSource } from './core/request-error';
 import { registerResponseEntities } from './core/entity-links';
 import { libraryScopedPath } from './core/library-scope';
 
 export class ApiError extends Error {
   readonly status: number;
+  readonly sourceMessage: string;
   /** 响应体原样。表单校验那种 400 会在 `errors` 里按字段给原因，页面要把它们写回原位。 */
   readonly body: unknown;
 
@@ -19,6 +20,7 @@ export class ApiError extends Error {
     super(requestErrorMessage(message,status));
     this.name = 'ApiError';
     this.status = status;
+    this.sourceMessage = requestErrorSource(message, status);
     this.body = body;
   }
 }
@@ -36,8 +38,8 @@ const reasonOf = (payload: unknown): string => {
 /** 把抛出来的东西收敛成一句能显示给人看的原因。
  *
  * 一次取数失败会同时落到两处——路由树打开时的首屏状态和共享 store 的错误态——
- * 两边显示的必须是同一句话，否则同一个失败会因为落在哪儿而说法不同。 */
-export const errorMessage = (cause: unknown): string => requestErrorMessage(cause);
+ * 两边保留相同原始原因，交给提示组件按当前语言显示；状态不缓存已翻译文本。 */
+export const errorMessage = (cause: unknown): string => requestErrorSource(cause);
 
 /** GET 一个 `/api/...` 契约端点。`signal` 中止时抛出 `AbortError`，调用方据此放弃写 DOM。 */
 export async function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> {

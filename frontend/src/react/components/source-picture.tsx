@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { useLayoutEffect, useRef, useState } from 'react';
 import { coverUrl } from '@peach/card-art';
 import { Button } from '@/components/base/buttons/button';
@@ -14,6 +15,7 @@ export function SourcePicture({ item, image, thumbnail = false }: {
   item: Pick<JavDetail, 'code' | 'has_cover' | 'source_image' | 'cover_url' | 'cover_version'>;
   image: string; thumbnail?: boolean;
 }) {
+  const uiText = useUiTranslation();
   const [attempt, setAttempt] = useState(0);
   const [loaded, setLoaded] = useState<{ src: string; alt: string } | null>(null);
   const [failed, setFailed] = useState('');
@@ -29,13 +31,12 @@ export function SourcePicture({ item, image, thumbnail = false }: {
   if (!remote) {
     if (src) return <img ref={picture} data-jav-picture={thumbnail ? undefined : ''} src={src} alt={alt} referrerPolicy="no-referrer"
       onLoad={() => setLoaded({ src, alt })} />;
-    return thumbnail ? <span>预览未取得</span> : <div data-jav-picture-wait=""><Note tone="neutral">封面未取得</Note></div>;
+    return thumbnail ? <span>{uiText("预览未取得")}</span> : <div data-jav-picture-wait=""><Note tone="neutral">{uiText("封面未取得")}</Note></div>;
   }
   if (failed === src) {
-    if (thumbnail) return <span>预览未取得</span>;
+    if (thumbnail) return <span>{uiText("预览未取得")}</span>;
     return <div data-jav-picture-wait=""><Note tone="neutral"
-      action={<Button variant="secondary" onClick={() => setAttempt((value) => value + 1)}>立即重试</Button>}>
-      图片未取得</Note></div>;
+      action={<Button variant="secondary" onClick={() => setAttempt((value) => value + 1)}>{uiText("立即重试")}</Button>}>{uiText("图片未取得")}</Note></div>;
   }
   const ready = loaded?.src === src;
   const reveal = async (node: HTMLImageElement) => {
@@ -44,8 +45,8 @@ export function SourcePicture({ item, image, thumbnail = false }: {
   };
   return <>
     {ready || loaded ? null : thumbnail
-      ? <span className="relative block h-full w-full skeleton-sheen" aria-label="正在读取预览" />
-      : <div data-jav-picture-wait="" data-skeleton="image" role="status" aria-label="正在读取图片"><span className="relative skeleton-sheen" /></div>}
+      ? <span className="relative block h-full w-full skeleton-sheen" aria-label={uiText("正在读取预览")} />
+      : <div data-jav-picture-wait="" data-skeleton="image" role="status" aria-label={uiText("正在读取图片")}><span className="relative skeleton-sheen" /></div>}
     {!ready && loaded ? <img data-jav-picture={thumbnail ? undefined : ''} data-source-picture="" src={loaded.src}
       alt={loaded.alt} referrerPolicy="no-referrer" /> : null}
     <img ref={picture} data-jav-picture={thumbnail ? undefined : ''} data-source-picture="" src={src} alt={alt} referrerPolicy="no-referrer"

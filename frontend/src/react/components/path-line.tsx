@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 页面上印着全路径的那一行：路径本身，加一颗把它在资源管理器里打开的键。
  *
  * 凭据文件、问题日志、卸载会删的数据目录都印全路径，读到它的下一步就是去那儿看一眼；
@@ -39,6 +40,7 @@ export function PathLine(
     onRevealed?(message: string): void;
   },
 ) {
+  const uiText = useUiTranslation();
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState('');
   /* 弹窗这一下由服务端去做，回程可能落在页面已经换掉之后；那时这一行早就不在了。 */
@@ -64,7 +66,7 @@ export function PathLine(
         <p className={cx('min-w-0 break-all', className)}>
           {prefix}{path}
         </p>
-        <IconButton icon={FolderOpenIcon} size="small" className="shrink-0" aria-label="在资源管理器中显示"
+        <IconButton icon={FolderOpenIcon} size="small" className="shrink-0" aria-label={uiText("在资源管理器中显示")}
           onClick={() => void reveal()} {...busyProps(busy)} />
       </div>
       {problem ? <p className="text-caption-1-regular text-text-error-primary">{problem}</p> : null}

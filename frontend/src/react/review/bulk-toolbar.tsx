@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 复核筛选与批量动作：分组方式、分类筛选、全选本页留在吸顶栏，所选项目的判定动作
  * 使用首页同款底部悬浮框。
  *
@@ -44,6 +45,7 @@ export interface BulkToolbarProps {
 }
 
 export function BulkToolbar(props: BulkToolbarProps) {
+  const uiText = useUiTranslation();
   const {
     groupOptions, groupBy, onGroupBy, groups, filter, onFilter, pageKeys, selected, onSelected,
     selectedRows, metadata, approvable, busy, feedback, onUnifySource, onRun, queueView = 'pending',
@@ -80,17 +82,17 @@ export function BulkToolbar(props: BulkToolbarProps) {
 
   return (
     <>
-      <FilterGlassRows label="复核筛选" topLabel="处理状态" attrs={{ 'data-review-filter': '' }}
+      <FilterGlassRows label={uiText("复核筛选")} topLabel={uiText("处理状态")} attrs={{ 'data-review-filter': '' }}
         className="mb-0 flex-row flex-wrap" topClassName="max-w-full flex-none"
         bottomClassName={pageKeys.length ? 'min-h-12 max-w-full flex-none flex-wrap' : 'hidden'}
         bottomRef={controlRow}
         panes={<span ref={statePane} data-view-glide="" aria-hidden="true" />}
-        top={<div ref={stateRow} role="group" aria-label="复核状态" data-entity-states=""
+        top={<div ref={stateRow} role="group" aria-label={uiText("复核状态")} data-entity-states=""
           onPointerLeave={stateGlide.leave}>
           {REVIEW_QUEUES.map(key => <button key={key} type="button" data-entity-state={key} data-entity-press=""
             disabled={busy} aria-pressed={queueView === key} onPointerEnter={stateGlide.hover}
             onClick={() => { if (key !== queueView) onQueueChange(key) }}>
-            <span data-copy-key={`review.queue.${key}`}>{REVIEW_QUEUE_LABELS[key]}</span>{' '}
+            <span data-copy-key={`review.queue.${key}`}>{uiText(REVIEW_QUEUE_LABELS[key])}</span>{' '}
             <span className="ms-1.5 tabular-nums text-caption-1-medium text-text-secondary">
               {queueCounts ? queueCounts[key].toLocaleString() : '…'}
             </span>
@@ -98,41 +100,41 @@ export function BulkToolbar(props: BulkToolbarProps) {
           <span data-entity-sep="" aria-hidden="true" className={joinedRows ? undefined : 'invisible'} />
         </div>}
         bottom={pageKeys.length ? <>
-        {metadata && fields.length ? <Select aria-label="筛选资料字段" size="sm"
-          prefix={<span data-copy-key="review.filter.field" className="pointer-events-auto">字段</span>}
+        {metadata && fields.length ? <Select aria-label={uiText("筛选资料字段")} size="sm"
+          prefix={<span data-copy-key="review.filter.field" className="pointer-events-auto">{uiText("字段")}</span>}
           selectedKey={fieldFilter || '*'} isDisabled={busy}
           onSelectionChange={(key) => { if (key !== null) onFieldFilter(String(key) === '*' ? '' : String(key)) }}>
-          <SelectItem id="*">全部</SelectItem>
+          <SelectItem id="*">{uiText("全部")}</SelectItem>
           {fields.map(field => <SelectItem key={field.key} id={field.key}>
-            {`${field.title} · ${field.rows.length}`}
+            {`${uiText(field.title)} · ${field.rows.length}`}
           </SelectItem>)}
         </Select> : null}
-        <Select aria-label="筛选分组方式" size="sm" selectedKey={groupBy}
+        <Select aria-label={uiText("筛选分组方式")} size="sm" selectedKey={groupBy}
           onSelectionChange={(key) => { if (key !== null) onGroupBy(String(key) as ReviewGrouping) }}>
-          {groupOptions.map(([key, name]) => <SelectItem key={key} id={key}>{name}</SelectItem>)}
+          {groupOptions.map(([key, name]) => <SelectItem key={key} id={key}>{uiText(name)}</SelectItem>)}
         </Select>
         {/* 只有一组时没什么可筛的：一个「全部分类」的下拉读起来像坏了。 */}
         {groups.length > 1 ? (
-          <Select aria-label={groupBy === 'field' ? '筛选字段分类' : '筛选当前分类'} size="sm" prefix="分类"
+          <Select aria-label={groupBy === 'field' ? uiText("筛选字段分类") : uiText("筛选当前分类")} size="sm" prefix={uiText("分类")}
             selectedKey={filter || '*'}
             onSelectionChange={(key) => { if (key !== null) onFilter(String(key) === '*' ? '' : String(key)) }}>
-            <SelectItem id="*">全部</SelectItem>
+            <SelectItem id="*">{uiText("全部")}</SelectItem>
             {groups.map((group) => (
               <SelectItem key={group.key} id={group.key}>
-                {`${group.title} · ${group.rows.length}`}
+                {`${uiText(group.title)} · ${group.rows.length}`}
               </SelectItem>
             ))}
           </Select>
         ) : null}
         {locked ? null : <Button variant="secondary" size="small" leadingIcon={RiCheckDoubleLine}
           aria-pressed={allShown} disabled={busy} onClick={toggleAll}>
-          {allShown ? '清空当前选择' : filter ? '全选当前分类' : '全选本页'}
+          {uiText(allShown ? '清空当前选择' : filter ? '全选当前分类' : '全选本页')}
         </Button>}
         </> : null} />
 
-        <SelectionDock label="复核所选项目" visible={!locked && selected.size > 0} count={`已选 ${selected.size} 项`}>
+        <SelectionDock label={uiText("复核所选项目")} visible={!locked && selected.size > 0} count={`已选 ${selected.size} 项`}>
           {needsSource && queueView !== 'ignored' ? (
-            <Select aria-label="统一选择来源" size="sm" selectedKey=""
+            <Select aria-label={uiText("统一选择来源")} size="sm" selectedKey=""
               isDisabled={busy || !sources.length}
               onSelectionChange={(key) => { if (key !== null && key !== '') onUnifySource(String(key)) }}>
               <SelectItem id="">{sourceLabel}</SelectItem>
@@ -140,15 +142,15 @@ export function BulkToolbar(props: BulkToolbarProps) {
             </Select>
           ) : null}
           {queueView !== 'ignored' ? <Button variant="ghost" size="small" disabled={busy || !selected.size}
-            onClick={() => onRun('rejected')}>忽略所选</Button> : null}
+            onClick={() => onRun('rejected')}>{uiText("忽略所选")}</Button> : null}
           {queueView === 'pending' ? <Button variant="secondary" size="small" disabled={busy || !selected.size}
-            onClick={() => onRun('skipped')}>稍后处理所选</Button> : <Button
+            onClick={() => onRun('skipped')}>{uiText("稍后处理所选")}</Button> : <Button
             variant={queueView === 'ignored' ? 'primary' : 'secondary'} size="small" disabled={busy || !selected.size}
-            onClick={() => onRun('restore')}>恢复所选</Button>}
+            onClick={() => onRun('restore')}>{uiText("恢复所选")}</Button>}
           {queueView !== 'ignored' ? <Button variant="primary" size="small" disabled={busy || !selected.size || !approvable}
-            onClick={() => onRun('approved')}>通过所选</Button> : null}
+            onClick={() => onRun('approved')}>{uiText("通过所选")}</Button> : null}
           <Button variant="ghost" size="small" disabled={busy}
-            onClick={() => onSelected(new Set())}>取消选择</Button>
+            onClick={() => onSelected(new Set())}>{uiText("取消选择")}</Button>
           {feedback
             ? <p role="status" className="w-full text-body-2-regular text-text-secondary">{feedback}</p>
             : null}

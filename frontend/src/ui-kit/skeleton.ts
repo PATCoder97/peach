@@ -1,6 +1,7 @@
 /* 骨架：整块占位、索引占位、配置页占位，落进 DOM 后按实际尺寸补齐，过了显示门槛才露面，
    到货时把占位换成真内容。由共享源码直接引用，随 `peach-app.js` 发出。 */
 import { esc } from '../core';
+import { translate as t } from '../i18n';
 import { tagSkeletonHtml } from '../tag-skeleton';
 
 /**
@@ -62,7 +63,7 @@ export function skeletonHtml(label='正在读取内容',{className='',variant='p
      整页刷新就会连闪两段动画；调用方拿这个键判断「已经是同一张了」，跳过重画。 */
   return `<div class="skeletonpanel skeleton-${kind}${className?` ${esc(className)}`:''}"
     data-skeleton="${esc(kind)}${className?`/${esc(className)}`:''}"${kind==='cards'&&fill?' data-fill=""':''}
-    role="status" aria-label="${esc(label)}"><span class="sr-only">${esc(label)}</span>
+    role="status" aria-label="${esc(t(label))}"><span class="sr-only">${esc(t(label))}</span>
     <div${gridClass?` class="${esc(gridClass)}"`:''}${gridSize?` data-size="${esc(gridSize)}"`:''}${
       kind==='cards'&&Number(cardRatio)>0?` style="--skeleton-card-ratio:${Number(cardRatio)}"`:''} aria-hidden="true">${body}</div></div>`;
 }
@@ -76,7 +77,7 @@ export function indexSkeletonHtml({kind,layout='big',mode='alphabet'}:{kind?:str
   const body=`<div class="igrid" data-cells="${company?'company':'people'}" data-layout="${esc(layout)}">${cell.repeat(12)}</div>`;
   const label='正在读取索引';
   return `<div class="skeletonpanel index-skeleton" data-skeleton="index/${esc(kind)}/${esc(layout)}/${esc(mode)}" data-fill=""
-    role="status" aria-label="${label}"><span class="sr-only">${label}</span><section aria-hidden="true">${body}</section></div>`;
+    role="status" aria-label="${esc(t(label))}"><span class="sr-only">${esc(t(label))}</span><section aria-hidden="true">${body}</section></div>`;
 }
 
 /* 骨架的枚数由容器当下的宽度决定，不写死一个数：横向一行铺到右缘为止，网格补满

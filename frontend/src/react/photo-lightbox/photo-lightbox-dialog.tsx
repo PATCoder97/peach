@@ -1,3 +1,5 @@
+import { useTranslation as useUiTranslation } from "../i18n";
+import { uiTextHtml } from '../../i18n/html';
 /* 图片灯箱：一枚原生模态 dialog，主画布与缩略图条各是一个 Swiper。
  *
  * 宿主是 body 末尾一个带 `.peach-react` 的容器，一棵根常驻：打开时换上新的一份灯箱
@@ -63,6 +65,7 @@ interface Detail {
 function PhotoLightbox({ slides, index, Swiper, host: actions }: {
   slides: LightboxSlide[]; index: number; Swiper: SwiperConstructor; host: LightboxHost | null;
 }) {
+  const uiText = useUiTranslation();
   const many = slides.length > 1;
   const detailId = useId();
   const box = useRef<HTMLDialogElement>(null);
@@ -192,10 +195,10 @@ function PhotoLightbox({ slides, index, Swiper, host: actions }: {
     setBroken((prev) => new Set(prev).add(at));
   };
   const apply = (raw: number | 'fit') => zoom.current?.apply(raw);
-  const revealLabel = '<span>在资源管理器中显示</span>';
+  const revealLabel = uiTextHtml('在资源管理器中显示');
 
   return (
-    <dialog ref={box} aria-label="图片浏览" data-photo-lightbox="" data-has-strip={many ? '' : undefined}
+    <dialog ref={box} aria-label={uiText("图片浏览")} data-photo-lightbox="" data-has-strip={many ? '' : undefined}
       onCancel={(event) => { event.preventDefault(); closePhotoLightbox() }}
       onClick={(event) => {
         // 主画布铺满视口后，黑色留白属于 zoom 容器而不是最外层；两者都视为背景。
@@ -204,16 +207,16 @@ function PhotoLightbox({ slides, index, Swiper, host: actions }: {
         if (detail.current?.dismissOutside(target)) return;
         if (target === box.current || target.classList.contains('swiper-zoom-container')) closePhotoLightbox();
       }}>
-      <button type="button" data-photo-close="" aria-label="关闭" onClick={closePhotoLightbox}
+      <button type="button" data-photo-close="" aria-label={uiText("关闭")} onClick={closePhotoLightbox}
         dangerouslySetInnerHTML={{ __html: icon('x') }} />
-      <div ref={mainEl} className="swiper" data-photo-main="" role="region" aria-roledescription="轮播"
-        aria-label="图片浏览">
+      <div ref={mainEl} className="swiper" data-photo-main="" role="region" aria-roledescription={uiText("轮播")}
+        aria-label={uiText("图片浏览")}>
         <div className="swiper-wrapper">
           {slides.map((item, at) => (
             <div key={at} className="swiper-slide">
               <div className="swiper-zoom-container">
                 {lost.has(at)
-                  ? <span data-photo-missing="">图片取不到</span>
+                  ? <span data-photo-missing="">{uiText("图片取不到")}</span>
                   : <img src={broken.has(at) ? item.thumb : item.src} alt={item.name ?? ''} loading="lazy"
                     referrerPolicy="no-referrer" onLoad={(event) => loaded(at, event.currentTarget)}
                     onError={() => failed(at)} />}
@@ -222,29 +225,29 @@ function PhotoLightbox({ slides, index, Swiper, host: actions }: {
           ))}
         </div>
         {/* 方向只翻图标，不转整个按钮。两枚都画朝左那一枚，朝右的在样式里转半圈。 */}
-        <button ref={back} type="button" data-photo-nav="back" aria-label="上一张"
+        <button ref={back} type="button" data-photo-nav="back" aria-label={uiText("上一张")}
           dangerouslySetInnerHTML={{ __html: icon('chevron-left') }} />
-        <button ref={fwd} type="button" data-photo-nav="fwd" aria-label="下一张"
+        <button ref={fwd} type="button" data-photo-nav="fwd" aria-label={uiText("下一张")}
           dangerouslySetInnerHTML={{ __html: icon('chevron-left') }} />
       </div>
       <div data-photo-bar="">
         <button ref={toggle} type="button" data-photo-detail-toggle="" aria-expanded="false" aria-controls={detailId}
-          aria-haspopup="dialog" aria-label="图片详情" title="图片详情" dangerouslySetInnerHTML={{ __html: icon('info') }} />
+          aria-haspopup="dialog" aria-label={uiText("图片详情")} title={uiText("图片详情")} dangerouslySetInnerHTML={{ __html: icon('info') }} />
         <div>
           <div data-photo-count="" aria-live="polite">{`${active + 1} / ${slides.length}`}</div>
-          {many ? <div ref={pagination} data-photo-pagination="" aria-label="选择图片" /> : null}
+          {many ? <div ref={pagination} data-photo-pagination="" aria-label={uiText("选择图片")} /> : null}
         </div>
         <div data-photo-zoom="">
-          <button type="button" data-zoom-step="-1" aria-label="缩小"
+          <button type="button" data-zoom-step="-1" aria-label={uiText("缩小")}
             onClick={() => apply(percent - PHOTO_ZOOM_STEP)} dangerouslySetInnerHTML={{ __html: icon('zoom-out') }} />
           <input ref={range} type="range" min={PHOTO_ZOOM_MIN} max={PHOTO_ZOOM_MAX} step="1" value={percent}
-            aria-label="缩放" onChange={(event) => apply(Number(event.currentTarget.value))} />
-          <button type="button" data-zoom-step="1" aria-label="放大"
+            aria-label={uiText("缩放")} onChange={(event) => apply(Number(event.currentTarget.value))} />
+          <button type="button" data-zoom-step="1" aria-label={uiText("放大")}
             onClick={() => apply(percent + PHOTO_ZOOM_STEP)} dangerouslySetInnerHTML={{ __html: icon('zoom-in') }} />
           <b data-photo-zoom-readout="">{`${percent}%`}</b>
-          <button type="button" data-photo-scale="fit" aria-label="适应窗口" title="适应窗口"
+          <button type="button" data-photo-scale="fit" aria-label={uiText("适应窗口")} title={uiText("适应窗口")}
             onClick={() => apply('fit')} dangerouslySetInnerHTML={{ __html: icon('maximize') }} />
-          <button type="button" data-photo-scale="original" aria-label="原大小" title="原大小"
+          <button type="button" data-photo-scale="original" aria-label={uiText("原大小")} title={uiText("原大小")}
             onClick={() => apply(100)}>1:1</button>
         </div>
       </div>

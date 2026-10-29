@@ -1,9 +1,11 @@
+import { useTranslation as useUiTranslation } from "../i18n";
+import { useSystemTranslation } from '../i18n';
 /* 「应用与维护」的后半段：存储空间、数据上传、运行信息、安装教程与卸载。少改的隐私开关和只读信息在后，
  * 卸载是不可逆动作，留在整组最后。 */
 import { useState, type FormEvent } from 'react';
 import { confirmModal } from '@peach/legacy/ui';
 
-import { SettingsCard, SettingsRow } from '@/components/application/settings/settings-rows';
+import { SettingsCard, SettingsRow } from '../components/settings-rows';
 import { Button } from '@/components/base/buttons/button';
 import { Select, SelectItem } from '@/components/base/select/select';
 import { Switch } from '@/components/base/switch/switch';
@@ -25,10 +27,11 @@ const INTERVALS = [['6', '每 6 小时'], ['24', '每天'], ['168', '每周']] a
 export function MaintenanceSettings(
   { data, receipt, reopenTutorial, panel }: ConfigurationGroupProps & Pick<ConfigurationProps, 'reopenTutorial'>,
 ) {
+  const uiText = useUiTranslation();
   return (
     <div {...groupRoot(panel)}>
       {data.storage ? <StorageSettings initial={data.storage} receipt={receipt} /> : null}
-      {data.remote_reporting || data.library_sharing ? <Section id="librarySharing" title="数据上传">
+      {data.remote_reporting || data.library_sharing ? <Section id="librarySharing" title={uiText("数据上传")}>
         {data.remote_reporting ? <RemoteReportingSettings initial={data.remote_reporting} receipt={receipt} /> : null}
         {data.library_sharing ? <div className="border-t border-separator-border">
           <LibrarySharingSettings initial={data.library_sharing} receipt={receipt} />
@@ -43,13 +46,14 @@ export function MaintenanceSettings(
 
 /** 安装教程的重开入口。教程卡本身还画在遗留层，这里只按一下让它回来。 */
 export function TutorialSettings({ receipt, reopenTutorial }: ConfigurationProps) {
+  const uiText = useUiTranslation();
   const action = useAction();
   const reopen = () => void action.run('reopen', () => reopenTutorial(),
     () => receipt('已重新打开安装教程'));
   return (
-    <section aria-label="安装教程" className="w-full"><SettingsCard>
-      <Rows><SettingsRow label="安装教程">
-        <Button variant="secondary" onClick={reopen} {...busyProps(action.busy === 'reopen')}>重新打开教程</Button>
+    <section aria-label={uiText("安装教程")} className="w-full"><SettingsCard>
+      <Rows><SettingsRow label={uiText("安装教程")}>
+        <Button variant="secondary" onClick={reopen} {...busyProps(action.busy === 'reopen')}>{uiText("重新打开教程")}</Button>
       </SettingsRow></Rows>
       {action.error ? <Stack><ErrorText>{action.error}</ErrorText></Stack> : null}
     </SettingsCard></section>
@@ -57,6 +61,7 @@ export function TutorialSettings({ receipt, reopenTutorial }: ConfigurationProps
 }
 
 export function AutomaticUpdates({ initial, receipt }: { initial: AutomaticUpdateState; receipt(message: string): void }) {
+  const uiText = useUiTranslation();
   const [mode, setMode] = useState(initial.mode);
   const [hours, setHours] = useState(initial.interval_hours);
   const action = useAction(initial.error);
@@ -74,40 +79,42 @@ export function AutomaticUpdates({ initial, receipt }: { initial: AutomaticUpdat
       ? '下载完成后在这里确认重启安装。'
       : undefined;
   return (
-    <Section id="automaticUpdates" title="自动更新" onSubmit={submit}>
+    <Section id="automaticUpdates" title={uiText("自动更新")} onSubmit={submit}>
       <Rows>
-        <SettingsRow label="自动检查新版本">
-          <Switch aria-label="自动检查新版本" isSelected={mode !== 'off'} isDisabled={!initial.available}
+        <SettingsRow label={uiText("自动检查新版本")}>
+          <Switch aria-label={uiText("自动检查新版本")} isSelected={mode !== 'off'} isDisabled={!initial.available}
             onChange={(on) => setMode(on ? 'check' : 'off')} />
         </SettingsRow>
-        <SettingsRow label="自动下载更新">
-          <Switch aria-label="自动下载更新" isSelected={mode === 'download'}
+        <SettingsRow label={uiText("自动下载更新")}>
+          <Switch aria-label={uiText("自动下载更新")} isSelected={mode === 'download'}
             isDisabled={!initial.available || !initial.download_available || mode === 'off'}
             onChange={(on) => setMode(on ? 'download' : 'check')} />
         </SettingsRow>
-        <SettingsRow label="检查频率" description={help}>
-          <Select aria-label="检查频率" selectedKey={String(hours)} isDisabled={!initial.available}
+        <SettingsRow label={uiText("检查频率")} description={help}>
+          <Select aria-label={uiText("检查频率")} selectedKey={String(hours)} isDisabled={!initial.available}
             onSelectionChange={(key) => { if (key !== null) setHours(Number(key)); }}>
-            {INTERVALS.map(([key, name]) => <SelectItem key={key} id={key}>{name}</SelectItem>)}
+            {INTERVALS.map(([key, name]) => <SelectItem key={key} id={key}>{uiText(name)}</SelectItem>)}
           </Select>
         </SettingsRow>
       </Rows>
       {action.error ? <Stack divided><ErrorText>{action.error}</ErrorText></Stack> : null}
       <Footer>
-        <Button type="submit" disabled={!initial.available} {...busyProps(action.busy === 'save')}>保存配置</Button>
+        <Button type="submit" disabled={!initial.available} {...busyProps(action.busy === 'save')}>{uiText("保存配置")}</Button>
       </Footer>
     </Section>
   );
 }
 
 function Facts({ facts }: { facts: ConfigurationFact[] }) {
+  const uiText = useUiTranslation();
+  const systemText = useSystemTranslation();
   return (
-    <Section title="运行信息">
+    <Section title={uiText("运行信息")}>
       <FactList>
         {facts.map((fact) => (
-          <Fact key={fact.term} term={fact.term}>
-            {fact.value}
-            {fact.download_url ? <ExternalLink href={fact.download_url}>{fact.download_label}</ExternalLink> : null}
+          <Fact key={fact.term} term={uiText(fact.term)}>
+            {systemText(fact.value)}
+            {fact.download_url ? <ExternalLink href={fact.download_url}>{uiText(fact.download_label || '')}</ExternalLink> : null}
           </Fact>
         ))}
       </FactList>
@@ -118,6 +125,7 @@ function Facts({ facts }: { facts: ConfigurationFact[] }) {
 export function UninstallSettings(
   { uninstall, receipt }: { uninstall: UninstallState; receipt(message: string): void },
 ) {
+  const uiText = useUiTranslation();
   const [removeData, setRemoveData] = useState(false);
   const [accepted, setAccepted] = useState('');
   const remove = () => void confirmModal({
@@ -137,22 +145,22 @@ export function UninstallSettings(
   const status = accepted || uninstall.message;
   const paths = [...new Set([uninstall.data_root, ...uninstall.directories])];
   return (
-    <Section id="uninstallPeach" title="卸载 Peach">
-      {uninstall.available ? <Stack><Help>卸载移除 Peach 程序本身，原始媒体文件保留。</Help></Stack> : null}
+    <Section id="uninstallPeach" title={uiText("卸载 Peach")}>
+      {uninstall.available ? <Stack><Help>{uiText("卸载移除 Peach 程序本身，原始媒体文件保留。")}</Help></Stack> : null}
       <Rows>
-        <SettingsRow label="完全卸载" description="同时删除设置、本地数据库、观看记录、凭据和缓存">
-          <Switch aria-label="完全卸载" isSelected={removeData} isDisabled={!uninstall.full_available || Boolean(accepted)} onChange={setRemoveData} />
+        <SettingsRow label={uiText("完全卸载")} description={uiText("同时删除设置、本地数据库、观看记录、凭据和缓存")}>
+          <Switch aria-label={uiText("完全卸载")} isSelected={removeData} isDisabled={!uninstall.full_available || Boolean(accepted)} onChange={setRemoveData} />
         </SettingsRow>
       </Rows>
       <Stack divided>
-        <Disclosure summary="数据目录">
+        <Disclosure summary={uiText("数据目录")}>
           {paths.map((path) => (
             <PathLine key={path} path={path} className="text-body-2-regular text-text-secondary" onRevealed={receipt} />
           ))}
         </Disclosure>
       </Stack>
-      <Footer status={status ? <p role={accepted ? 'status' : undefined}>{status}</p> : null}>
-        <Button variant="danger" disabled={!uninstall.available || Boolean(accepted)} onClick={remove}>卸载 Peach</Button>
+      <Footer status={status ? <p role={accepted ? 'status' : undefined}>{uiText(status)}</p> : null}>
+        <Button variant="danger" disabled={!uninstall.available || Boolean(accepted)} onClick={remove}>{uiText("卸载 Peach")}</Button>
       </Footer>
     </Section>
   );

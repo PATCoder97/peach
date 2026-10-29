@@ -1,3 +1,5 @@
+import { translate as t } from '../../i18n/index';
+import { useTranslation, useSystemTranslation } from '../i18n';
 /* 管理区页头（ADR-0031 第 11g 步）：管理条、面包屑、页面标题与回收站说明行。
  *
  * 常驻组件 `manage-header`（`router/managed-routes.tsx` 的常驻表）：路由树把它画进壳常驻的
@@ -54,13 +56,14 @@ export function ManageHeaderSurface() {
 }
 
 function ManageHeader({ host: at, props: current }: { host: ManageHeaderHost; props: ManageHeaderProps }) {
+  useTranslation();
   const view = manageHeaderView(current);
   if (!view) return null;
   return (
     <>
       <ManageBar host={at} pressed={view.pressed} menu={current.menu} />
       {view.crumb ? <Crumb host={at} label={view.crumb} /> : null}
-      <h2 data-manage-title="" data-compact={view.compact ? '' : undefined}>{view.title}</h2>
+      <h2 data-manage-title="" data-compact={view.compact ? '' : undefined}>{t(view.title)}</h2>
       {view.lede.kind === 'none' ? null : <TrashLede host={at} lede={view.lede} />}
     </>
   );
@@ -68,6 +71,7 @@ function ManageHeader({ host: at, props: current }: { host: ManageHeaderHost; pr
 
 /** 管理导航使用中性填充选中态；切换后把当前项滚入可见区域。 */
 function ManageBar({ host: at, pressed: key, menu }: Pick<ManageHeaderProps, 'menu'> & { host: ManageHeaderHost; pressed: string }) {
+  useTranslation();
   const row = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -80,7 +84,7 @@ function ManageBar({ host: at, pressed: key, menu }: Pick<ManageHeaderProps, 'me
   }, [key, menu]);
 
   return (
-    <nav data-manage-bar="" aria-label="管理">
+    <nav data-manage-bar="" aria-label={t("管理")}>
       <PillTabList ref={row} data-manage-menu="" data-pill-nav="">
         {menu.map(([entry, label, glyph]) => {
           const on = entry === key;
@@ -88,7 +92,7 @@ function ManageBar({ host: at, pressed: key, menu }: Pick<ManageHeaderProps, 'me
             <button key={entry} type="button" data-manage={entry} aria-pressed={on} aria-current={on ? 'page' : undefined}
               data-pill-selected={on ? '' : undefined} data-pill-variant="gray"
               onClick={() => at.openManage(entry)}>
-              <Icon name={glyph} /><span>{label}</span>
+              <Icon name={glyph} /><span>{t(label)}</span>
             </button>
           );
         })}
@@ -101,16 +105,17 @@ function ManageBar({ host: at, pressed: key, menu }: Pick<ManageHeaderProps, 'me
    Geist Breadcrumbs：上一级是链接、当前页是纯文本并带 `aria-current="true"`。href 留给新标签页与右键
    菜单；普通左键走路由，整页重载会丢掉返回表面与已读位置。 */
 function Crumb({ host: at, label }: { host: ManageHeaderHost; label: string }) {
+  useTranslation();
   const follow = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) return;
     event.preventDefault();
     at.openDataCleanup();
   };
   return (
-    <nav data-manage-crumb="" aria-label="当前位置">
+    <nav data-manage-crumb="" aria-label={t("当前位置")}>
       <ol>
-        <li><a href="/data-cleanup" onClick={follow}>数据管理</a><Icon name="chevron-right" /></li>
-        <li aria-current="true"><span>{label}</span></li>
+        <li><a href="/data-cleanup" onClick={follow}>{t("数据管理")}</a><Icon name="chevron-right" /></li>
+        <li aria-current="true"><span>{t(label)}</span></li>
       </ol>
     </nav>
   );
@@ -123,6 +128,7 @@ function Crumb({ host: at, label }: { host: ManageHeaderHost; label: string }) {
 type Lede = Exclude<ManageHeaderView['lede'], { kind: 'none' }>;
 
 function TrashLede({ host: at, lede }: { host: ManageHeaderHost; lede: Lede }) {
+  useTranslation();
   return (
     <p className="mono" data-manage-lede="">
       {lede.kind === 'skeleton'
@@ -131,8 +137,8 @@ function TrashLede({ host: at, lede }: { host: ManageHeaderHost; lede: Lede }) {
           <>
             <LedeText text={lede.text} />
             {lede.total ? (
-              <button type="button" data-empty-trash="" data-danger="" title="永久删除回收站内容"
-                onClick={() => at.emptyTrash()}>清空回收站</button>
+              <button type="button" data-empty-trash="" data-danger="" title={t("永久删除回收站内容")}
+                onClick={() => at.emptyTrash()}>{t("清空回收站")}</button>
             ) : null}
           </>
         )}
@@ -141,7 +147,9 @@ function TrashLede({ host: at, lede }: { host: ManageHeaderHost; lede: Lede }) {
 }
 
 function LedeText({ text }: { text: string }) {
+  const systemText = useSystemTranslation();
+  const label = systemText(text);
   const slot = useRef<HTMLSpanElement>(null);
-  useLayoutEffect(() => { swapText(slot.current, text) }, [text]);
+  useLayoutEffect(() => { swapText(slot.current, label) }, [label]);
   return <span ref={slot} data-lede-text="" />;
 }

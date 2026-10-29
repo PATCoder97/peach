@@ -1,5 +1,6 @@
 import { emptyStateHtml } from '@peach/legacy/ui';
 import { esc } from '@peach/legacy/core';
+import { uiTextHtml } from './i18n/html';
 
 type Request = (url: string) => Promise<any>;
 const FILTERS = ['loc', 'creator', 'performer', 'studio', 'series', 'agency', 'tag', 'tag_match', 'len', 'dur_min', 'dur_max', 'orient', 'region', 'year', 'state', 'jav', 'thumb'];
@@ -33,13 +34,13 @@ export async function catalogSuggestions(state: Record<string, string>, request:
 
 /** 空馆藏、筛选无结果与资料尚未建立分别给出可执行入口。 */
 export function catalogEmptyHtml({ kind = 'catalog', filtered = false, jav = false, configurable: _configurable = false, online = false } = {}): string {
-  const add = '<a class="geist-button primary" href="/settings/library">添加媒体</a>';
-  const follow = '<a class="geist-button' + (online ? ' primary' : '') + '" href="/subscriptions?tab=add">添加关注</a>';
+  const add = `<a class="geist-button primary" href="/settings/library">${uiTextHtml('添加媒体')}</a>`;
+  const follow = '<a class="geist-button' + (online ? ' primary' : '') + `" href="/subscriptions?tab=add">${uiTextHtml('添加关注')}</a>`;
   if (filtered || jav) return emptyStateHtml('search', jav ? '还没有符合条件的 JAV 作品' : '没有符合条件的内容',
     jav ? '已扫描但尚未补充发行资料的视频可在全部内容中查看。' : '清除筛选或搜索条件后查看全部内容。',
     { actions: jav
-      ? '<a class="geist-button primary" href="/?loc=&thumb=0">查看全部内容</a><a class="geist-button" href="/data-cleanup#libraryProcessing">补全影片资料</a>'
-      : `<a class="geist-button primary" href="${filtered ? esc(clearCatalogAddress()) : '/?loc=&thumb=0'}">${filtered ? '清除筛选' : '查看全部内容'}</a>` });
+      ? `<a class="geist-button primary" href="/?loc=&thumb=0">${uiTextHtml('查看全部内容')}</a><a class="geist-button" href="/data-cleanup#libraryProcessing">${uiTextHtml('补全影片资料')}</a>`
+      : `<a class="geist-button primary" href="${filtered ? esc(clearCatalogAddress()) : '/?loc=&thumb=0'}">${uiTextHtml(filtered ? '清除筛选' : '查看全部内容')}</a>` });
   if (kind !== 'catalog') {
     const labels: Record<string, string> = { tags: '标签', performers: '艺人', creators: '卖家', studios: '厂牌', agencies: '事务所', series: '系列' };
     // 在线那一档数的是来源上的东西，名字也跟着来源的说法：艺人页在线摆的是关注来源里的创作者。

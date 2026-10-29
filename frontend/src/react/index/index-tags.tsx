@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 标签页的三块：筛选浮层、正文（字母表或标签云）、所选标签的操作条。
  *
  * 两套词表共用这三块，区别在颜色和去处：本地是 ledger 里的中文标签，按 ledger 的九类着色，
@@ -42,6 +43,7 @@ const tagFavorite = (tag: TagEntry, online: boolean): Favorite => ({ kind: 'tag'
 /* 一行一枚标签：36px 高、8px 圆角，取的是 Board 排名行那一档身量。nowrap 是省略号的前提，
    少了它长标签改成折行，同一行里的其它标签跟着被拉高，几列各行高度也对不齐。 */
 function AlphaTag({ tag, actions }: { tag: TagEntry; actions: TagActions }) {
+  const uiText = useUiTranslation();
   const pressed = actions.picked.has(tag.k);
   return (
     <div className="flex min-w-0 items-center gap-1">
@@ -53,7 +55,7 @@ function AlphaTag({ tag, actions }: { tag: TagEntry; actions: TagActions }) {
       <span className="flex-none text-caption-1-regular text-text-secondary">{tag.n.toLocaleString()}</span>
     </button>
     {actions.favorites !== false ? <FavoriteButton item={tagFavorite(tag, actions.online)} /> : null}
-    {actions.edit ? <EntityActionButton label={`编辑标签 ${tag.label}`} onClick={() => actions.edit?.(tag.k)}><Pencil /></EntityActionButton> : null}
+    {actions.edit ? <EntityActionButton label={uiText("编辑标签 {value0}", { value0: String(tag.label) })} onClick={() => actions.edit?.(tag.k)}><Pencil /></EntityActionButton> : null}
     </div>
   );
 }
@@ -61,13 +63,14 @@ function AlphaTag({ tag, actions }: { tag: TagEntry; actions: TagActions }) {
 /** 字母表：每个首字一张卡，字头是卡的标题，右边挂这一组有几个。`data-alpha-group` 是浮层
  *  下排那排跳转键的落点，卡顶给吸顶的浮层让出位置。 */
 export function TagAlphabet({ groups, actions }: { groups: [string, TagEntry[]][]; actions: TagActions }) {
+  const uiText = useUiTranslation();
   return (
     <div data-alphabet="" className="flex flex-col gap-4">
       {groups.map(([letter, tags], at) => (
         <section key={letter} data-alpha-group={at}
           className={cardClass({ radius: 'plain', padding: 'none', className: 'px-5 pt-4 pb-3' })}>
           <h3 className="mb-2 flex items-center text-title-2-medium text-text-primary">
-            {letter}<TabCount value={tags.length} />
+            {uiText(letter)}<TabCount value={tags.length} />
           </h3>
           <div className="index-tag-list gap-x-4 gap-y-0.5">
             {tags.map((tag) => <AlphaTag key={tag.k} tag={tag} actions={actions} />)}
@@ -84,6 +87,7 @@ const NBSP = String.fromCharCode(0xa0);
  *  不断行空格，宽度是名字那一档字号下的一个空格（13px 时约 3.7px）；flex 会吞掉普通空格，
  *  所以用不断行的那一个。 */
 export function TagCloud({ tags, actions }: { tags: TagEntry[]; actions: TagActions }) {
+  const uiText = useUiTranslation();
   return (
     <div data-tag-cloud="" className="flex flex-wrap gap-1.75">
       {tags.map((tag) => (
@@ -98,7 +102,7 @@ export function TagCloud({ tags, actions }: { tags: TagEntry[]; actions: TagActi
         </button>
         {actions.favorites !== false || actions.edit ? <span data-tag-actions="" className="inline-flex flex-none items-center gap-1">
           {actions.favorites !== false ? <FavoriteButton item={tagFavorite(tag, actions.online)} /> : null}
-          {actions.edit ? <EntityActionButton label={`编辑标签 ${tag.label}`} onClick={() => actions.edit?.(tag.k)}><Pencil /></EntityActionButton> : null}
+          {actions.edit ? <EntityActionButton label={uiText("编辑标签 {value0}", { value0: String(tag.label) })} onClick={() => actions.edit?.(tag.k)}><Pencil /></EntityActionButton> : null}
         </span> : null}
         </span>
       ))}
@@ -126,20 +130,21 @@ export function TagFilters(
     actions?: ReactNode;
   },
 ) {
+  const uiText = useUiTranslation();
   const alphaScroll = useHorizontalScroller<HTMLElement>();
   return (
-    <FilterGlassRows label="标签筛选" topLabel="标签类型"
+    <FilterGlassRows label={uiText("标签筛选")} topLabel={uiText("标签类型")}
       top={<>
-        {status ? <div role="group" aria-label="标签状态" className="flex flex-none items-center gap-1.75 border-r border-(--glass-low) pr-3">
+        {status ? <div role="group" aria-label={uiText("标签状态")} className="flex flex-none items-center gap-1.75 border-r border-(--glass-low) pr-3">
           {[[false, '使用中'], [true, '已隐藏']].map(([hidden, label]) => <FilterPill key={String(hidden)}
-            data-tag-pill="" data-tag-cat="all" pressed={!status.blocked && status.hidden === hidden} onPress={() => status.onChange(Boolean(hidden))}>{label}</FilterPill>)}
+            data-tag-pill="" data-tag-cat="all" pressed={!status.blocked && status.hidden === hidden} onPress={() => status.onChange(Boolean(hidden))}>{uiText(String(label))}</FilterPill>)}
           {status.onBlocked ? <FilterPill data-tag-pill="" data-tag-cat="all" pressed={!!status.blocked}
-            onPress={status.onBlocked}>已屏蔽内容</FilterPill> : null}
+            onPress={status.onBlocked}>{uiText("已屏蔽内容")}</FilterPill> : null}
         </div> : null}
         {categories.map(([key, label]) => (
         <FilterPill key={key} data-tag-pill="" data-tag-cat={key === 'all' ? 'all' : tagColorKey(online, key)}
           pressed={category === key} onPress={() => onCategory(key)}>
-          <Dot />{label}
+          <Dot />{uiText(label)}
         </FilterPill>
       ))}</>}
       bottom={<>
@@ -148,23 +153,23 @@ export function TagFilters(
         </span>
         {actions}
         {letters.length > 1 ? (
-          <nav ref={alphaScroll} aria-label="按首字跳转" data-alpha-jump=""
+          <nav ref={alphaScroll} aria-label={uiText("按首字跳转")} data-alpha-jump=""
             className="flex min-w-0 gap-0.5 overflow-x-auto overscroll-x-contain">
             {letters.map((letter, at) => (
               <button key={letter} type="button" onClick={() => onJump(at)}
                 className="h-8 min-w-8 flex-none cursor-pointer rounded-glass-key px-1.5 text-caption-1-regular leading-5 text-(--glass-text)/60 outline-none hover:text-(--glass-text) focus-visible:ring-2 focus-visible:ring-border-focus-ring">
-                {letter}
+                {uiText(letter)}
               </button>
             ))}
           </nav>
         ) : null}
-        <RadioGroup aria-label="标签视图" orientation="horizontal" value={view}
+        <RadioGroup aria-label={uiText("标签视图")} orientation="horizontal" value={view}
           onChange={(next) => onView(next as TagView)} className={`ml-auto ${SEGMENTED_GLASS_TRACK}`}>
           {VIEWS.map(([value, label, symbol]) => {
             const Glyph = spriteGlyph(symbol);
             return (
-              <Radio key={value} value={value} aria-label={label} data-glass-segment="" className={SEGMENT_GLASS}>
-                <span title={label} className="contents"><Glyph className="size-4" /></span>
+              <Radio key={value} value={value} aria-label={uiText(label)} data-glass-segment="" className={SEGMENT_GLASS}>
+                <span title={uiText(label)} className="contents"><Glyph className="size-4" /></span>
               </Radio>
             );
           })}
@@ -180,16 +185,17 @@ export function TagDock(
   { count, match, onMatch, onClear, onApply }:
   { count: number; match: 'any' | 'all'; onMatch(match: 'any' | 'all'): void; onClear(): void; onApply(): void },
 ) {
+  const uiText = useUiTranslation();
   return (
-    <SelectionDock visible={count > 0} label="所选标签操作" count={`已选 ${count.toLocaleString()} 个标签`}>
+    <SelectionDock visible={count > 0} label={uiText("所选标签操作")} count={`已选 ${count.toLocaleString()} 个标签`}>
       <Checkbox isSelected={match === 'any'} onChange={(on) => onMatch(on ? 'any' : 'all')}>
         <span className="flex flex-col">
-          <span className="text-body-medium">广泛匹配</span>
-          <span className="text-caption-1-regular text-text-secondary">开启后匹配任一所选标签；关闭后必须同时包含全部标签。</span>
+          <span className="text-body-medium">{uiText("广泛匹配")}</span>
+          <span className="text-caption-1-regular text-text-secondary">{uiText("开启后匹配任一所选标签；关闭后必须同时包含全部标签。")}</span>
         </span>
       </Checkbox>
-      <Button variant="secondary" size="small" onClick={onClear}>清空</Button>
-      <Button variant="primary" size="small" disabled={!count} onClick={onApply}>显示结果</Button>
+      <Button variant="secondary" size="small" onClick={onClear}>{uiText("清空")}</Button>
+      <Button variant="primary" size="small" disabled={!count} onClick={onApply}>{uiText("显示结果")}</Button>
     </SelectionDock>
   );
 }

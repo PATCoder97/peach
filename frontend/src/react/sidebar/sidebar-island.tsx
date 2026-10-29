@@ -1,3 +1,6 @@
+import { useTranslation as useUiTranslation } from "../i18n";
+import { translate as t } from '../../i18n/index';
+import { useTranslation } from '../i18n';
 /* 侧栏（ADR-0031 第 11f 步）：左侧抽屉里滚动的那一层。
  *
  * 常驻组件 `sidebar`（`router/managed-routes.tsx` 的常驻表）：路由树把它画进壳常驻的 `#drawerScroll`，宿主就是
@@ -94,6 +97,7 @@ function Sidebar({ host: at, props: view, epoch }: { host: SidebarHost; props: S
 /* ── 导航 ── */
 
 function Navigation({ host: at, epoch, version }: { host: SidebarHost; epoch: number; version: number }) {
+  useTranslation();
   const commit = useCommitSidebarOrder(at.store);
   const order = at.store.value.sidebarOrder;
   const byKey = new Map(at.navCatalog.map((item) => [item[0], item]));
@@ -152,14 +156,14 @@ function Navigation({ host: at, epoch, version }: { host: SidebarHost; epoch: nu
     <>
       <div data-sidebar-nav="" ref={column} onPointerLeave={glide.leave}>
         {items.map(([key, label, glyph], index) => (
-          <button type="button" key={key || HOME} data-nav={key} aria-pressed={pressed[index]} aria-label={label}
+          <button type="button" key={key || HOME} data-nav={key} aria-pressed={pressed[index]} aria-label={t(label)}
             data-dragging={dragging === key ? '' : undefined}
             data-drop={drop?.key === key ? (drop.after ? 'after' : 'before') : undefined}
             onClick={() => at.navTo(key)} onPointerEnter={glide.hover} {...drag(key)}>
             {key === '' ? <img data-sidebar-home-logo="" src="/peach-logo-64.png"
               srcSet="/peach-logo-64.png 64w, /peach-logo-128.png 128w" sizes="24px" width={24} height={24} alt=""
               decoding="async" /> : <Icon name={glyph} />}
-            <span>{label}</span>
+            <span>{t(label)}</span>
           </button>
         ))}
       </div>
@@ -285,6 +289,7 @@ function wantOpen(title: string, active: boolean): boolean {
 function Group({ title, kind, active, index, epoch, children }: {
   title: string; kind: string; active: boolean; index: number; epoch: string; children: ReactNode;
 }) {
+  useTranslation();
   const details = useRef<HTMLDetailsElement | null>(null);
   const body = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(() => wantOpen(title, active));
@@ -314,7 +319,7 @@ function Group({ title, kind, active, index, epoch, children }: {
   return (
     <details ref={details} data-sidebar-group={title} data-sidebar-kind={kind}>
       <summary role="button" data-sidebar-toggle="" aria-expanded={open} aria-controls={collapseId} onClick={toggle}>
-        <Icon name="chevron-right" /><span>{title}</span>
+        <Icon name="chevron-right" /><span>{t(title)}</span>
       </summary>
       <div ref={body} data-sidebar-collapse="" id={collapseId} inert={!open}>
         <div data-sidebar-collapse-body="">
@@ -343,17 +348,20 @@ function ChipList({ rows, filterKey, multi, selected, counts, host: at, onToggle
   /** 点下去回给谁：缺省是目录筛选，关注页换成它自己的。 */
   onToggle?: SidebarHost['toggleChip'];
 }) {
+  const uiText = useUiTranslation();
   return (
     <div data-sidebar-chips="">
       {rows.map((row) => {
         const n = row.n === null ? null : counts ? counts.get(`${filterKey}\n${row.value}`) ?? 0 : row.n;
+        const label = ['loc', 'region', 'orient'].includes(filterKey) || filterKey === 'year' && row.value === 'none'
+          ? uiText(row.label) : row.label;
         return (
           <button type="button" key={row.value} data-sidebar-chip="" aria-pressed={selected.includes(row.value)}
             data-key={filterKey} data-val={row.value} data-multi={multi ? '1' : '0'}
-            data-offline={row.offline ? '' : undefined} disabled={!!row.offline} title={row.offline || row.label}
+            data-offline={row.offline ? '' : undefined} disabled={!!row.offline} title={row.offline ? uiText(row.offline) : label}
             onClick={() => onToggle(filterKey, row.value, multi)}>
             <Dot dot={row.dot} />
-            <span data-sidebar-chip-label="">{row.label}</span>
+            <span data-sidebar-chip-label="">{label}</span>
             {n === null ? null : <span data-sidebar-count="" data-count-badge={`${filterKey}:${row.value}`}>{n.toLocaleString()}</span>}
           </button>
         );
@@ -368,6 +376,7 @@ function MoreList({ epoch, title, rows, latest, limit, filterKey, selected, coun
   epoch: string; title: string; rows: SidebarChip[]; latest: SidebarChip[] | null; limit: number; filterKey: string;
   selected: string[]; counts: Map<string, number> | null; host: SidebarHost; expandable: boolean;
 }) {
+  const uiText = useUiTranslation();
   const toggleGroup = useContext(GroupToggle);
   const [shown, setShown] = useState<{ rows: SidebarChip[]; all: boolean } | null>(null);
   /* 新的一份聚合到来时名单从头摊：成员换回这一份的前几条，展开键回到「展开全部」。 */
@@ -412,7 +421,7 @@ function MoreList({ epoch, title, rows, latest, limit, filterKey, selected, coun
         counts={counts} host={at} />
       {expandable && rows.length > limit
         ? <button type="button" ref={button} data-sidebar-more={filterKey} aria-expanded={expanded}
-            aria-label={`${expanded ? '收起' : '展开全部'}${title}`} onClick={more}><Icon name="chevron-down" /></button>
+            aria-label={uiText(expanded ? '收起{title}' : '展开全部{title}', { title: uiText(title) })} onClick={more}><Icon name="chevron-down" /></button>
         : null}
     </>
   );
@@ -449,6 +458,8 @@ function Duration({ host: at, filters, commit: onCommit = at.setDuration }: {
   /** 松手时回给谁：缺省是目录筛选，关注页换成它自己的。 */
   commit?: SidebarHost['setDuration'];
 }) {
+  const uiText = useUiTranslation();
+  useTranslation();
   const source = `${filters.dur_min ?? ''}:${filters.dur_max ?? ''}`;
   const [seen, setSeen] = useState(source);
   const [range, setRange] = useState(() => [minutesOf(filters.dur_min, 0), minutesOf(filters.dur_max, DURATION_MAX)]);
@@ -502,7 +513,7 @@ function Duration({ host: at, filters, commit: onCommit = at.setDuration }: {
 
   const tip = (end: 'min' | 'max', value: number) => (
     <output data-sidebar-range-tip="" data-range-end={end} data-range-active={active === end ? '' : undefined} aria-hidden="true">
-      {end === 'max' && value >= DURATION_MAX ? '不限' : `${value} 分钟`}
+      {end === 'max' && value >= DURATION_MAX ? t("不限") : uiText("{value0} 分钟", { value0: String(value) })}
     </output>
   );
   return (
@@ -510,9 +521,9 @@ function Duration({ host: at, filters, commit: onCommit = at.setDuration }: {
       <div data-sidebar-range="" id="durationRange" ref={group}>
         <span data-sidebar-range-base="" />
         <span data-sidebar-range-fill="" />
-        <input id="durMin" type="range" min="0" max={DURATION_MAX} step="5" value={lo} aria-label="最短时长（分钟）"
+        <input id="durMin" type="range" min="0" max={DURATION_MAX} step="5" value={lo} aria-label={t("最短时长（分钟）")}
           ref={minInput} onChange={(event) => move('min', Number(event.currentTarget.value))} />
-        <input id="durMax" type="range" min="0" max={DURATION_MAX} step="5" value={hi} aria-label="最长时长（分钟）"
+        <input id="durMax" type="range" min="0" max={DURATION_MAX} step="5" value={hi} aria-label={t("最长时长（分钟）")}
           ref={maxInput} onChange={(event) => move('max', Number(event.currentTarget.value))} />
         {tip('min', lo)}
         {tip('max', hi)}

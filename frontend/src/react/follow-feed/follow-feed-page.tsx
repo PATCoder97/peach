@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 关注页 `/follow`：页头、创作者与题材两排、两排的筛选玻璃、交集条、卡片列表与底栏（ADR-0031 第 10g 步）。
  *
  * 数据形状、取数键与这一页的判定在 `./follow-feed.ts`，卡片在 `./follow-card.tsx`。换筛选或排序时
@@ -105,6 +106,7 @@ function useFacets(data: FollowPage | null, view: FollowView, seed: number) {
 type Facets = ReturnType<typeof useFacets>;
 
 export function FollowFeedPage(props: FollowFeedProps) {
+  const uiText = useUiTranslation();
   const { view, seed, revision, actions } = props;
   const query = followFeedQuery(view, revision);
   const result = useInfiniteQuery(query);
@@ -164,16 +166,16 @@ export function FollowFeedPage(props: FollowFeedProps) {
     <>
       {/* 进度那一格归 `followJobProgress`：它自己往里插面板、自己开合，React 只给一个空节点。 */}
       <div key={job.generation} ref={job.host} data-follow-progress="" />
-      {!job.busy && job.report ? <Note tone="neutral" title="检查结果">{job.report}</Note> : null}
+      {!job.busy && job.report ? <Note tone="neutral" title={uiText("检查结果")}>{job.report}</Note> : null}
       <div data-follow-feed="" data-select-mode={props.selectMode ? '' : undefined}>
         <Head>
           {facets.sources.length ? (
-            <Button variant="primary" data-follow-recheck="" aria-label="检查每个来源的更新"
+            <Button variant="primary" data-follow-recheck="" aria-label={uiText("检查每个来源的更新")}
               aria-busy={job.busy || undefined}
               onClick={() => void job.start(false)}>
               {job.starting === 'check'
                 ? <span className="contents" dangerouslySetInnerHTML={{ __html: spinnerHtml('检查中') }} />
-                : '检查更新'}
+                : uiText("检查更新")}
             </Button>
           ) : null}
         </Head>
@@ -186,8 +188,8 @@ export function FollowFeedPage(props: FollowFeedProps) {
           onClear={() => route({ author: '', provider: '', work: '', tags: [], durMin: 0, durMax: 0 })} />
         {facets.broken.length ? <BrokenNote count={facets.broken.length} /> : null}
         <List key={query.queryKey.join('\u0000')} retryKey={result.dataUpdatedAt} pending={listPending} facets={facets} data={data} context={context}
-          props={props} checkAction={<Button size="small" variant="secondary" aria-label="检查每个来源的更新" aria-busy={job.busy || undefined}
-            aria-disabled={job.busy || undefined} onClick={() => { if (!job.busy) void job.start(false) }}>检查更新</Button>} />
+          props={props} checkAction={<Button size="small" variant="secondary" aria-label={uiText("检查每个来源的更新")} aria-busy={job.busy || undefined}
+            aria-disabled={job.busy || undefined} onClick={() => { if (!job.busy) void job.start(false) }}>{uiText("检查更新")}</Button>} />
         {data.has_more || canBackfill ? (
           <div data-follow-pagination="">
             {data.has_more ? (
@@ -195,8 +197,7 @@ export function FollowFeedPage(props: FollowFeedProps) {
                 {data.groups.length < FOLLOW_AUTO_LOAD_LIMIT ? (
                   <LoadMore key={result.data?.pages.length} entity enabled={() => !job.busyRef.current}
                     load={async () => { await result.fetchNextPage({ throwOnError: true }) }}>
-                    <CHEVRON_DOWN className="size-(--icon-inline)" />加载更多
-                  </LoadMore>
+                    <CHEVRON_DOWN className="size-(--icon-inline)" />{uiText("加载更多")}</LoadMore>
                 ) : (
                   <ManualMore busy={result.isFetchingNextPage}
                     error={result.isFetchNextPageError ? requestErrorMessage(result.error) : ''}
@@ -210,8 +211,8 @@ export function FollowFeedPage(props: FollowFeedProps) {
                   aria-busy={job.busy || undefined}
                   onClick={() => void job.start(true)}>
                   {job.olderBusy
-                    ? <><span className="contents" dangerouslySetInnerHTML={{ __html: spinnerHtml('抓取中') }} /><span>抓取中</span></>
-                    : '抓更早的一页'}
+                    ? <><span className="contents" dangerouslySetInnerHTML={{ __html: spinnerHtml('抓取中') }} /><span>{uiText("抓取中")}</span></>
+                    : uiText("抓更早的一页")}
                 </Button>
                 <span data-follow-backfill="">{backfillState(facets.sources)}</span>
               </span>
@@ -225,13 +226,12 @@ export function FollowFeedPage(props: FollowFeedProps) {
 
 /** 页头：标题与「管理关注」恒在，检查更新那枚键要等来源读到才摆（`children`）。 */
 function Head({ children }: { children?: ReactNode }) {
+  const uiText = useUiTranslation();
   return (
     <div data-follow-head="">
-      <h2 data-follow-title="">关注</h2>
+      <h2 data-follow-title="">{uiText("关注")}</h2>
       <span data-follow-head-actions="">
-        <ButtonLink variant="secondary" leadingIcon={SETTINGS} data-follow-manage="" href={manageHref()}>
-          管理关注
-        </ButtonLink>
+        <ButtonLink variant="secondary" leadingIcon={SETTINGS} data-follow-manage="" href={manageHref()}>{uiText("管理关注")}</ButtonLink>
         {children}
       </span>
     </div>
@@ -241,11 +241,11 @@ function Head({ children }: { children?: ReactNode }) {
 /** 摆满 `FOLLOW_AUTO_LOAD_LIMIT` 组以后的「加载更多」：外观同 `LoadMore` 那枚，只是滚到它不会自己接，
  *  要点一下。失败时原位留原因与重试。 */
 function ManualMore({ busy, error, load }: { busy: boolean; error: string; load(): void }) {
+  const uiText = useUiTranslation();
   return (
     <>
       <button type="button" data-entity-more="" aria-busy={busy || undefined} aria-disabled={busy || undefined} onClick={load}>
-        <CHEVRON_DOWN className="size-(--icon-inline)" />加载更多
-      </button>
+        <CHEVRON_DOWN className="size-(--icon-inline)" />{uiText("加载更多")}</button>
       {error ? <RetryNote message={error} onRetry={load} /> : null}
     </>
   );
@@ -331,13 +331,14 @@ function useFollowJob(props: FollowFeedProps, ready: boolean) {
 function Authors({ facets, pressed, context, props, onPick }: {
   facets: Facets; pressed: string; context: FollowContext; props: FollowFeedProps; onPick(key: string): void;
 }) {
+  const uiText = useUiTranslation();
   const row = useRef<HTMLDivElement>(null);
   useEffect(() => { props.helpers.wireDrag(row.current) }, [props.helpers]);
   const nameOf = (key: string) => followAuthorName(facets.authorSources.get(key) || [], context);
   if (!facets.authorOrder.length) return null;
   return (
     <div data-follow-authors-bar="">
-      <div ref={row} data-follow-authors="" aria-label="创作者">
+      <div ref={row} data-follow-authors="" aria-label={uiText("创作者")}>
         {facets.authorOrder.map((key) => {
           const list = facets.authorSources.get(key) || [];
           const entity = followAuthorEntity(list);
@@ -347,7 +348,7 @@ function Authors({ facets, pressed, context, props, onPick }: {
           </>;
           return entity ? (
             <FollowAuthorLink key={key} name={entity} actions={props.actions} data-follow-author={key}
-              aria-label={`查看 ${nameOf(key)} 的作者页`}>{content}</FollowAuthorLink>
+              aria-label={uiText("查看 {value0} 的作者页", { value0: String(nameOf(key)) })}>{content}</FollowAuthorLink>
           ) : (
             <button key={key} type="button" data-follow-author={key} aria-pressed={pressed === key} onClick={() => onPick(key)}>
               {content}
@@ -364,11 +365,12 @@ function Authors({ facets, pressed, context, props, onPick }: {
 function Works({ rows, pressed, props, onPick }: {
   rows: readonly FollowWorkRow[]; pressed: string; props: FollowFeedProps; onPick(key: string): void;
 }) {
+  const uiText = useUiTranslation();
   const row = useRef<HTMLDivElement>(null);
   useEffect(() => { props.helpers.wireDrag(row.current) }, [props.helpers]);
   if (!rows.length) return null;
   return (
-    <div ref={row} data-follow-works="" aria-label="按题材筛选">
+    <div ref={row} data-follow-works="" aria-label={uiText("按题材筛选")}>
       {rows.map((work) => (
         <button key={work[0]} type="button" data-follow-work={work[0]} aria-pressed={pressed === work[0]}
           onClick={() => onPick(work[0])}>
@@ -390,6 +392,7 @@ function Glass({ facets, view, total, busy, props, route }: {
   facets: Facets; view: FollowView; total: number; busy: boolean; props: FollowFeedProps;
   route(patch: Partial<FollowView>): void;
 }) {
+  const uiText = useUiTranslation();
   const { helpers, actions } = props;
   const statePane = useRef<HTMLSpanElement>(null);
   const mediaPane = useRef<HTMLSpanElement>(null);
@@ -409,7 +412,7 @@ function Glass({ facets, view, total, busy, props, route }: {
   const extras = providers.length + facets.tagRows.length > 0;
   const images = view.media === 'images';
   return (
-    <FilterGlassRows label="筛选与排序" topLabel={showMedia ? '媒体与关注筛选' : '关注筛选'}
+    <FilterGlassRows label={uiText("筛选与排序")} topLabel={uiText(showMedia ? '媒体与关注筛选' : '关注筛选')}
       attrs={{ 'data-filter-frame': '', 'data-follow-filter-glass': '' }}
       topClassName="gap-1.5 overflow-visible" busy={busy}
       panes={<>
@@ -419,10 +422,10 @@ function Glass({ facets, view, total, busy, props, route }: {
       top={<>
         {showMedia ? (
           <>
-            <div ref={mediaRow} role="group" aria-label="媒体类型" data-entity-media="" onPointerLeave={mediaGlide.leave}>
+            <div ref={mediaRow} role="group" aria-label={uiText("媒体类型")} data-entity-media="" onPointerLeave={mediaGlide.leave}>
               {([['videos', '视频', facets.mediaCounts.videos, 'play', 'video'],
                 ['images', '图片', facets.mediaCounts.images, 'pics', 'image']] as const).map(([value, text, count, symbol, kind]) => {
-                const title = `${text} ${Math.max(0, count || 0).toLocaleString()}`;
+                const title = `${uiText(text)} ${Math.max(0, count || 0).toLocaleString()}`;
                 return (
                   <button key={value} type="button" data-media-view={value} data-media-icon={kind}
                     aria-pressed={view.media === value} aria-label={title} title={title}
@@ -435,12 +438,12 @@ function Glass({ facets, view, total, busy, props, route }: {
           </>
         ) : null}
         <div ref={scroll} data-entity-scroll="">
-          <div ref={stateRow} role="group" aria-label="状态" data-entity-states="" onPointerLeave={stateGlide.leave}>
+          <div ref={stateRow} role="group" aria-label={uiText("状态")} data-entity-states="" onPointerLeave={stateGlide.leave}>
             {FOLLOW_FILTERS.map(([key, label]) => (
               <button key={key} type="button" data-entity-state={key} data-follow-filter={key} data-entity-press=""
                 aria-pressed={view.status === key} onPointerEnter={stateGlide.hover}
                 onClick={() => { if (view.status !== key) route({ status: key }) }}>
-                {label}
+                {uiText(label)}
               </button>
             ))}
             {extras ? <Sep /> : null}
@@ -448,7 +451,7 @@ function Glass({ facets, view, total, busy, props, route }: {
           <div ref={tagRow} data-entity-tags="">
             {providers.map(([key, label]) => (
               <button key={key} type="button" data-follow-provider={key} data-entity-press=""
-                aria-pressed={facets.provider === key} title={label} aria-label={`来源：${label}`}
+                aria-pressed={facets.provider === key} title={label} aria-label={uiText("来源：{value0}", { value0: String(label) })}
                 onClick={() => route({ provider: facets.provider === key ? '' : key })}
                 dangerouslySetInnerHTML={{ __html: sourceMark(key, label) }} />
             ))}
@@ -466,17 +469,17 @@ function Glass({ facets, view, total, busy, props, route }: {
       </>}
       bottom={<>
         <h3 data-entity-readout="" data-follow-readout="">
-          {`${total.toLocaleString()} 项更新 · 显示 ${facets.visible.length.toLocaleString()}`}
+          {uiText("{value0} 项更新 · 显示 {value1}", { value0: String(total.toLocaleString()), value1: String(facets.visible.length.toLocaleString()) })}
         </h3>
         <LibraryShortcuts currentHref={() => location.pathname + location.search} kind="creator" />
         <span data-entity-sorts="">
           <Shuffle onPress={actions.shuffle} />
           {images ? (
             <>
-              <Segments label="图片布局" value={props.photoLayout} options={FOLLOW_PHOTO_LAYOUTS}
+              <Segments label={uiText("图片布局")} value={props.photoLayout} options={FOLLOW_PHOTO_LAYOUTS}
                 onChange={(value) => actions.setPhotoLayout(value === 'fixed' ? 'fixed' : 'masonry')} />
-              <button type="button" data-follow-images-only="" aria-pressed={props.imagesOnly} title="仅显示图片"
-                aria-label="仅显示图片" onClick={() => actions.setImagesOnly(!props.imagesOnly)}>
+              <button type="button" data-follow-images-only="" aria-pressed={props.imagesOnly} title={uiText("仅显示图片")}
+                aria-label={uiText("仅显示图片")} onClick={() => actions.setImagesOnly(!props.imagesOnly)}>
                 {props.imagesOnly ? <span data-view-glide="" aria-hidden="true" /> : null}
                 <span className="contents" dangerouslySetInnerHTML={{ __html: icon('captions-off') }} />
               </button>
@@ -486,12 +489,12 @@ function Glass({ facets, view, total, busy, props, route }: {
             const pressed = view.sort === key;
             return (
               <button key={key} type="button" data-entity-sort={key} data-follow-sort={key} data-entity-press=""
-                aria-pressed={pressed} aria-label={sortAriaLabel(key, label, view.sort, view.dir) || undefined}
+                aria-pressed={pressed} aria-label={uiText(sortAriaLabel(key, label, view.sort, view.dir) || '') || undefined}
                 onClick={() => {
                   const next = nextSort(key, view.sort, view.dir);
                   if (next) route(next);
                 }}>
-                {label}{pressed ? <IconSwap a={SortUpIcon} b={SortDownIcon} state={view.dir === 'asc' ? 'a' : 'b'} className="size-(--icon-inline)" /> : null}
+                {uiText(label)}{pressed ? <IconSwap a={SortUpIcon} b={SortDownIcon} state={view.dir === 'asc' ? 'a' : 'b'} className="size-(--icon-inline)" /> : null}
               </button>
             );
           })}
@@ -507,21 +510,22 @@ function Glass({ facets, view, total, busy, props, route }: {
 function Combo({ conditions, onDrop, onClear }: {
   conditions: FollowCondition[]; onDrop(row: FollowCondition): void; onClear(): void;
 }) {
+  const uiText = useUiTranslation();
   return (
     <div data-entity-combo="" data-follow-combo="">
       {conditions.length ? (
         <>
           {conditions.map((row) => {
-            const text = `${row.kind === '标签' ? '' : `${row.kind} `}${row.label}`;
+            const text = `${row.kind === '标签' ? '' : `${uiText(row.kind)} `}${row.label}`;
             return (
               <span key={`${row.kind}:${row.key}`} data-combo-chip="">
                 {text}
-                <button type="button" aria-label={`撤掉 ${text}`} data-follow-drop={row.key} data-follow-drop-kind={row.kind}
+                <button type="button" aria-label={uiText("撤掉 {value0}", { value0: String(text) })} data-follow-drop={row.key} data-follow-drop-kind={row.kind}
                   onClick={() => onDrop(row)}>✕</button>
               </span>
             );
           })}
-          <button type="button" data-combo-clear="" onClick={onClear}>全部清除</button>
+          <button type="button" data-combo-clear="" onClick={onClear}>{uiText("全部清除")}</button>
         </>
       ) : null}
     </div>
@@ -603,14 +607,15 @@ function cardId(group: FollowGroup, view: FollowView): number {
 function Empty({ data, filtered, clear, checkAction }: {
   data: FollowPage; filtered: boolean; clear(): void; checkAction: ReactNode;
 }) {
+  const uiText = useUiTranslation();
   const noMatch = !!data.groups.length || filtered;
   const hasSources = !!data.sources.length;
   return <div data-follow-empty="" className="contents"><EmptyState icon={spriteGlyph(noMatch ? 'search-x' : 'rss')}
-    title={noMatch ? '当前筛选下没有更新' : hasSources ? '还没有更新' : '还没有关注任何来源'}
-    actions={noMatch ? <Button size="small" onClick={clear}>清除筛选</Button>
-      : hasSources ? checkAction : <ButtonLink size="small" href="/subscriptions?tab=add">添加关注</ButtonLink>}>
-    {noMatch ? '切换媒体类型、创作者、来源、时长或标签后再试。'
-      : hasSources ? '检查来源更新后，新内容会集中显示在这里。' : '添加创作者或订阅来源后，更新会集中显示在这里。'}
+    title={noMatch ? uiText("当前筛选下没有更新") : hasSources ? uiText("还没有更新") : uiText("还没有关注任何来源")}
+    actions={noMatch ? <Button size="small" onClick={clear}>{uiText("清除筛选")}</Button>
+      : hasSources ? checkAction : <ButtonLink size="small" href="/subscriptions?tab=add">{uiText("添加关注")}</ButtonLink>}>
+    {noMatch ? uiText("切换媒体类型、创作者、来源、时长或标签后再试。")
+      : hasSources ? uiText("检查来源更新后，新内容会集中显示在这里。") : uiText("添加创作者或订阅来源后，更新会集中显示在这里。")}
   </EmptyState></div>;
 }
 

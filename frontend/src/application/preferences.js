@@ -7,6 +7,7 @@ import { applyTheme, watchSystemTheme } from './../appearance/theme';
 import { applyAccent, applyGlassFaces, applyHomeGlow, paintHomeGlowNow } from './../appearance/glow';
 import { navigationState } from './navigation.js';
 import { $, LOC, esc, icon, isCatalogPath } from '../core';
+import { translate as t } from '../i18n';
 import { peachHistory, shellNavigate } from './../history/index';
 import { notifyShell, selectMode, selected, state } from './../shell/index';
 import { preferredDirection } from './../sort-preferences';
@@ -201,7 +202,7 @@ preferencesState.SRCICON = {
     [location,mark.startsWith('data:')?`<img class="source-icon" src="${mark}" alt="">`:icon(mark)])),
   online:icon('rss'),
 };
-preferencesState.srcBadge = (loc,cost,cls)=>{const label=`${LOC[loc]||loc}${cost==='metered'?' · 计费':''}`;
+preferencesState.srcBadge = (loc,cost,cls)=>{const label=`${t(LOC[loc]||loc)}${cost==='metered'?t(' · 计费'):''}`;
   return `<span class="${cls||'src'} ${cost==='metered'?'metered':'free'}" title="${esc(label)}" aria-label="${esc(label)}">`
     +(preferencesState.SRCICON[loc]||'')+'</span>'};
 preferencesState.emptyState = emptyStateHtml;

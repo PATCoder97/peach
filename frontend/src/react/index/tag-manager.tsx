@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 标签管理：预览影响范围，确认后提交；来源证据与隐藏决定由服务端保存。 */
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -20,6 +21,7 @@ interface TagInventory { items: ManagedTag[]; duplicate_groups: number[][]; tota
 
 export function TagManager({ search, category = 'all', view = 'cloud', onCategory, onView, onJump, scope = 'local' }:
   { search?: string; category?: string; view?: TagView; scope?: TagScope; onCategory?(category: string): void; onView?(view: TagView): void; onJump?(at: number): void }) {
+  const uiText = useUiTranslation();
   const online = scope === 'online';
   const root = useRef<HTMLElement>(null);
   const [localSearch, setLocalSearch] = useState('');
@@ -60,32 +62,32 @@ export function TagManager({ search, category = 'all', view = 'cloud', onCategor
       const next = new Map(current); const row = rows.find(row => row.k === key); if (!next.delete(key) && row) next.set(key, row); return next;
     }) };
 
-  return <section ref={root} aria-label="标签管理" data-tag-manager="" className="flex min-w-0 flex-col">
-    {search === undefined ? <div className="mb-4 flex"><IndexSearch label="过滤标签" value={localSearch} onQuery={setLocalSearch} /></div> : null}
+  return <section ref={root} aria-label={uiText("标签管理")} data-tag-manager="" className="flex min-w-0 flex-col">
+    {search === undefined ? <div className="mb-4 flex"><IndexSearch label={uiText("过滤标签")} value={localSearch} onQuery={setLocalSearch} /></div> : null}
     <TagFilters categories={categories} category={activeCategory} online={online} readout={inventory.data ? `${inventory.data.total.toLocaleString()} 个标签` : ''}
       letters={groups.map(([letter]) => letter)} view={activeView} onCategory={next => { setLocalCategory(next); onCategory?.(next) }}
       onView={next => { setLocalView(next); onView?.(next) }} onJump={at => onJump ? onJump(at) : root.current?.querySelector(`[data-alpha-group="${at}"]`)?.scrollIntoView({ block:'start', behavior:'smooth' })} status={{ hidden, blocked,
         onChange: value => { setHidden(value); setBlocked(false) },
         ...(online ? { onBlocked: () => { setBlocked(true); setHidden(false) } } : {}) }}
       actions={<>
-        {inventory.data?.duplicate_groups.length ? <GlassPill busy={action.busy === 'repair'} onPress={() => run({ operation: 'repair', ids: [] })}>整理重复标签</GlassPill> : null}
-        {visible.length ? <GlassPill onPress={() => setPicked(current => new Map([...current, ...visible.map(row => [row.k, row] as const)]))}>选择本页</GlassPill> : null}
-        {picked.size ? <GlassPill onPress={() => setPicked(new Map())}>清空选择</GlassPill> : null}
+        {inventory.data?.duplicate_groups.length ? <GlassPill busy={action.busy === 'repair'} onPress={() => run({ operation: 'repair', ids: [] })}>{uiText("整理重复标签")}</GlassPill> : null}
+        {visible.length ? <GlassPill onPress={() => setPicked(current => new Map([...current, ...visible.map(row => [row.k, row] as const)]))}>{uiText("选择本页")}</GlassPill> : null}
+        {picked.size ? <GlassPill onPress={() => setPicked(new Map())}>{uiText("清空选择")}</GlassPill> : null}
       </>} />
     {inventory.isPending ? <div dangerouslySetInnerHTML={{ __html:tagSkeletonHtml({ mode:activeView, pageSize:pagination.pageSize }) }} />
-      : inventory.isError ? <Note tone="error" action={<Button variant="secondary" onClick={() => void inventory.refetch()}>立即重试</Button>}>无法读取标签</Note>
+      : inventory.isError ? <Note tone="error" action={<Button variant="secondary" onClick={() => void inventory.refetch()}>{uiText("立即重试")}</Button>}>{uiText("无法读取标签")}</Note>
         : visible.length ? (activeView === 'alphabet' ? <TagAlphabet groups={groups} actions={actions} /> : <TagCloud tags={tags} actions={actions} />)
-          : <Note tone="neutral">没有符合条件的标签。</Note>}
-    {inventory.data ? <div className="mt-5"><DataTableFooter label="标签管理" total={inventory.data.total} pagination={pagination}
+          : <Note tone="neutral">{uiText("没有符合条件的标签。")}</Note>}
+    {inventory.data ? <div className="mt-5"><DataTableFooter label={uiText("标签管理")} total={inventory.data.total} pagination={pagination}
       onChange={changePage} unit="个标签" pageUnit="个" pageSizes={TAG_PAGE_SIZES} /></div> : null}
     {action.error ? <Note tone="error">{action.error}</Note> : null}
-    <SelectionDock label="标签管理操作" count={`已选 ${picked.size} 个标签`} visible={picked.size > 0}>
-      <Button variant="secondary" size="small" disabled={selected.length !== 1} onClick={() => setEditing('rename')}>重命名</Button>
-      <Button variant="secondary" size="small" disabled={selected.length < 2 || (online && new Set(selected.map(row => row.cat)).size > 1)} onClick={() => setEditing('merge')}>合并</Button>
+    <SelectionDock label={uiText("标签管理操作")} count={`已选 ${picked.size} 个标签`} visible={picked.size > 0}>
+      <Button variant="secondary" size="small" disabled={selected.length !== 1} onClick={() => setEditing('rename')}>{uiText("重命名")}</Button>
+      <Button variant="secondary" size="small" disabled={selected.length < 2 || (online && new Set(selected.map(row => row.cat)).size > 1)} onClick={() => setEditing('merge')}>{uiText("合并")}</Button>
       <Button variant="secondary" size="small" {...busyProps(Boolean(action.busy))}
-        onClick={() => run({ operation: hidden ? 'restore' : 'hide', ids })}>{hidden ? '恢复' : '隐藏'}</Button>
+        onClick={() => run({ operation: hidden ? 'restore' : 'hide', ids })}>{hidden ? uiText("恢复") : uiText("隐藏")}</Button>
       {online ? <Button variant="secondary" size="small" {...busyProps(Boolean(action.busy))}
-        onClick={() => run({ operation: blocked ? 'unblock' : 'block', ids })}>{blocked ? '恢复内容' : '屏蔽内容'}</Button> : null}
+        onClick={() => run({ operation: blocked ? 'unblock' : 'block', ids })}>{blocked ? uiText("恢复内容") : uiText("屏蔽内容")}</Button> : null}
     </SelectionDock>
     {editing ? <TagEditor key={editing} operation={editing} selected={selected} scope={scope}
       close={() => setEditing(null)} done={() => setPicked(new Map())} /> : null}

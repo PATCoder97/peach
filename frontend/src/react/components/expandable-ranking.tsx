@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { RiArrowDownSLine } from '@remixicon/react';
 import {
   Children, cloneElement, isValidElement, useId, useLayoutEffect, useRef, useState,
@@ -14,6 +15,7 @@ interface ExpandableRankingProps {
 export function ExpandableRanking(
   { children, className = '', previewCount = 10 }: ExpandableRankingProps,
 ) {
+  const uiText = useUiTranslation();
   const listId = useId();
   const list = useRef<HTMLOListElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -53,7 +55,7 @@ export function ExpandableRanking(
       </ol>
       {expandable ? (
         <button type="button" data-ranking-toggle aria-controls={listId} aria-expanded={expanded}
-          aria-label={expanded ? '收起排名' : '展开更多排名'}
+          aria-label={expanded ? uiText("收起排名") : uiText("展开更多排名")}
           onClick={() => { setAnimating(true); setExpanded((current) => !current) }}>
           <RiArrowDownSLine aria-hidden />
         </button>

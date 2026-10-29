@@ -1,3 +1,4 @@
+import { translate as t } from './i18n';
 /** 实体资料的等待态使用资料头、标签条和对应正文布局。
  *
  * 筛选条和作品抬头在这一页是同一块浮层的上下两格（`entity-filter` 岛），等待态也得是
@@ -10,8 +11,8 @@ export function entitySkeletonHtml(kind: string, head: string, body: string, top
   const params = new URLSearchParams(location.search);
   const folders = params.get('browse') === 'folders' || !!params.get('folder');
   const content = folders ? `<div class="peach-react entity-folder-workspace" data-folder-workspace data-folder-browse><aside data-folder-tree-host><div class="flex flex-col gap-3"><span class="skeleton ui-configuration-skeleton-input"></span>${'<span class="skeleton" style="width:75%;height:32px"></span>'.repeat(8)}</div></aside><div class="min-w-0"><div data-folder-header-host><span class="skeleton" style="width:160px;height:32px"></span></div>${body}</div></div>` : body;
-  return `<section data-skeleton="entity/${kind}" role="status" aria-label="正在读取资料">
-    <span class="sr-only">正在读取资料</span><div aria-hidden="true" inert><div class="peach-react contents">
+  return `<section data-skeleton="entity/${kind}" role="status" aria-label="${t("正在读取资料")}">
+    <span class="sr-only">${t("正在读取资料")}</span><div aria-hidden="true" inert><div class="peach-react contents">
     <section class="entityhero" data-entity-card><div class="entityprofile" data-entity-profile><div data-entity-portrait-wrap><div class="entityportrait ${square ? 'square ' : ''}skeleton" data-entity-portrait="${square ? 'square' : 'round'}"></div></div>
       <div class="ui-entityidentity entityskeletontext" data-entity-identity><div class="entitytitle" data-entity-title><h2 class="skeleton">&nbsp;</h2></div>
       <div class="alias" data-entity-alias><span class="skeleton"></span></div>

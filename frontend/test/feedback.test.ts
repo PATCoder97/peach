@@ -1,8 +1,23 @@
 import {describe,expect,it} from 'vitest';
 import {requestErrorMessage} from '../src/core';
+import {setLocale} from '../src/i18n';
 import {noteHtml,projectBannerHtml,gaugeHtml,progressHtml,configurationSkeletonHtml} from '../src/ui-kit';
 
 describe('中文错误反馈',()=>{
+  it('已登记的接口校验原因跟随语言，保留动态参数与未知诊断',()=>{
+    try{
+      setLocale('en');
+      expect(requestErrorMessage({sourceMessage:'播放列表最多 500 个视频',status:400}))
+        .toBe('A playlist can contain at most 500 videos');
+      setLocale('vi');
+      expect(requestErrorMessage({sourceMessage:'播放列表最多 500 个视频',status:400}))
+        .toBe('Danh sách phát có tối đa 500 video');
+      expect(requestErrorMessage({sourceMessage:'设置写入失败：R:\\资料\\config.toml',status:500}))
+        .toBe('Không lưu được cài đặt: R:\\资料\\config.toml');
+      expect(requestErrorMessage({sourceMessage:'未登记的诊断原文',status:409}))
+        .toBe('未登记的诊断原文');
+    }finally{setLocale('zh-CN');}
+  });
   it.each(['Failed to fetch','NetworkError when attempting to fetch resource.','Load failed'])('网络异常 %s 给出连接检查方法',message=>{
     expect(requestErrorMessage(new TypeError(message))).toBe('无法连接到 Peach 服务，请确认网络连接和托盘服务已启动。');
   });

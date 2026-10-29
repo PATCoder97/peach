@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 详情浮窗右侧那一列队列（Mix、分卷、版本、播放列表、关注的合集与多媒体）。
  *
  * 队列、行与条目各挂一枚 `data-mix-*`，样式在
@@ -16,6 +17,7 @@ export function MixQueue({ kind, title, summary, onClose, actions, listRef, chil
   listRef?: Ref<HTMLDivElement>;
   children: ReactNode;
 } & Record<`data-${string}`, string>) {
+  const uiText = useUiTranslation();
   const list = useRef<HTMLDivElement | null>(null);
   const attach = useCallback((node: HTMLDivElement | null) => {
     list.current = node;
@@ -41,7 +43,7 @@ export function MixQueue({ kind, title, summary, onClose, actions, listRef, chil
         <div data-mix-queue-actions="">
           {actions}
           {/* 详情底部的队列头不放关闭键，关舞台用媒体框上那一枚（`stage.css`）。 */}
-          <button type="button" data-queue-close="" title="关闭" aria-label="关闭" onClick={onClose}
+          <button type="button" data-queue-close="" title={uiText("关闭")} aria-label={uiText("关闭")} onClick={onClose}
             dangerouslySetInnerHTML={{ __html: icon('x') }} />
         </div>
       </div>

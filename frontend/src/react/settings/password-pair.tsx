@@ -1,3 +1,5 @@
+import { translate as t } from '../../i18n/index';
+import { useTranslation } from '../i18n';
 /* 访问密码与确认两框：配置页「访问密码」与首启页共用。
  *
  * 两框都是 BoardUI `Input`，`id` 固定为 `access-password`、`access-confirm`，浏览器的密码管理器按
@@ -23,17 +25,18 @@ export function PasswordPair({
   confirmationError?: ReactNode;
   confirmationInvalid?: boolean;
 }) {
+  const uiText = useTranslation();
   return (
     <>
-      <Input id="access-password" type="password" label={label}
+      <Input id="access-password" type="password" label={t(label)}
         autoComplete="new-password" maxLength={256} value={password} onChange={onPassword}
         isDisabled={disabled} isRequired={!disabled} validationBehavior="aria"
         isInvalid={!disabled && Boolean(passwordError)}
-        hint={disabled ? passwordHint : passwordError || passwordHint} />
-      <Input id="access-confirm" type="password" label="确认访问密码" autoComplete="new-password" maxLength={256}
+        hint={disabled ? passwordHint ? t(passwordHint) : undefined : (typeof passwordError === 'string' ? uiText(passwordError) : passwordError) || (passwordHint ? t(passwordHint) : undefined)} />
+      <Input id="access-confirm" type="password" label={t("确认访问密码")} autoComplete="new-password" maxLength={256}
         value={confirmation} onChange={onConfirmation} isDisabled={disabled} isRequired={!disabled} validationBehavior="aria"
         isInvalid={!disabled && (Boolean(confirmationError) || confirmationInvalid)}
-        hint={disabled ? undefined : confirmationError} />
+        hint={disabled ? undefined : typeof confirmationError === 'string' ? uiText(confirmationError) : confirmationError} />
     </>
   );
 }

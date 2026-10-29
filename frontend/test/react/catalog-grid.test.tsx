@@ -15,6 +15,7 @@ import type { MediaCardActions, MediaCardHelpers, MediaCardLayout, MediaItem } f
 
 import { click, mount, settle } from './render';
 import { queryClient } from '../../src/react/query';
+import { setLocale } from '../../src/i18n';
 
 const SMALL: MediaCardLayout = { active: false, size: 'small', portrait: false, javImage: 'cover' };
 
@@ -343,6 +344,28 @@ describe('作品卡', () => {
     );
     return { host, actions, onOpen, card: host.querySelector<HTMLElement>('[data-media-card]')! };
   };
+
+  it('换语言更新卡片动态标签，保留来源名称、标签和操作身份', async () => {
+    const target = item(901, { name: '技术详情', creator: '来源原文', tags: ['复制代码'], has_thumb: false,
+      disposal: 'trash', disposal_reason: 'manual', part_group: { key: 'parts', seed_id: 901, count: 2 } });
+    const { host, actions, card } = await render(target);
+    try {
+      await act(async () => setLocale('en'));
+      expect(host.querySelector('[data-media-group]')?.textContent).toBe('2 parts');
+      expect(host.querySelector('[aria-label="Back 10 seconds"]')).not.toBeNull();
+      expect(host.querySelector('[data-media-disposal-reason]')?.textContent).toBe('Manual');
+      await act(async () => setLocale('vi'));
+      expect(host.querySelector('[data-media-card]')).toBe(card);
+      expect(host.querySelector('[data-media-group]')?.textContent).toBe('2 phần');
+      expect(host.querySelector('[data-media-disposal-reason]')?.textContent).toBe('Thủ công');
+      expect(host.querySelector('[data-media-title]')?.textContent).toBe('技术详情');
+      expect(host.querySelector('[data-media-tag]')?.textContent).toBe('#复制代码');
+      await click(host.querySelector('[data-media-resource-action]'));
+      expect(actions.resourceOperation).toHaveBeenCalledWith(target, 'restore');
+    } finally {
+      await act(async () => setLocale('zh-CN'));
+    }
+  });
 
   it('点标题打开，点署名进资料页，点「未归属」进那一批，点标签在这一屏筛它', async () => {
     const credited = await render(item(7, { creator: '某某', tags: ['苗条'] }));

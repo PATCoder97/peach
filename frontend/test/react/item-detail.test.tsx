@@ -17,8 +17,9 @@ import { ItemDetailPage } from '../../src/react/item-detail/item-detail-page';
 import { tagLabel } from '../../src/core/tags';
 import { queryClient } from '../../src/react/query';
 import { click, mount, pending, settle, type } from './render';
+import { setLocale } from '../../src/i18n';
 
-afterEach(() => { queryClient.clear(); localStorage.removeItem('peach.recentTags') });
+afterEach(() => { queryClient.clear(); localStorage.removeItem('peach.recentTags'); setLocale('zh-CN') });
 notifyManager.setScheduler((notify) => notify());
 
 const item = (id: number, extra: Partial<DetailItem> = {}): DetailItem => ({
@@ -431,6 +432,35 @@ describe('写完之后', () => {
     expect(posts(fetcher).map(([url, body]) => [url, body.wanted ?? body.kind])).toEqual([
       ['/api/quality-goal', true], ['/api/quality-goal', false], ['/api/feedback', 'o'], ['/api/feedback', 'o-undo'],
     ]);
+  });
+
+  it('喜爱理由切换语言时保留输入与提交，忙态和完成状态使用当前语言', async () => {
+    const reply = pending<unknown>();
+    const fetcher = vi.fn(async (url: string) => ({ok:true,status:200,
+      json:async()=>url === '/api/local-players' ? {players:[]} : reply.answer}));
+    vi.stubGlobal('fetch',fetcher);
+    setLocale('en');
+    const {host} = await show(item(1));
+    expect(host.querySelector('[data-rating-value]')?.textContent).toBe('3 stars');
+    expect(host.querySelector('[data-local-playback]')?.textContent).toContain('M3U playlist');
+    await click(host.querySelector('#preferenceToggle'));
+    const field = host.querySelector<HTMLTextAreaElement>('#likeReason')!;
+    await typeText(field,'原文理由');
+    const save = host.querySelector<HTMLButtonElement>('#savePreference')!;
+    expect(save.textContent).toBe('Submit');
+    await click(save);
+    expect(save.textContent).toContain('Submitting');
+    await act(async()=>setLocale('vi'));
+    expect(host.querySelector('[data-rating-value]')?.textContent).toBe('3 sao');
+    expect(host.querySelector('[data-local-playback]')?.textContent).toContain('Danh sách phát M3U');
+    expect(host.querySelector('#likeReason')).toBe(field);
+    expect(field.value).toBe('原文理由');
+    expect(save.textContent).toContain('Đang gửi');
+    await reply.release({liked:true,like_reason:'原文理由'});
+    await settle();
+    expect(save.textContent).toBe('Gửi');
+    expect(host.querySelector('#preferenceState')?.textContent).toBe('Đã lưu');
+    expect(posts(fetcher)).toEqual([['/api/preference',{id:1,liked:true,reason:'原文理由'}]]);
   });
 
   it('喜爱理由：图标键开合理由框；提交时键上转圈，写完回执', async () => {

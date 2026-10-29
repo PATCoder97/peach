@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 创作者资料页的在线视图（ADR-0096）：关注里绑在这位名下、还没入库的更新，卡片与照片墙就是关注页那一份。
  *
  * 取数与筛选（状态、来源、标签、排序、视频／图片）归资料页（`entity-page-view.tsx`），筛选浮层与这一格
@@ -91,11 +92,12 @@ function Cards({ view, media, data, visible, context, photoSize, photoLayout, im
 function Empty({ searched, clear, actions, sources }: {
   searched: boolean; clear(): void; actions: FollowFeedActions; sources: number[];
 }) {
+  const uiText = useUiTranslation();
   return <div data-follow-empty="" className="contents"><EmptyState
-    icon={spriteGlyph(searched ? 'search-x' : 'rss')} title={searched ? '当前筛选下没有更新' : '还没有抓到更新'}
-    actions={searched ? <Button size="small" onClick={clear}>清除筛选</Button>
+    icon={spriteGlyph(searched ? 'search-x' : 'rss')} title={searched ? uiText("当前筛选下没有更新") : uiText("还没有抓到更新")}
+    actions={searched ? <Button size="small" onClick={clear}>{uiText("清除筛选")}</Button>
       : sources.length ? <FollowCheckButton sources={sources} report={actions.checkReport} />
-      : <ButtonLink size="small" href="/subscriptions?tab=add">添加关注</ButtonLink>}>
-    {searched ? '切换媒体类型、状态、来源或标签后再试。' : '检查来源更新后，这位创作者的新内容会出现在这里。'}
+      : <ButtonLink size="small" href="/subscriptions?tab=add">{uiText("添加关注")}</ButtonLink>}>
+    {searched ? uiText("切换媒体类型、状态、来源或标签后再试。") : uiText("检查来源更新后，这位创作者的新内容会出现在这里。")}
   </EmptyState></div>;
 }

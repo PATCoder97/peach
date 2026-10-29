@@ -48,6 +48,7 @@ Movie demo data; see [asset credits and licenses](https://peach.video/en/credits
 - **Follows and discovery**: track performer and creator updates, discover titles and manage a want list.
 - **Cloud download**: search by video code or submit a magnet link, then organize completed downloads into your library.
 - **Library management**: manage tags, duplicates, versions and parts; metadata and watch history are stored locally.
+- **Interface language**: choose English, Vietnamese or Simplified Chinese during setup or in appearance settings. The choice stays in this browser and applies to browsing, management, settings and player controls. Library content and diagnostic data keep their original text. See [language coverage](docs/LOCALIZATION.md).
 
 ## Download and use
 

@@ -42,6 +42,8 @@ export function plainStatClass({ interactive = false }: { interactive?: boolean 
 export const PLAIN_STAT_STRIP = 'inline-grid w-full grid-cols-5 gap-4 max-plain-stat-pair:grid-cols-2'
   + ' max-plain-stat-single:grid-cols-1';
 
+import { useSystemTranslation } from '../i18n';
+
 export function PlainStat(
   { label, icon: Icon, mark, aside, figure, meta, wrapMeta = false }:
   {
@@ -49,6 +51,7 @@ export function PlainStat(
     figure: string; meta?: string; wrapMeta?: boolean;
   },
 ) {
+  const systemText = useSystemTranslation();
   return (
     <>
       <span className="flex min-w-0 items-center gap-2 text-body-medium text-text-secondary">
@@ -57,12 +60,12 @@ export function PlainStat(
             {Icon ? <Icon aria-hidden className="size-4" /> : mark}
           </i>
         ) : null}
-        <span className="min-w-0 truncate">{label}</span>
+        <span className="min-w-0 truncate">{systemText(label)}</span>
         {aside ? <span className="ml-auto shrink-0 text-caption-1-regular">{aside}</span> : null}
       </span>
-      <strong className="block text-title-1-medium tabular-nums text-text-primary">{figure}</strong>
+      <strong className="block text-title-1-medium tabular-nums text-text-primary">{systemText(figure)}</strong>
       <span className={`block min-h-4 text-caption-1-regular text-text-tertiary ${wrapMeta ? '' : 'truncate'}`}>
-        {meta}
+        {meta ? systemText(meta) : null}
       </span>
     </>
   );

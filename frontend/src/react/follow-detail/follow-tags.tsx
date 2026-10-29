@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 在线标签复用本地详情的标签行、选择器和名称编辑。 */
 import { apiSend } from '../../api';
 import { collectionItems, replaceFollowItem, type FollowGroup } from '../follow-feed/follow-feed';
@@ -9,6 +10,7 @@ import { queryClient } from '../query';
 import { detailTags, tagCategory, type FollowDetailActions, type FollowDetailData, type FollowDetailItem } from './follow-detail';
 
 export function FollowTags({ item, label, actions }: { item: FollowDetailItem; label(tag: string): string; actions: FollowDetailActions }) {
+  const uiText = useUiTranslation();
   const action = useAction();
   const refresh = () => queryClient.invalidateQueries({
     predicate: query => ['follow-feed', 'follow', 'tag-management'].includes(String(query.queryKey[0])),
@@ -34,7 +36,7 @@ export function FollowTags({ item, label, actions }: { item: FollowDetailItem; l
       },
     });
   }) };
-  return <section aria-label="内容标签" data-follow-tag-editor="" data-follow-detail-tags="">
+  return <section aria-label={uiText("内容标签")} data-follow-tag-editor="" data-follow-detail-tags="">
     <DetailTags tags={detailTags(item, label).map(k => ({ k, cat: tagCategory(item, k) }))} scope="online" adding={!!action.busy}
       candidates={[]}
       label={label} onOpen={actions.openTag} onAdd={tag => write('add', tag)} onRemove={tag => write('remove', tag.k)}

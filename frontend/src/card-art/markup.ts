@@ -5,6 +5,7 @@
  * 加载后往图上写内联样式与类名。React 看不见这些改动：节点归它管，重画一次就冲掉取景，
  * 被兜底链摘掉的节点再交给它更新还会报错。 */
 import { esc, firstGrapheme } from '@peach/legacy/core';
+import { uiTextHtml } from '../i18n/html';
 
 import { javImageKind } from '../jav-artwork';
 import { imageFallbackAttrs } from './image-fallback';
@@ -311,7 +312,7 @@ export function frameArtwork(item: CoverItem, eager: boolean): Artwork {
 
 /** 播放队列一行的小图：Mix 画面按小图取，没有可用的图就写「无预览」占住那一格。 */
 export function queueThumbHtml(item: CoverItem, javImage: unknown): string {
-  return mixFace(item, 'small', false, javImage).html || '<span class="nopic">无预览</span>';
+  return mixFace(item, 'small', false, javImage).html || `<span class="nopic">${uiTextHtml('无预览')}</span>`;
 }
 
 /* 详情开场给播放器的海报位：video.js 的脚本还在下载、流源还没接上时，画面先给本地
@@ -381,8 +382,8 @@ export function queueAvatarHtml(item: IdentityItem): string {
 }
 
 /** Mix 的署名：番号作品先认女优，其余先认创作者。 */
-export function mixLabel(item: IdentityItem, tagLabel: (tag: string) => string): string {
+export function mixLabel(item: IdentityItem, tagLabel: (tag: string) => string, fallback = '为你推荐'): string {
   const performer = (item.performers || [])[0];
   return (item.is_jav && performer ? performer : item.creator) || performer || item.studio || item.code
-    || tagLabel((item.tags || [])[0] || '') || '为你推荐';
+    || tagLabel((item.tags || [])[0] || '') || fallback;
 }

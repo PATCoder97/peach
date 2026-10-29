@@ -5,6 +5,8 @@ import { setActionBusy } from './controls';
 import { noteHtml } from './markup';
 import { playUiSound } from './sounds';
 import { attachOverlayScrollbar } from './overlay-scrollbar';
+import { subscribeLocale, translate as t } from '../i18n';
+import { translateSystem } from '../i18n/system';
 
 /* Geist Modal 的另一种正文：要填的一份表单，而不是一句待确认的话。
 
@@ -16,7 +18,7 @@ import { attachOverlayScrollbar } from './overlay-scrollbar';
 let formModalSeq=0;
 export function formModal({title,description='',body='',confirmLabel,cancelLabel='取消',
                            onConfirm=null,confirmDisabled=false}:{
-  title?: string; description?: string; body?: string; confirmLabel?: string; cancelLabel?: string;
+  title?: string; description?: string | (() => string); body?: string; confirmLabel?: string; cancelLabel?: string;
   onConfirm?: (()=>unknown)|null; confirmDisabled?: boolean;
 }={}):{dialog:HTMLDialogElement;confirmButton:any;done:Promise<{confirmed:boolean;result?:unknown}>;close:()=>void}{
   const trigger=document.activeElement;
@@ -32,17 +34,26 @@ export function formModal({title,description='',body='',confirmLabel,cancelLabel
         <div><button type="button" class="geist-button" data-modal-cancel></button></div>
         <div><button type="submit" class="geist-button primary" data-modal-confirm></button></div>
       </footer></form>`;
-  dialog.querySelector('h3')!.textContent=title as string;
-  if(description)dialog.querySelector('.ui-geist-modal-body p')!.textContent=description;
+  dialog.querySelector('h3')!.textContent=t(title || '');
+  const descriptionText=()=>translateSystem(typeof description === 'function' ? description() : description);
+  if(description)dialog.querySelector('.ui-geist-modal-body p')!.textContent=descriptionText();
   const cancel:any=dialog.querySelector('[data-modal-cancel]');
   const accept:any=dialog.querySelector('[data-modal-confirm]');
   const failure:any=dialog.querySelector('[data-modal-error]');
-  cancel.textContent=cancelLabel;
-  accept.textContent=confirmLabel;
+  cancel.textContent=t(cancelLabel);
+  accept.textContent=t(confirmLabel || '');
   accept.disabled=!!confirmDisabled;
   document.body.append(dialog);
   let settled:{confirmed:boolean;result?:unknown}|null=null,busy=false;
+  const syncLanguage=()=>{
+    dialog.querySelector('h3')!.textContent=t(title || '');
+    if(description)dialog.querySelector('.ui-geist-modal-body p')!.textContent=descriptionText();
+    cancel.textContent=t(cancelLabel);
+    if(!busy)accept.textContent=t(confirmLabel || '');
+  };
+  const unsubscribeLocale=subscribeLocale(syncLanguage);
   const done=new Promise<{confirmed:boolean;result?:unknown}>(resolve=>dialog.addEventListener('close',()=>{
+    unsubscribeLocale();
     dialog.remove();
     if(trigger instanceof HTMLElement&&trigger.isConnected)trigger.focus();
     resolve(settled||{confirmed:false});
@@ -62,7 +73,7 @@ export function formModal({title,description='',body='',confirmLabel,cancelLabel
     }catch(error:any){
       failure.innerHTML=noteHtml(error.message||'操作未完成',{variant:'error'});
       setActionBusy(accept,false);
-    }finally{busy=false}
+    }finally{busy=false;syncLanguage()}
   };
   dialog.showModal();
   attachOverlayScrollbar(dialog.querySelector<HTMLElement>('.ui-geist-modal-body'));
@@ -104,14 +115,14 @@ export function confirmModal({title,body,items=[],confirmLabel,cancelLabel='取�
       <div><button type="button" class="geist-button" data-modal-cancel></button></div>
       <div><button type="button" class="geist-button primary" data-modal-confirm></button></div>
     </footer>`;
-  dialog.querySelector('h3')!.textContent=title as string;
-  dialog.querySelector('.ui-geist-modal-body p')!.textContent=body as string;
+  dialog.querySelector('h3')!.textContent=t(title || '');
+  dialog.querySelector('.ui-geist-modal-body p')!.textContent=translateSystem(body || '');
   let list: HTMLUListElement | null = null;
   if(items.length){
     const host=document.createElement('div');
     host.className='ui-geist-modal-list';
     list=document.createElement('ul');
-    list.setAttribute('aria-label','所选记录');
+    list.setAttribute('aria-label',t('所选记录'));
     list.tabIndex=0;
     for(const text of items){
       const item=document.createElement('li');
@@ -125,13 +136,21 @@ export function confirmModal({title,body,items=[],confirmLabel,cancelLabel='取�
   const accept:any=dialog.querySelector('[data-modal-confirm]');
   if(danger){accept.classList.remove('primary');accept.classList.add('danger')}
   const failure:any=dialog.querySelector('[data-modal-error]');
-  cancel.textContent=cancelLabel;
-  accept.textContent=confirmLabel;
+  const syncLanguage = () => {
+    dialog.querySelector('h3')!.textContent=t(title || '');
+    dialog.querySelector('.ui-geist-modal-body p')!.textContent=translateSystem(body || '');
+    cancel.textContent=t(cancelLabel);
+    if (!busy) accept.textContent=t(confirmLabel || '');
+    list?.setAttribute('aria-label',t('所选记录'));
+  };
+  let busy=false;
+  syncLanguage();
+  const unsubscribeLocale=subscribeLocale(syncLanguage);
   document.body.append(dialog);
   return new Promise(resolve=>{
     let settled:{confirmed:boolean;result?:unknown}|null=null;
-    let busy=false;
     dialog.addEventListener('close',()=>{
+      unsubscribeLocale();
       dialog.remove();
       if(trigger instanceof HTMLElement&&trigger.isConnected)trigger.focus();
       resolve(settled||{confirmed:false});
@@ -153,7 +172,7 @@ export function confirmModal({title,body,items=[],confirmLabel,cancelLabel='取�
       }catch(error:any){
         failure.innerHTML=noteHtml(error.message||'操作未完成',{variant:'error'});
         setActionBusy(accept,false);
-      }finally{busy=false}
+      }finally{busy=false;syncLanguage()}
     };
     dialog.showModal();
     attachOverlayScrollbar(dialog.querySelector<HTMLElement>('.ui-geist-modal-body'));

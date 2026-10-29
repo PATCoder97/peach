@@ -1,25 +1,28 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import type { SortingState } from '@tanstack/react-table';
 import { Button } from '@/components/base/buttons/button';
 import { Select, SelectItem } from './select';
 import { Pagination } from './table-pagination';
 import { SortDirectionIcon } from './icon-swap';
+import { formatNumber } from '../../i18n/format';
 
 export function DataTableSort({ label, options, sorting, onChange }: {
   label: string; options: { id: string; label: string }[]; sorting: SortingState;
   onChange(next: SortingState): void;
 }) {
+  const uiText = useUiTranslation();
   const current = sorting[0];
   return <span className="flex flex-none items-center gap-2">
-    <Select aria-label={`${label}排序`} prefix="排序" selectedKey={current?.id ?? 'default'}
+    <Select aria-label={uiText('{label}排序', { label: uiText(label) })} prefix={uiText("排序")} selectedKey={current?.id ?? 'default'}
       onSelectionChange={(key) => {
         if (key !== null) onChange(key === 'default' ? [] : [{ id: String(key), desc: current?.desc ?? false }]);
       }}>
-      <SelectItem id="default">默认顺序</SelectItem>
-      {options.map((option) => <SelectItem key={option.id} id={option.id}>{option.label}</SelectItem>)}
+      <SelectItem id="default">{uiText("默认顺序")}</SelectItem>
+      {options.map((option) => <SelectItem key={option.id} id={option.id}>{uiText(option.label)}</SelectItem>)}
     </Select>
     <Button variant="secondary" iconOnly disabled={!current}
       leadingIcon={SortDirectionIcon} data-icon-state={current?.desc ? 'b' : 'a'}
-      aria-label={`${label}改为${current?.desc ? '升序' : '降序'}`}
+      aria-label={uiText(current?.desc ? '{label}改为升序' : '{label}改为降序', { label: uiText(label) })}
       onClick={() => { if (current) onChange([{ ...current, desc: !current.desc }]); }} />
   </span>;
 }
@@ -31,20 +34,21 @@ export function DataTableFooter({ label, total, pagination, onChange, unit = '�
   unit?: string; pageUnit?: string;
   pageSizes?: readonly number[];
 }) {
+  const uiText = useUiTranslation();
   const pages = Math.max(1, Math.ceil(total / pagination.pageSize));
   const pageIndex = Math.min(pagination.pageIndex, pages - 1);
   const start = total ? pageIndex * pagination.pageSize + 1 : 0;
   const end = Math.min((pageIndex + 1) * pagination.pageSize, total);
   return <div data-table-pagination className="flex flex-wrap items-center justify-between gap-3">
     <span className="mr-auto text-body-2-regular tabular-nums text-text-secondary">
-      {`${start.toLocaleString()}–${end.toLocaleString()} / ${total.toLocaleString()} ${unit}`}
+      {`${formatNumber(start)}–${formatNumber(end)} / ${formatNumber(total)} ${uiText(unit)}`}
     </span>
     <div data-toolbar-actions="">
-    <Select aria-label="每页显示数量" size="sm" selectedKey={String(pagination.pageSize)}
+    <Select aria-label={uiText("每页显示数量")} size="sm" selectedKey={String(pagination.pageSize)}
       onSelectionChange={(key) => { if (key !== null) onChange({ pageIndex: 0, pageSize: Number(key) }); }}>
-      {pageSizes.map((size) => <SelectItem key={size} id={String(size)}>{`每页 ${size} ${pageUnit}`}</SelectItem>)}
+      {pageSizes.map((size) => <SelectItem key={size} id={String(size)}>{uiText('每页 {count} {unit}', { count: formatNumber(size), unit: uiText(pageUnit) })}</SelectItem>)}
     </Select>
-    <Pagination label={`${label}分页`} page={pageIndex + 1} pages={pages}
+    <Pagination label={uiText('{label}分页', { label: uiText(label) })} page={pageIndex + 1} pages={pages}
       onPage={(page) => onChange({ ...pagination, pageIndex: page - 1 })} />
     </div>
   </div>;

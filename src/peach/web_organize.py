@@ -59,7 +59,8 @@ def q_organize(contract, _args=None) -> dict:
 def q_organize_example(_contract, args=None) -> dict:
     """以示例字段预览模板，保持账本与文件系统只读。"""
     args = args or {}
-    return example_path(str(args.get("file_template") or ""), str(args.get("dir_template") or ""))
+    return example_path(str(args.get("file_template") or ""), str(args.get("dir_template") or ""),
+                        locale=str(args.get("locale") or 'zh-CN'))
 
 
 def w_organize_preview(contract, body) -> dict:

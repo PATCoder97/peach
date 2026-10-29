@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { manageHeaderSkeletonHtml, manageHeaderView, type ManageEntry, type ManageHeaderProps } from '../src/manage-header';
+import { setLocale } from '../src/i18n';
 
 const SECTIONS: ManageEntry[] = [
   ['stats', '统计', 'chart'], ['cleanup', '数据管理', 'database'], ['trash', '回收站', 'trash'],
@@ -14,6 +15,19 @@ const props = (section: string, path: string, patch: Partial<ManageHeaderProps> 
   ({ section, path, sections: SECTIONS, menu: MENU, trash: null, ...patch });
 
 describe('页头判据', () => {
+  it('回收站启动骨架按所选语言呈现数量与永久删除说明', () => {
+    try {
+      for (const [locale, count, action] of [['en','12 matches · showing 3','Empty trash'],['vi','12 mục phù hợp · hiển thị 3','Dọn thùng rác']] as const) {
+        setLocale(locale);
+        const host = document.createElement('div');
+        host.innerHTML = manageHeaderSkeletonHtml(props('trash','/trash',{trash:{total:12,shown:3}}));
+        expect(host.querySelector('[data-lede-text]')?.textContent).toBe(count);
+        expect(host.querySelector('[data-empty-trash]')?.textContent).toBe(action);
+        expect(host.textContent).not.toMatch(/\p{Script=Han}/u);
+        expect(host.querySelector('[data-empty-trash]')?.getAttribute('title')).not.toMatch(/\p{Script=Han}/u);
+      }
+    } finally { setLocale('zh-CN') }
+  });
   it('诊断分区共用配置页标题', () => {
     expect(manageHeaderView(props('configuration', '/settings/diagnostics'))).toMatchObject({ title: 'Peach 配置', compact: true });
   });

@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 数据管理页上的「孤儿记录」：文件已不在盘上、带着个人记录的作品（ADR-0087）。
  *
  * 每行一条已消失的作品：快照图供认片，后面是它带的记录、在库里可能是它新版本的文件。
@@ -28,6 +29,7 @@ const PLAY = spriteGlyph('play');
 const refresh = () => queryClient.invalidateQueries({ queryKey: ORPHAN_RECORDS_KEY, exact: true });
 
 function OrphanActions({ item, toast }: { item: OrphanRecord; toast(message: string): void }) {
+  const uiText = useUiTranslation();
   const [target, setTarget] = useState<number | null>(item.candidates[0]?.id ?? null);
   const attach = useMutation({
     mutationFn: () => attachOrphan(item.id, Number(target)),
@@ -59,9 +61,9 @@ function OrphanActions({ item, toast }: { item: OrphanRecord; toast(message: str
   const busy = attach.isPending || purge.isPending;
   return (
     <span className="flex min-w-0 flex-wrap items-center gap-2">
-        <Button variant="danger" size="small" {...busyProps(busy)} onClick={remove}>删除记录</Button>
+        <Button variant="danger" size="small" {...busyProps(busy)} onClick={remove}>{uiText("删除记录")}</Button>
         {item.candidates.length
-          ? <Select aria-label={`选择接收 ${item.name} 个人记录的文件`} prefix="接收" className="w-52" selectedKey={target}
+          ? <Select aria-label={uiText("选择接收 {value0} 个人记录的文件", { value0: String(item.name) })} prefix={uiText("接收")} className="w-52" selectedKey={target}
               onSelectionChange={(key) => { if (key !== null) setTarget(Number(key)) }}>
               {item.candidates.map((candidate) => (
                 <SelectItem key={candidate.id} id={candidate.id} textValue={candidateText(candidate)}>
@@ -72,7 +74,7 @@ function OrphanActions({ item, toast }: { item: OrphanRecord; toast(message: str
           : null}
         {item.candidates.length
           ? <Button variant="primary" size="small" disabled={target === null} {...busyProps(busy)}
-              onClick={() => attach.mutate()}>转移记录</Button>
+              onClick={() => attach.mutate()}>{uiText("转移记录")}</Button>
           : null}
     </span>
   );
@@ -102,6 +104,7 @@ function OrphanIdentity({ item }: { item: OrphanRecord }) {
 }
 
 export function OrphanRecordsCard({ toast }: { toast(message: string): void }) {
+  const uiText = useUiTranslation();
   const [selected, setSelected] = useState<string[]>([]);
   const query = useQuery({ queryKey: ORPHAN_RECORDS_KEY, queryFn: ({ signal }) => fetchOrphanRecords(signal) });
   const items = query.data?.items ?? [];
@@ -122,7 +125,7 @@ export function OrphanRecordsCard({ toast }: { toast(message: string): void }) {
   const columns: DataColumn<OrphanRecord>[] = [
     { id: 'item', label: '作品', width: 480, min: 320, value: (item) => item.name, render: (item) => <OrphanIdentity item={item} /> },
     { id: 'records', label: '个人记录', width: 176, min: 144, value: (item) => recordsText(item.records),
-      render: (item) => <span className="block min-w-0 whitespace-normal wrap-anywhere">{recordsText(item.records) || '无'}</span> },
+      render: (item) => <span className="block min-w-0 whitespace-normal wrap-anywhere">{recordsText(item.records) || uiText("无")}</span> },
     { id: 'target', label: '操作', width: items.some(item => item.candidates.length) ? 360 : 128, min: 128, value: (item) => item.candidates.length,
       render: (item) => <OrphanActions item={item} toast={toast} /> },
   ];
@@ -131,17 +134,17 @@ export function OrphanRecordsCard({ toast }: { toast(message: string): void }) {
     <section id="orphan-records" aria-labelledby="orphan-records-title" className="flex scroll-mt-20 flex-col gap-4">
         {query.isError
           ? <Fieldset layout="stack" labelledBy="orphan-records-title">
-              <FieldsetTitle id="orphan-records-title">文件已丢失的记录</FieldsetTitle>
-              <Note tone="error" title="读取文件已丢失的记录失败">{errorMessage(query.error)}</Note>
+              <FieldsetTitle id="orphan-records-title">{uiText("文件已丢失的记录")}</FieldsetTitle>
+              <Note tone="error" title={uiText("读取文件已丢失的记录失败")}>{errorMessage(query.error)}</Note>
             </Fieldset>
-          : <DataTable label="文件已消失的作品" items={items} columns={columns}
-              title="文件已丢失的记录" titleId="orphan-records-title" unit="条作品"
-              description="这些作品的源文件已删除，喜欢、稍后看、播放列表与观看历史仍保留。选择替代文件后，这些记录会转移到该文件，旧作品记录随之删除。"
+          : <DataTable label={uiText("文件已消失的作品")} items={items} columns={columns}
+              title={uiText("文件已丢失的记录")} titleId="orphan-records-title" unit="条作品"
+              description={uiText("这些作品的源文件已删除，喜欢、稍后看、播放列表与观看历史仍保留。选择替代文件后，这些记录会转移到该文件，旧作品记录随之删除。")}
               rowId={(item) => String(item.id)} rowLabel={(item) => item.name}
               selected={selected} onSelected={setSelected}
               actions={(chosen) => <Button variant="danger" size="small" disabled={!chosen.length}
                 {...busyProps(purge.isPending)} onClick={() => removeSelected(chosen)}>
-                {`删除所选记录（${chosen.length}）`}
+                {uiText("删除所选记录（{value0}）", { value0: String(chosen.length) })}
               </Button>} />}
     </section>
   );

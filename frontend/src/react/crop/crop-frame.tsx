@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 在一张图上框一块。头像和封面共用这一份。
  *
  * 不引裁剪库：要的就是「一个能拖能缩的矩形」，算术全在 `crop-geometry.ts` 里，
@@ -36,6 +37,7 @@ const KEY_STEP = 0.02;
 const WHEEL_STEP = 1.08;
 
 export function CropFrame({ src, aspect, box, size, onBox, onSize, label }: CropFrameProps) {
+  const uiText = useUiTranslation();
   const image = useRef<HTMLImageElement>(null);
   const drag = useRef<{ mode: 'move' | 'resize'; x: number; y: number; box: CropBox } | null>(null);
   const [failed, setFailed] = useState(false);
@@ -154,7 +156,7 @@ export function CropFrame({ src, aspect, box, size, onBox, onSize, label }: Crop
         </>
       )}
       {failed
-        ? <p className="p-4 text-body-2-regular text-text-secondary">这张图读不出来，换一张再框。</p>
+        ? <p className="p-4 text-body-2-regular text-text-secondary">{uiText("这张图读不出来，换一张再框。")}</p>
         : null}
     </div>
   );

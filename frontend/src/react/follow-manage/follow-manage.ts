@@ -14,6 +14,8 @@
  * 分组、排序、分页都是纯函数：两种视图（创作者卡片与表格）必须给出同一套顺序，比较器
  * 写在两处的话，同一份数据在两种视图里的先后就会不一样。 */
 import { apiGet, apiSend } from '../../api';
+import { translate as t } from '../../i18n';
+import { formatNumber } from '../../i18n/format';
 import {
   DEFAULT_SORT, isSortKey, SORT_DEFAULT_DIR, SORT_OPTIONS, type SortDir, type SortKey,
 } from '../../follow-sort';
@@ -247,9 +249,9 @@ export const isBroken = (source: FollowSource): boolean =>
 /** 订阅源的拉取频率：一小时以内按分钟，两天以内按小时，再长按天。 */
 export function feedIntervalText(minutes: number): string {
   const value = Number(minutes) || 0;
-  if (value >= 2880) return `每 ${Math.round(value / 1440).toLocaleString()} 天`;
-  if (value >= 60) return `每 ${Math.round(value / 60)} 小时`;
-  return `每 ${value} 分钟`;
+  if (value >= 2880) return t('每 {count} 天', { count: formatNumber(Math.round(value / 1440)) });
+  if (value >= 60) return t('每 {count} 小时', { count: formatNumber(Math.round(value / 60)) });
+  return t('每 {count} 分钟', { count: formatNumber(value) });
 }
 
 /** 一段报错在列表里只露的那一行。Python traceback 的第一行永远是「Traceback (most recent call
@@ -616,12 +618,12 @@ export function checkReceipt(job: Pick<CheckJob, 'results'>): string {
   const updated = rows.reduce((total, row) => total + (row.updated || 0), 0);
   const failed = rows.filter((row) => !row.ok).length;
   const bits: string[] = [];
-  if (added) bits.push(`新增 ${added} 条`);
-  if (updated) bits.push(`更新 ${updated} 条`);
-  if (!bits.length && failed < rows.length) bits.push('没有更新');
-  if (failed) bits.push(`${failed} 个失败`);
-  if (!bits.length) bits.push('没有更新');
-  return `已检查 ${rows.length} 个来源：${bits.join(' · ')}`;
+  if (added) bits.push(t('新增 {count} 条', { count: added }));
+  if (updated) bits.push(t('更新 {count} 条', { count: updated }));
+  if (!bits.length && failed < rows.length) bits.push(t('没有更新'));
+  if (failed) bits.push(t('{count} 个失败', { count: failed }));
+  if (!bits.length) bits.push(t('没有更新'));
+  return t('已检查 {count} 个来源：{summary}', { count: rows.length, summary: bits.join(' · ') });
 }
 
 /** 一次检查的完整统计。 */
@@ -638,19 +640,19 @@ export function checkSummary(job: CheckJob): string {
   const quiet = rows.filter((row) => row.ok && !row.added && !row.updated).length;
   const failed = rows.filter((row) => !row.ok).length;
   const bits: string[] = [];
-  if (added) bits.push(`新增 ${added} 条`);
-  if (updated) bits.push(`更新 ${updated} 条`);
-  if (skipped) bits.push(`跳过 ${skipped} 条无资源`);
-  if (compilations) bits.push(`排除 ${compilations} 个超大合集`);
-  if (history) bits.push(`跳过 ${history} 条超出首次采集范围的历史内容`);
-  if (probed) bits.push(`回查 ${probed} 条`);
-  if (quiet) bits.push(`${quiet} 个来源没有更新`);
-  if (!bits.length) bits.push('没有任何更新');
+  if (added) bits.push(t('新增 {count} 条', { count: added }));
+  if (updated) bits.push(t('更新 {count} 条', { count: updated }));
+  if (skipped) bits.push(t('跳过 {count} 条无资源', { count: skipped }));
+  if (compilations) bits.push(t('排除 {count} 个超大合集', { count: compilations }));
+  if (history) bits.push(t('跳过 {count} 条超出首次采集范围的历史内容', { count: history }));
+  if (probed) bits.push(t('回查 {count} 条', { count: probed }));
+  if (quiet) bits.push(t('{count} 个来源没有更新', { count: quiet }));
+  if (!bits.length) bits.push(t('没有任何更新'));
   /* 来源没有更多内容与本次没有更新分别计数。 */
   const exhausted = rows.filter((row) => row.exhausted).length;
-  if (exhausted) bits.push(`${exhausted} 个没有更多内容`);
-  if (failed) bits.push(`${failed} 个失败`);
-  return `检查了 ${rows.length} 个来源：${bits.join(' · ')}`;
+  if (exhausted) bits.push(t('{count} 个没有更多内容', { count: exhausted }));
+  if (failed) bits.push(t('{count} 个失败', { count: failed }));
+  return t('检查了 {count} 个来源：{summary}', { count: rows.length, summary: bits.join(' · ') });
 }
 
 /** 页内持久行只装要处理的东西：失败与取证缺档。全部成功时没有这一行。 */

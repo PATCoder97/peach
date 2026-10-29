@@ -9,15 +9,17 @@ import { Text } from 'recharts';
 import type { ChartConfig } from '@/registry/ui/recharts-chart';
 
 import { cardClass } from '../components/card';
+import { useTranslation } from '../i18n';
 
 export const CHART_CARD = `${cardClass({ radius: 'chart' })} flex flex-col gap-4 max-sm:p-4`;
 
 /** 一张没有可画数据的图：标题照旧，图的位置换成一句说明。统计页与口味页的图共用。 */
 export function ChartEmpty({ title, children }: { title: string; children: ReactNode }) {
+  const t = useTranslation();
   return (
-    <section className={CHART_CARD} aria-label={title}>
-      <h3 className="text-title-2-medium text-text-primary">{title}</h3>
-      <p className="text-body-2-regular text-text-secondary">{children}</p>
+    <section className={CHART_CARD} aria-label={t(title)}>
+      <h3 className="text-title-2-medium text-text-primary">{t(title)}</h3>
+      <p className="text-body-2-regular text-text-secondary">{typeof children === 'string' ? t(children) : children}</p>
     </section>
   );
 }
@@ -80,13 +82,14 @@ export function CategoryTick(
 
 /** 一张图的头：一个标题、一个大数、一句它此刻指的是什么。 */
 export function ChartHead({ title, figure, note }: { title: string; figure: string; note: string }) {
+  const t = useTranslation();
   return (
     <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
       <span className="flex min-w-0 flex-col gap-1">
-        <h3 className="text-title-2-medium text-text-primary">{title}</h3>
+        <h3 className="text-title-2-medium text-text-primary">{t(title)}</h3>
         <b className="text-display-4-medium tabular-nums text-text-primary">{figure}</b>
       </span>
-      <small className="min-w-0 text-caption-1-regular break-words text-text-secondary">{note}</small>
+      <small className="min-w-0 text-caption-1-regular break-words text-text-secondary">{t(note)}</small>
     </header>
   );
 }

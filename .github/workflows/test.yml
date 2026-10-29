@@ -142,6 +142,17 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - name: 取得分叉仓库的旧版更新兼容样本
+        if: github.repository != 'peach-mitao/peach'
+        shell: bash
+        run: |
+          git fetch --no-tags https://github.com/peach-mitao/peach.git \
+            refs/tags/v0.47.3:refs/tags/v0.47.3 \
+            refs/tags/v0.48.0:refs/tags/v0.48.0 \
+            refs/tags/v0.48.1:refs/tags/v0.48.1 \
+            refs/tags/v0.48.2:refs/tags/v0.48.2 \
+            refs/tags/v0.49.1:refs/tags/v0.49.1 \
+            refs/tags/v0.50.0:refs/tags/v0.50.0
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}

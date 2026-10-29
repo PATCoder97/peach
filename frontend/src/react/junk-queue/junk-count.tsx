@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 垃圾文件页的计数行：一块摘要面（这一视图、这一类有多少个）和一条分类条。
  *
  * 分类有哪几项、选中哪一项、看的是待判断还是已排除，全由地址决定，等数据时就是最终样子；
@@ -30,6 +31,7 @@ function Badge({ scope, count }: { scope: string; count: number }) {
 export function JunkCount({ route, page, failed, onNavigate }: {
   route: JunkRoute; page: JunkPage | undefined; failed: boolean; onNavigate(path: string): void;
 }) {
+  const uiText = useUiTranslation();
   const nav = useOverlayScrollbar<HTMLElement>();
   const pane = useRef<HTMLSpanElement>(null);
   const { kind, view } = route;
@@ -52,17 +54,17 @@ export function JunkCount({ route, page, failed, onNavigate }: {
       </div>
       <div data-junk-filters-frame="" data-filter-glass="" data-glass-pane="">
         <span ref={pane} data-view-glide="" aria-hidden="true" />
-        <nav ref={nav} data-junk-filters="" aria-label="垃圾文件分类" onClick={click} onPointerLeave={glide.leave}>
+        <nav ref={nav} data-junk-filters="" aria-label={uiText("垃圾文件分类")} onClick={click} onPointerLeave={glide.leave}>
           {JUNK_KIND_OPTIONS.map(([key, label, glyph]) => (
             <a key={key || 'all'} href={junkPath(key, view)} data-junk-kind-link={key}
               aria-current={key === kind ? 'page' : undefined} onPointerEnter={glide.hover}>
-              <Icon name={glyph} />{label}<Badge scope={key} count={page ? junkCount(page, key) : 0} />
+              <Icon name={glyph} />{uiText(label)}<Badge scope={key} count={page ? junkCount(page, key) : 0} />
             </a>
           ))}
           <i data-junk-divider="" aria-hidden="true" />
           <a href={other.href} data-junk-view-link={other.view} aria-current={view === 'dismissed' ? 'page' : undefined}
             onPointerEnter={view === 'dismissed' ? undefined : glide.hover}>
-            <Icon name={other.glyph} />{other.label}<Badge scope="dismissed" count={Number(page?.dismissed_total || 0)} />
+            <Icon name={other.glyph} />{uiText(other.label)}<Badge scope="dismissed" count={Number(page?.dismissed_total || 0)} />
           </a>
         </nav>
       </div>

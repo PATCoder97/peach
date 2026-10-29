@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { RiArrowDownSLine, RiArrowRightLine } from '@remixicon/react';
@@ -13,6 +14,7 @@ import { errorMessage } from '../../api';
 import { fetchProcessingEstimate, type LibraryProcessingCommand, type ProcessingSpeed, type ProcessingTraffic } from './library-processing';
 import { ProcessingEffort } from './processing-effort';
 import { TrafficProgress } from './processing-traffic';
+import { translate } from '../../i18n';
 
 interface ProcessingOption {
   label: string; description: string; command: LibraryProcessingCommand; disabled?: boolean;
@@ -31,13 +33,14 @@ function ProcessingMenuGroup({ label, maintenance = false, children }: {
 function ProcessingMenuOption({ option, metadataOnly, onRun }: {
   option: ProcessingOption; metadataOnly: boolean; onRun(command: LibraryProcessingCommand): void;
 }) {
+  const uiText = useUiTranslation();
   const blocked = metadataOnly && option.command.stage === 'previews';
   const disabled = blocked || option.disabled;
   return <button type="button" disabled={disabled}
-    title={blocked ? '请先在媒体库设置中开启视频预览生成' : undefined}
+    title={blocked ? uiText('请先在媒体库设置中开启视频预览生成') : undefined}
     className={cx(MENU_ITEM, disabled ? 'cursor-not-allowed opacity-50' : MENU_ITEM_INTERACTIVE, 'text-body-2-medium')}
     onClick={() => onRun(option.command)}><span className="flex min-w-0 flex-col gap-1">
-      <span>{option.label}</span><span className="text-caption-1-regular text-text-secondary">{option.description}</span>
+      <span>{uiText(option.label)}</span><span className="text-caption-1-regular text-text-secondary">{uiText(option.description)}</span>
     </span></button>;
 }
 
@@ -45,6 +48,7 @@ function ProcessingPrompt({ command, speed, dialog, onSpeed, busy }: {
   command: LibraryProcessingCommand; speed: ProcessingSpeed; dialog: ReturnType<typeof formModal>;
   onSpeed(value: ProcessingSpeed): void; busy: boolean;
 }) {
+  const uiText = useUiTranslation();
   const [mode, setMode] = useState(speed);
   const [traffic, setTraffic] = useState<ProcessingTraffic>();
   const [failure, setFailure] = useState('');
@@ -73,10 +77,10 @@ function ProcessingPrompt({ command, speed, dialog, onSpeed, busy }: {
     : command.scope === 'new' ? '已登记的待补全影片'
     : command.stage === 'previews' ? '已入库的本地视频' : '整个媒体库';
   return <div className="flex flex-col gap-4">
-    <p data-processing-scope className="text-body-2-medium text-text-primary">处理范围：{scope}</p>
+    <p data-processing-scope className="text-body-2-medium text-text-primary">{uiText("处理范围：")}{uiText(scope)}</p>
     <div className="flex justify-center"><ProcessingEffort value={mode} busy={busy} onChange={value => { setMode(value); onSpeed(value) }} /></div>
     {traffic ? <TrafficProgress traffic={traffic} initial /> : null}
-    {failure || !traffic ? <p role="status" className="text-body-2-regular text-text-secondary">{failure ? `流量预估未取得：${failure}` : '正在估算流量…'}</p> : null}
+    {failure || !traffic ? <p role="status" className="text-body-2-regular text-text-secondary">{failure ? uiText("流量预估未取得：{value0}", { value0: String(failure) }) : uiText("正在估算流量…")}</p> : null}
   </div>;
 }
 
@@ -85,6 +89,7 @@ export function ProcessingActions({ busy, scan = false, metadataOnly = false, sp
   busy: boolean; scan?: boolean; metadataOnly?: boolean; speedMode?: ProcessingSpeed; pendingCount?: number;
   onRun(command: LibraryProcessingCommand): void | Promise<unknown>;
 }) {
+  const uiText = useUiTranslation();
   const trigger = useRef<HTMLButtonElement>(null);
   const prompt = useRef<ReturnType<typeof formModal> | null>(null);
   const [promptView, setPromptView] = useState<{ host: HTMLElement; footer: HTMLElement; dialog: ReturnType<typeof formModal>; command: LibraryProcessingCommand } | null>(null);
@@ -95,7 +100,7 @@ export function ProcessingActions({ busy, scan = false, metadataOnly = false, sp
     command: scan ? {incremental:true} : { stage: 'collect' as const } };
   const dailyOptions: ProcessingOption[] = [
     {label:'仅发现新增文件', description:'扫描并登记新文件，保留已有影片资料', command:{stage:'scan',incremental:true}},
-    {label:'补全待处理影片', description:pendingCount ? `${pendingCount.toLocaleString()} 部已登记影片等待补全` : '暂无待补全影片',
+    {label:'补全待处理影片', description:pendingCount ? uiText('{count} 部已登记影片等待补全', { count: pendingCount.toLocaleString() }) : '暂无待补全影片',
       command:{stage:'collect',scope:'new'}, disabled:!pendingCount},
   ];
   const options: ProcessingOption[] = [
@@ -129,7 +134,7 @@ export function ProcessingActions({ busy, scan = false, metadataOnly = false, sp
       : `${command.stage === 'collect' ? '为已入库影片补全资料和视频属性' : '扫描目录发现文件，再补全资料和视频属性'}${metadataOnly ? '' : '，并生成本地预览图'}`;
     const dialog = formModal({
       title,
-      description: `${work}，可能让电脑变慢。需要同时使用电脑时，可选择低占用模式。`,
+      description: () => translate('{work}，可能让电脑变慢。需要同时使用电脑时，可选择低占用模式。', { work: translate(work) }),
       body: '<div class="peach-react" data-processing-prompt></div>',
       confirmLabel: title,
       confirmDisabled: true,
@@ -151,23 +156,23 @@ export function ProcessingActions({ busy, scan = false, metadataOnly = false, sp
       onClick={event => {
         if (promptView.dialog.confirmButton.getAttribute('aria-busy') === 'true') { event.preventDefault(); return }
         promptView.dialog.close();
-      }}>管理媒体库</LinkButton>, promptView.footer) : null}
+      }}>{uiText("管理媒体库")}</LinkButton>, promptView.footer) : null}
     <span data-button-group data-split-button data-variant="primary">
-      <Button {...busyProps(busy)} onClick={() => run(primary.command)}>{primary.label}</Button>
-      <Button ref={trigger} iconOnly leadingIcon={RiArrowDownSLine} aria-label="更多同步方式"
+      <Button {...busyProps(busy)} onClick={() => run(primary.command)}>{uiText(primary.label)}</Button>
+      <Button ref={trigger} iconOnly leadingIcon={RiArrowDownSLine} aria-label={uiText("更多同步方式")}
         aria-haspopup="dialog" aria-expanded={open} {...busyProps(busy)} onClick={() => { if (!busy) setOpen(!open) }} />
     </span>
     <Popover triggerRef={trigger} isOpen={open} onOpenChange={setOpen} placement="bottom end" offset={4}
       className={MENU_POPOVER_SURFACE}>
-      <Dialog aria-label="同步方式" className="flex w-80 flex-col gap-1 outline-none">
-        {scan ? <ProcessingMenuGroup label="日常同步">
-          <p className="px-2 py-1 text-caption-1-medium text-text-secondary">日常同步</p>
+      <Dialog aria-label={uiText("同步方式")} className="flex w-80 flex-col gap-1 outline-none">
+        {scan ? <ProcessingMenuGroup label={uiText("日常同步")}>
+          <p className="px-2 py-1 text-caption-1-medium text-text-secondary">{uiText("日常同步")}</p>
           {dailyOptions.map(option => <ProcessingMenuOption key={option.label} option={option} metadataOnly={metadataOnly} onRun={run} />)}
         </ProcessingMenuGroup> : null}
-        <ProcessingMenuGroup label={scan ? '全库维护' : '补全方式'} maintenance={scan}>
+        <ProcessingMenuGroup label={scan ? uiText("全库维护") : uiText("补全方式")} maintenance={scan}>
           {scan ? <div className="flex flex-col gap-1 px-2 pb-2">
-            <p className="text-body-medium text-text-primary">全库维护</p>
-            <p className="text-caption-1-regular text-text-secondary">检查全部文件，复用已有资料和预览</p>
+            <p className="text-body-medium text-text-primary">{uiText("全库维护")}</p>
+            <p className="text-caption-1-regular text-text-secondary">{uiText("检查全部文件，复用已有资料和预览")}</p>
           </div> : null}
           {options.map(option => <ProcessingMenuOption key={option.label} option={option} metadataOnly={metadataOnly} onRun={run} />)}
         </ProcessingMenuGroup>

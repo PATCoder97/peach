@@ -1,3 +1,5 @@
+import { translate as t } from './i18n';
+import { esc as escapeUi } from './core';
 /* 艺人页本地名册的身份分类：一组按身份筛名册的小号键，React 页（`react/index/index-page.tsx`）与
  * 进页骨架（`index-skeleton.ts`）共用这一张词表。
  *
@@ -17,5 +19,5 @@ export function identityFilterSkeletonHtml(category: string): string {
   const buttons = IDENTITY_CATEGORIES.map(([key, label]) => islandButton({
     variant: key === known ? 'primary' : 'secondary', size: 'small', label, attrs: `aria-pressed="${key === known}"`,
   })).join('');
-  return `<div class="peach-react"><div aria-label="身份分类" class="${IDENTITY_ROW_CLASS}">${buttons}</div></div>`;
+  return `<div class="peach-react"><div aria-label="${escapeUi(t("身份分类"))}" data-i18n-aria-label="身份分类" class="${IDENTITY_ROW_CLASS}">${buttons}</div></div>`;
 }

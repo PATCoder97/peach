@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 关注列表里的 JAV 订阅表：
  * 一行一条源，名字前是她的资料图，列出类型、来源、状态、频率、上次拉取与新增，行尾是启用开关、
  * 拉取键与移除键（ADR-0042）。行尾这三样和关注列表那一行一一对应，两张表看起来是一回事。
@@ -99,10 +100,11 @@ function originHost(url: string): string {
 
 /** 启用状态与已取得的拉取结果共同决定当前标签。 */
 function StatusChip({ source }: { source: FeedSource }) {
-  if (!source.enabled) return <Chip variant="caption" color="gray">已暂停</Chip>;
-  if (source.last_error) return <Chip variant="caption" color="rose">拉取失败</Chip>;
-  if (!source.last_fetched_at) return <Chip variant="caption" color="gray">未检查</Chip>;
-  return <Chip variant="caption" color="lime">正常</Chip>;
+  const uiText = useUiTranslation();
+  if (!source.enabled) return <Chip variant="caption" color="gray">{uiText("已暂停")}</Chip>;
+  if (source.last_error) return <Chip variant="caption" color="rose">{uiText("拉取失败")}</Chip>;
+  if (!source.last_fetched_at) return <Chip variant="caption" color="gray">{uiText("未检查")}</Chip>;
+  return <Chip variant="caption" color="lime">{uiText("正常")}</Chip>;
 }
 
 /** 名字前的圆框：和关注列表的创作者圆标同一个尺寸与底色。里面那段由 `card-art` 的 `avatarInner` 拼：
@@ -172,6 +174,7 @@ export function FeedSources({ readOnly, toast, onAdd, selection }: {
     onActivate(): void;
   };
 }) {
+  const uiText = useUiTranslation();
   const feeds = useQuery({ queryKey: FEEDS_KEY, queryFn: ({ signal }) => fetchFeeds(signal) });
   const action = useAction();
   const preferences = useTablePreferences('jav-feeds', preferenceColumns);
@@ -240,17 +243,17 @@ export function FeedSources({ readOnly, toast, onAdd, selection }: {
 
   const columns = useMemo(() => {
     const column = createColumnHelper<typeof feedTableFeatures, FeedSource>();
-    const label = (id: string) => () => COLUMN_LABELS[id] || id;
+    const label = (id: string) => () => uiText(COLUMN_LABELS[id] || id);
     return column.columns([
       column.display({
         id: 'select',
-        header: context => <TableSelectionHeader table={context.table} label="全选本页订阅源" page />,
+        header: context => <TableSelectionHeader table={context.table} label={uiText("全选本页订阅源")} page />,
         /* `slot={null}`：表格自带一个叫 selection 的插槽，摆进去的勾不声明归属就会被它
            拦下报错。这一列的勾归 TanStack Table 那份行选择管，不走 Table 自己的选择。 */
         cell: (context) => (
           <Checkbox slot={null} isSelected={context.row.getIsSelected()}
             onChange={(on) => context.row.toggleSelected(on)}
-            aria-label={`选择 ${feedName(context.row.original)}`} />
+            aria-label={uiText("选择 {value0}", { value0: String(feedName(context.row.original)) })} />
         ),
       }),
       column.accessor(feedName, {
@@ -265,7 +268,7 @@ export function FeedSources({ readOnly, toast, onAdd, selection }: {
               <FeedAvatar source={context.row.original} />
               {context.getValue()}
               {alias ? (
-                <span className="text-body-2-regular text-text-secondary" title={`站上这一页挂在「${alias}」名下`}>
+                <span className="text-body-2-regular text-text-secondary" title={uiText("站上这一页挂在「{value0}」名下", { value0: String(alias) })}>
                   {alias}
                 </span>
               ) : null}
@@ -282,7 +285,7 @@ export function FeedSources({ readOnly, toast, onAdd, selection }: {
         id: 'origin',
         header: label('origin'),
         cell: (context) => (
-          <a href={context.getValue()} target="_blank" rel="noopener noreferrer" title="打开来源页面"
+          <a href={context.getValue()} target="_blank" rel="noopener noreferrer" title={uiText("打开来源页面")}
             className="text-text-primary underline-offset-2 hover:underline">
             <SiteLabel site={context.row.original.kind.startsWith('javdb') ? 'javdb' : originHost(context.getValue())}
               label={originHost(context.getValue())} />
@@ -303,12 +306,12 @@ export function FeedSources({ readOnly, toast, onAdd, selection }: {
       column.accessor((row) => row.last_fetched_at ? Date.parse(row.last_fetched_at) || 0 : 0, {
         id: 'fetched',
         header: label('fetched'),
-        cell: (context) => <span className="whitespace-nowrap tabular-nums">{context.row.original.last_fetched_at ? localTime(context.row.original.last_fetched_at) : '还没拉过'}</span>,
+        cell: (context) => <span className="whitespace-nowrap tabular-nums">{context.row.original.last_fetched_at ? localTime(context.row.original.last_fetched_at) : uiText("还没拉过")}</span>,
       }),
       column.accessor((row) => row.last_new_count, {
         id: 'fresh',
         header: label('fresh'),
-        cell: (context) => <span className="whitespace-nowrap tabular-nums">{`${context.getValue()} 条`}</span>,
+        cell: (context) => <span className="whitespace-nowrap tabular-nums">{uiText("{value0} 条", { value0: String(context.getValue()) })}</span>,
       }),
       column.display({
         id: 'actions',
@@ -317,23 +320,23 @@ export function FeedSources({ readOnly, toast, onAdd, selection }: {
            刷新与垃圾桶字形，xs 那一档和开关一样高。 */
         cell: (context) => (
           <span className="flex items-center gap-1">
-            <Switch aria-label={`启用 ${feedName(context.row.original)}`}
+            <Switch aria-label={uiText("启用 {value0}", { value0: String(feedName(context.row.original)) })}
               isSelected={context.row.original.enabled} isDisabled={handlers.current.readOnly}
               onChange={(enabled) => handlers.current.toggle(context.row.original, enabled)} />
             <Button variant="secondary" size="small" iconOnly leadingIcon={RiRefreshLine}
-              aria-label={`拉取 ${feedName(context.row.original)}`}
+              aria-label={uiText("拉取 {value0}", { value0: String(feedName(context.row.original)) })}
               disabled={handlers.current.readOnly}
               {...busyProps(handlers.current.busy === `check-${context.row.original.id}`)}
               onClick={() => handlers.current.fetch(context.row.original)} />
             <Button variant="secondary" size="small" iconOnly leadingIcon={RiDeleteBinLine}
-              aria-label={`移除 ${feedName(context.row.original)}`}
+              aria-label={uiText("移除 {value0}", { value0: String(feedName(context.row.original)) })}
               disabled={handlers.current.readOnly}
               onClick={() => handlers.current.remove(context.row.original)} />
           </span>
         ),
       }),
     ]);
-  }, []);
+  }, [uiText]);
 
   const rowSelection = useMemo<RowSelectionState>(
     () => Object.fromEntries([...selected].map((id) => [String(id), true])), [selected]);
@@ -355,8 +358,8 @@ export function FeedSources({ readOnly, toast, onAdd, selection }: {
 
   if (!data) {
     return feeds.error
-      ? <Note tone="error" title="打不开订阅源">{errorMessage(feeds.error)}</Note>
-      : <Help>正在读订阅源。</Help>;
+      ? <Note tone="error" title={uiText("打不开订阅源")}>{errorMessage(feeds.error)}</Note>
+      : <Help>{uiText("正在读订阅源。")}</Help>;
   }
 
   const check = () => void action.run('check', (signal) => checkFeeds(signal), () => void reload());
@@ -373,17 +376,17 @@ export function FeedSources({ readOnly, toast, onAdd, selection }: {
 
   return (
     <div className="flex flex-col gap-3">
-      <section aria-label="JAV 订阅列表"
+      <section aria-label={uiText("JAV 订阅列表")}
         className={cardClass({ padding: 'none', className: 'flex flex-col gap-4 px-6 py-5 max-sm:px-4' })}>
       <div data-responsive-toolbar="">
         <div data-toolbar-heading="">
-        <h3 className="text-title-2-medium text-text-primary">JAV 订阅源</h3>
-        <span className="text-body-2-regular text-text-secondary">{`${sources.length.toLocaleString()} 个订阅源 · ${(Number(data.unread) || 0).toLocaleString()} 条未看`}</span>
+        <h3 className="text-title-2-medium text-text-primary">{uiText("JAV 订阅源")}</h3>
+        <span className="text-body-2-regular text-text-secondary">{uiText("{value0} 个订阅源 · {value1} 条未看", { value0: String(sources.length.toLocaleString()), value1: String((Number(data.unread) || 0).toLocaleString()) })}</span>
         </div>
         <div data-toolbar-actions="">
-        <Button onClick={check} disabled={readOnly} {...busyProps(action.busy === 'check')}>立即拉取</Button>
-        <TableColumnControls preferences={preferences} label="JAV 订阅源" />
-        <DataTableSort label="JAV 订阅源" sorting={sorting} onChange={(next) => { setSorting(next); setPage(1); }}
+        <Button onClick={check} disabled={readOnly} {...busyProps(action.busy === 'check')}>{uiText("立即拉取")}</Button>
+        <TableColumnControls preferences={preferences} label={uiText("JAV 订阅源")} />
+        <DataTableSort label={uiText("JAV 订阅源")} sorting={sorting} onChange={(next) => { setSorting(next); setPage(1); }}
           options={['name', 'kind', 'origin', 'status', 'interval', 'fetched', 'fresh'].map((id) => ({ id, label: COLUMN_LABELS[id]! }))} />
         </div>
       </div>
@@ -393,35 +396,33 @@ export function FeedSources({ readOnly, toast, onAdd, selection }: {
           {/* 拉不动的源并成一条：每条源一行「源名：报错首行」，几条源同时坏也不把表格推出首屏；
               表格里那一行的状态徽章同时标着「拉取失败」。 */}
           {failing.length ? (
-            <Note tone="error" title={`${failing.length.toLocaleString()} 条订阅源拉取失败`}
+            <Note tone="error" title={uiText("{value0} 条订阅源拉取失败", { value0: String(failing.length.toLocaleString()) })}
               extra={<ul className="flex flex-col gap-0.5 text-body-2-regular">
                 {failing.map((source) => (
                   <li key={source.id} className="min-w-0 truncate" title={source.last_error || ''}>
                     {`${feedName(source)}：${errorHeadline(source.last_error || '') || '未说明原因'}`}
                   </li>
                 ))}
-              </ul>}>
-              这些订阅源这一轮没有取到新条目。
-            </Note>
+              </ul>}>{uiText("这些订阅源这一轮没有取到新条目。")}</Note>
           ) : null}
           {action.error ? <ErrorText>{action.error}</ErrorText> : null}
         </div>
       ) : null}
 
-        <SelectionDock visible={chosen.length > 0} label="订阅源批量操作" count={`已选 ${chosen.length} 条订阅源`}>
+        <SelectionDock visible={chosen.length > 0} label={uiText("订阅源批量操作")} count={`已选 ${chosen.length} 条订阅源`}>
           <Button variant="secondary" size="small" disabled={readOnly} {...busyProps(bulk.isPending)}
-            onClick={() => bulk.mutate({ ids: chosen.map((row) => row.id), action: 'enabled' })}>启用</Button>
+            onClick={() => bulk.mutate({ ids: chosen.map((row) => row.id), action: 'enabled' })}>{uiText("启用")}</Button>
           <Button variant="secondary" size="small" disabled={readOnly} {...busyProps(bulk.isPending)}
-            onClick={() => bulk.mutate({ ids: chosen.map((row) => row.id), action: 'paused' })}>暂停</Button>
+            onClick={() => bulk.mutate({ ids: chosen.map((row) => row.id), action: 'paused' })}>{uiText("暂停")}</Button>
           <Button variant="danger" size="small" disabled={readOnly} {...busyProps(bulk.isPending)}
             onClick={() => void confirmRemove(chosen,
-              () => bulk.mutateAsync({ ids: chosen.map((row) => row.id), action: 'remove' }))}>移除</Button>
-          <Button variant="ghost" size="small" onClick={() => setSelected(new Set())}>取消选择</Button>
+              () => bulk.mutateAsync({ ids: chosen.map((row) => row.id), action: 'remove' }))}>{uiText("移除")}</Button>
+          <Button variant="ghost" size="small" onClick={() => setSelected(new Set())}>{uiText("取消选择")}</Button>
         </SelectionDock>
 
       {sources.length ? (
         <DataTableFrame follow preferences={preferences} onRowClick={(key) => toggleRow(Number(key))}>
-          <Table aria-label="JAV 订阅源" size="sm"
+          <Table aria-label={uiText("JAV 订阅源")} size="sm"
             sortDescriptor={sorting[0] ? { column: sorting[0].id, direction: sorting[0].desc ? 'descending' : 'ascending' } : undefined}
             onSortChange={(sort) => table.getColumn(String(sort.column))?.toggleSorting(sort.direction === 'descending')}>
             <TableHeader>
@@ -436,7 +437,7 @@ export function FeedSources({ readOnly, toast, onAdd, selection }: {
                   </TableColumn>
                 );
               })}
-              <TableColumn id="remaining-space" aria-label="行空白区域" data-table-space="" width={preferences.spaceWidth} minWidth={0} />
+              <TableColumn id="remaining-space" aria-label={uiText("行空白区域")} data-table-space="" width={preferences.spaceWidth} minWidth={0} />
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows.map((row) => (
@@ -453,19 +454,17 @@ export function FeedSources({ readOnly, toast, onAdd, selection }: {
           </Table>
         </DataTableFrame>
       ) : (
-        <EmptyState icon={RiRssLine} title="还没有订阅源" size="compact"
-          actions={!readOnly ? <Button variant="secondary" onClick={onAdd}>添加订阅</Button> : undefined}>
-          在「添加关注」按女优名添加，或在人物页点「订阅新作」。
-        </EmptyState>
+        <EmptyState icon={RiRssLine} title={uiText("还没有订阅源")} size="compact"
+          actions={!readOnly ? <Button variant="secondary" onClick={onAdd}>{uiText("添加订阅")}</Button> : undefined}>{uiText("在「添加关注」按女优名添加，或在人物页点「订阅新作」。")}</EmptyState>
       )}
       {sources.length ? (
-        <DataTableFooter label="JAV 订阅" total={win.total} unit="个订阅源"
+        <DataTableFooter label={uiText("JAV 订阅")} total={win.total} unit="个订阅源"
           pagination={{ pageIndex: win.page - 1, pageSize }}
           onChange={(next) => { setPageSize(next.pageSize); setPage(next.pageIndex + 1); }} />
       ) : null}
       <footer className="-mx-6 -mb-5 flex flex-wrap items-center gap-2 border-t border-separator-border rounded-b-2xl bg-card-footer px-6 py-4 max-sm:-mx-4 max-sm:px-4">
         <span role="status" className="mr-auto text-body-2-regular text-text-secondary">
-          {`未看 ${(Number(data.unread) || 0).toLocaleString()} · 已启用 ${sources.filter((source) => source.enabled).length.toLocaleString()} / ${sources.length.toLocaleString()}`}
+          {uiText("未看 {value0} · 已启用 {value1} / {value2}", { value0: String((Number(data.unread) || 0).toLocaleString()), value1: String(sources.filter((source) => source.enabled).length.toLocaleString()), value2: String(sources.length.toLocaleString()) })}
         </span>
       </footer>
       </section>

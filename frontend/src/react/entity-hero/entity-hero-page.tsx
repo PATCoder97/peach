@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 实体资料页顶上那块资料卡，连同资料卡下面、作品上面那一行未入库的新作。
  *
  * 资料卡按 Board 的 profile 卡排：一块 secondary 底、18px 圆角的卡，正文是头像加身份三行
@@ -39,6 +40,7 @@ function costarImg(person: HeroCostar): string {
 }
 
 export function EntityHeroPage({ kind, name, entity, feedNew, feedHost, actions, helpers }: EntityHeroProps) {
+  const uiText = useUiTranslation();
   const people = isPeople(kind);
   const company = isCompany(kind);
   const facts = people ? factRows(entity.profile) : company ? companyFactRows(entity.company_profile) : [];
@@ -54,7 +56,7 @@ export function EntityHeroPage({ kind, name, entity, feedNew, feedHost, actions,
 
   return (
     <>
-      <section data-entity-card="" aria-label="资料">
+      <section data-entity-card="" aria-label={uiText("资料")}>
         <div data-entity-profile={facts.length ? 'facts' : ''}>
           <div data-entity-portrait-wrap="">
             <Portrait kind={kind} name={name} helpers={helpers} people={people} company={company} />
@@ -110,7 +112,7 @@ export function EntityHeroPage({ kind, name, entity, feedNew, feedHost, actions,
           ) : null}
         </div>
         {costars.length ? (
-          <div data-entity-foot="" aria-label="同台艺人">
+          <div data-entity-foot="" aria-label={uiText("同台艺人")}>
             <div ref={costarRow} data-related-people="">
               {costars.map((person) => (
                 <button key={person.k} type="button" data-related-performer={person.k}
@@ -146,6 +148,7 @@ function Portrait({ kind, name, helpers, people, company }: {
 
 /** 身份资料各项带图标；别名独立排列，归属有实体时提供站内入口。 */
 function AliasLine({ kind, entity, actions }: { kind: string; entity: EntityHeroData; actions: EntityHeroActions }) {
+  const uiText = useUiTranslation();
   const agency = agencyOf(entity);
   const go = (target: string, to: string) => (event: MouseEvent) => {
     event.preventDefault();
@@ -154,21 +157,21 @@ function AliasLine({ kind, entity, actions }: { kind: string; entity: EntityHero
   const agencyNode = agency ? (agency.linked
     ? <a href={entityPath('agency', agency.name, agency.id)} data-agency={agency.name} onClick={go('agency', agency.name)}>{agency.name}</a>
     : agency.name) : null;
-  const count = <><b>{entity.asset_count.toLocaleString()}</b> 个视频</>;
+  const count = <><b>{entity.asset_count.toLocaleString()}</b>{uiText(" 个视频")}</>;
   if (kind === 'performer' || kind === 'creator') {
     const line = nameLine(entity.name_groups);
     return (
       <div data-entity-alias="meta">
         <IdentityMeta entity={entity} />
-        <span data-meta-item="" title="视频"><Glyph name="film" /><span>{count}</span></span>
+        <span data-meta-item="" title={uiText("视频")}><Glyph name="film" /><span>{count}</span></span>
         {entity.follow?.key ? <FollowMeta follow={entity.follow} actions={actions} /> : null}
-        {agencyNode ? <span data-meta-item="" title="事务所"><Glyph name="briefcase" /><span>{agencyNode}</span></span> : null}
+        {agencyNode ? <span data-meta-item="" title={uiText("事务所")}><Glyph name="briefcase" /><span>{agencyNode}</span></span> : null}
         {line ? (
           <div data-meta-item="names">
             <Glyph name="id-card" />
-            <span data-alias-names="" title="别名">{line.names.map((one, at) => <span key={at} lang={textLang(one)}>{one}</span>)}</span>
+            <span data-alias-names="" title={uiText("别名")}>{line.names.map((one, at) => <span key={at} lang={textLang(one)}>{one}</span>)}</span>
             {line.rest > 0 ? (
-              <MorePop id="entityAliasPop" hook="alias" rest={line.rest} label={`另外 ${line.rest.toLocaleString()} 个别名`}
+              <MorePop id="entityAliasPop" hook="alias" rest={line.rest} label={uiText("另外 {value0} 个别名", { value0: String(line.rest.toLocaleString()) })}
                 heading={`${line.total.toLocaleString()} 个别名`}>
                 <dl>
                   {(entity.name_groups?.groups || []).map((group, at) => (
@@ -185,15 +188,15 @@ function AliasLine({ kind, entity, actions }: { kind: string; entity: EntityHero
   const aliases = entity.display_aliases || [];
   /* 事务所页数的是人，不是片；片商页同理，旗下有几个 label 是它自己的读数（ADR-0051）。 */
   const members = kind === 'agency'
-    ? <> · <b>{(entity.member_count || 0).toLocaleString()}</b> 位艺人</>
-    : (entity.labels || []).length ? <> · <b>{entity.labels!.length.toLocaleString()}</b> 个厂牌</> : null;
+    ? <> · <b>{(entity.member_count || 0).toLocaleString()}</b>{uiText(" 位艺人")}</>
+    : (entity.labels || []).length ? <> · <b>{entity.labels!.length.toLocaleString()}</b>{uiText(" 个厂牌")}</> : null;
   const maker = entity.maker;
   return (
     <div data-entity-alias="meta">
       {kind === 'creator' ? <IdentityMeta entity={entity} /> : null}
-      <span data-meta-item="" title="视频"><Glyph name="film" /><span>{count}{members}</span></span>
-      {agencyNode ? <span data-meta-item="" title="事务所"><Glyph name="briefcase" /><span>{agencyNode}</span></span> : null}
-      {maker ? <span data-meta-item="" title="片商"><Glyph name="clapperboard" /><a href={entityPath('studio', maker.name, maker.id)} data-studio-link={maker.name}
+      <span data-meta-item="" title={uiText("视频")}><Glyph name="film" /><span>{count}{members}</span></span>
+      {agencyNode ? <span data-meta-item="" title={uiText("事务所")}><Glyph name="briefcase" /><span>{agencyNode}</span></span> : null}
+      {maker ? <span data-meta-item="" title={uiText("片商")}><Glyph name="clapperboard" /><a href={entityPath('studio', maker.name, maker.id)} data-studio-link={maker.name}
         onClick={go('studio', maker.name)}>{maker.name}</a></span> : null}
       {aliases.length ? <CompanyAliases aliases={aliases} /> : null}
     </div>
@@ -203,13 +206,14 @@ function AliasLine({ kind, entity, actions }: { kind: string; entity: EntityHero
 /** 公司别名：先列几个，余下的收进「+N」，浮层里一个名字一行。片商改过几轮名、挂过一串
  *  label 时别名能有三十多个，全摊开会占掉资料卡十几行。 */
 function CompanyAliases({ aliases }: { aliases: string[] }) {
+  const uiText = useUiTranslation();
   const { shown, rest } = shownTags(aliases, COMPANY_ALIASES_SHOWN);
   return (
     <div data-meta-item="names" data-company-names="">
       <Glyph name="id-card" />
-      <span data-alias-names="" title="别名">{shown.map((name, at) => <span key={at}>{name}</span>)}</span>
+      <span data-alias-names="" title={uiText("别名")}>{shown.map((name, at) => <span key={at}>{name}</span>)}</span>
       {rest ? (
-        <MorePop id="entityAliasPop" hook="alias" rest={rest} label={`另外 ${rest.toLocaleString()} 个别名`}
+        <MorePop id="entityAliasPop" hook="alias" rest={rest} label={uiText("另外 {value0} 个别名", { value0: String(rest.toLocaleString()) })}
           heading={`${aliases.length.toLocaleString()} 个别名`}>
           <dl><NameGroup names={aliases.map((name) => ({ name }))} /></dl>
         </MorePop>
@@ -221,13 +225,13 @@ function CompanyAliases({ aliases }: { aliases: string[] }) {
 /** 关注里绑在这位名下的来源：读数是还没入库的更新，整段是站内去处（同事务所链接的钨蓝），
  *  点开切到这一页的在线视图。 */
 function FollowMeta({ follow, actions }: { follow: HeroFollow; actions: EntityHeroActions }) {
+  const uiText = useUiTranslation();
   const from = follow.providers.join(' · ');
   return (
-    <span data-meta-item="" data-entity-follow="" title={from ? `关注 · ${from}` : '关注'}>
+    <span data-meta-item="" data-entity-follow="" title={from ? uiText("关注 · {value0}", { value0: String(from) }) : uiText("关注")}>
       <Glyph name="rss" />
       <a href="?media=online" onClick={(event) => { event.preventDefault(); actions.openFollowAuthor(follow.key) }}>
-        {follow.n.toLocaleString()} 项更新
-      </a>
+        {follow.n.toLocaleString()}{uiText(" 项更新")}</a>
     </span>
   );
 }
@@ -237,6 +241,7 @@ function FollowMeta({ follow, actions }: { follow: HeroFollow; actions: EntityHe
 function HeldAuthors({ follow, entity, actions }: {
   follow: HeroFollow; entity: EntityHeroData; actions: EntityHeroActions;
 }) {
+  const uiText = useUiTranslation();
   const [busy, setBusy] = useState('');
   const confirm = async (key: string, name: string) => {
     if (busy) return;
@@ -252,12 +257,10 @@ function HeldAuthors({ follow, entity, actions }: {
   return (
     <div data-entity-held="" className="flex flex-col gap-2">
       {follow.held.map((group) => (
-        <Note key={group.key} tone="info" title={`关注里有同名作者 ${group.name}`}
+        <Note key={group.key} tone="info" title={uiText("关注里有同名作者 {value0}", { value0: String(group.name) })}
           action={<Button size="small" {...busyProps(busy === group.key)}
-            onClick={() => { void confirm(group.key, group.name) }}>是同一个人</Button>}>
-          {[group.providers.join(' · '), `${group.n.toLocaleString()} 项更新`].filter(Boolean).join(' · ')}
-          。和 {entity.canonical_name} 是同一个人吗？
-        </Note>
+            onClick={() => { void confirm(group.key, group.name) }}>{uiText("是同一个人")}</Button>}>
+          {[group.providers.join(' · '), `${group.n.toLocaleString()} 项更新`].filter(Boolean).join(' · ')}{uiText("。和 ")}{entity.canonical_name}{uiText(" 是同一个人吗？")}</Note>
       ))}
     </div>
   );
@@ -299,12 +302,13 @@ function FactRowView({ glyph, label, clip, children }: { glyph: string; label: s
 
 /** 站上的标签只是读数，不是这一页的筛选，所以是标签的脸、不接点击。 */
 function FactTags({ tags }: { tags: string[] }) {
+  const uiText = useUiTranslation();
   const { shown, rest } = shownTags(tags);
   return (
     <>
       {shown.map((tag) => <span key={tag} data-fact-tag="" title={tag}>{tag}</span>)}
       {rest ? (
-        <MorePop id="entityTagPop" hook="fact" rest={rest} label={`另外 ${rest.toLocaleString()} 个标签`}
+        <MorePop id="entityTagPop" hook="fact" rest={rest} label={uiText("另外 {value0} 个标签", { value0: String(rest.toLocaleString()) })}
           heading={`${tags.length.toLocaleString()} 个标签`}>
           <div data-fact-tags="">{tags.map((tag) => <span key={tag} data-fact-tag="" title={tag}>{tag}</span>)}</div>
         </MorePop>
@@ -325,6 +329,7 @@ function LinkIcon({ mark }: { mark: LinkMark }) {
 /** 外链排成一行次级按钮：36px 高、一圈线。纯图标的链接自己不带可读文字，名字留在 title 与
  *  读屏名称里；官网那种「点之前看不出是谁」的链接才写字。 */
 function HeroLinkView({ link }: { link: LinkView }) {
+  const uiText = useUiTranslation();
   switch (link.type) {
     case 'icon':
       return (
@@ -343,7 +348,7 @@ function HeroLinkView({ link }: { link: LinkView }) {
       return (
         <span data-link="private" title={link.sources ? link.sources.join('\n') : link.label}>
           <LinkIcon mark={{ globe: true }} />
-          <span data-link-label="">{link.sources ? link.label : `来源 · ${link.label}`}</span>
+          <span data-link-label="">{link.sources ? link.label : uiText("来源 · {value0}", { value0: String(link.label) })}</span>
         </span>
       );
     default:

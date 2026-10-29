@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "../i18n";
 /* 搜索只选择候选；真正提交由云下载表单确认。 */
 import { useEffect, useRef, useState } from 'react';
 import { RiSearchLine } from '@remixicon/react';
@@ -33,6 +34,7 @@ export function ResourceSearch({ initialCode, reason, choose, onSearch, onWork }
   initialCode: string; reason?: string; choose(uri: string, code: string): void;
   onSearch?(code: string): void; onWork?(work: DownloadPrefill | null): void;
 }) {
+  const uiText = useUiTranslation();
   const [code, setCode] = useState(initialCode);
   const [goal, setGoal] = useState(() => preferredGoal(reason));
   const [min, setMin] = useState('');
@@ -70,29 +72,29 @@ export function ResourceSearch({ initialCode, reason, choose, onSearch, onWork }
     }
   };
   return (
-    <section aria-label="查找资源" aria-busy={Boolean(action.busy)} className="flex min-w-0 flex-col gap-4">
-      {reason ? <Help>版本目标：{reason}。可在下方调整搜索优先项；完整度与水印需要逐条复核。</Help> : null}
-      <Input label="按番号查找资源" value={code} maxLength={80} placeholder="输入番号，按回车搜索" enterKeyHint="search"
+    <section aria-label={uiText("查找资源")} aria-busy={Boolean(action.busy)} className="flex min-w-0 flex-col gap-4">
+      {reason ? <Help>{uiText("版本目标：")}{reason}{uiText("。可在下方调整搜索优先项；完整度与水印需要逐条复核。")}</Help> : null}
+      <Input label={uiText("按番号查找资源")} value={code} maxLength={80} placeholder={uiText("输入番号，按回车搜索")} enterKeyHint="search"
         leadingIcon={action.busy ? SearchSpinner : RiSearchLine}
         isReadOnly={Boolean(action.busy)} aria-busy={Boolean(action.busy)} onChange={setCode} onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); search() }
         }} />
       <div className="flex flex-col gap-1">
-        <FieldLabel>优先寻找</FieldLabel>
-        <Select aria-label="优先寻找" selectedKey={goal} isDisabled={Boolean(action.busy)}
+        <FieldLabel>{uiText("优先寻找")}</FieldLabel>
+        <Select aria-label={uiText("优先寻找")} selectedKey={goal} isDisabled={Boolean(action.busy)}
           onSelectionChange={(key) => { if (key !== null) setGoal(String(key)) }}>
-          <SelectItem id="quality">高清</SelectItem><SelectItem id="chinese">中字</SelectItem>
-          <SelectItem id="uncensored">无码</SelectItem>
+          <SelectItem id="quality">{uiText("高清")}</SelectItem><SelectItem id="chinese">{uiText("中字")}</SelectItem>
+          <SelectItem id="uncensored">{uiText("无码")}</SelectItem>
         </Select>
       </div>
       <div className="flex gap-3 max-sm:flex-col">
-        <Input label="最小体积（GiB）" inputMode="decimal" value={min} onChange={setMin} />
-        <Input label="最大体积（GiB）" inputMode="decimal" value={max} onChange={setMax} />
+        <Input label={uiText("最小体积（GiB）")} inputMode="decimal" value={min} onChange={setMin} />
+        <Input label={uiText("最大体积（GiB）")} inputMode="decimal" value={max} onChange={setMax} />
       </div>
-      {action.busy ? <Help role="status">正在搜索资源</Help> : null}
+      {action.busy ? <Help role="status">{uiText("正在搜索资源")}</Help> : null}
       {action.error ? <ErrorText>{action.error}</ErrorText> : null}
       {result?.error ? <Help role="status">{result.error}</Help> : null}
-      {result?.state === 'ready' && !result.items.length ? <Help role="status">没有符合条件的资源。</Help> : null}
+      {result?.state === 'ready' && !result.items.length ? <Help role="status">{uiText("没有符合条件的资源。")}</Help> : null}
       {result?.warnings.map((warning) => <Help key={warning}>{warning}</Help>)}
       {result?.items.length ? <ul className="flex min-w-0 flex-col gap-4">
         {result.items.map((item) => <li key={item.id} className="flex min-w-0 flex-col gap-2 border-t border-separator-border pt-4">
@@ -102,7 +104,7 @@ export function ResourceSearch({ initialCode, reason, choose, onSearch, onWork }
             item.uncensored ? '无码' : '', item.origins.join('、')].filter(Boolean).join(' · ')}</Help>
           <div><Button type="button" variant="secondary" onClick={() => {
             choose(item.uri, searched); setSelected(item.id);
-          }}>{selected === item.id ? '已填入磁力' : '选用此资源'}</Button></div>
+          }}>{selected === item.id ? uiText("已填入磁力") : uiText("选用此资源")}</Button></div>
         </li>)}
       </ul> : null}
     </section>

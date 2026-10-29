@@ -1,4 +1,5 @@
 import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { useTranslation } from '../i18n';
 
 interface SelectableTable {
   getFilteredRowModel(): { flatRows: SelectableRow[] };
@@ -18,8 +19,9 @@ function selection(table: SelectableTable, page: boolean) {
 export function TableSelectionHeader({ table, label, page = false, disabled = false }: {
   table: SelectableTable; label: string; page?: boolean; disabled?: boolean;
 }) {
+  const t = useTranslation();
   const { all, some } = selection(table, page);
-  return <Checkbox slot={null} aria-label={label} isDisabled={disabled} isSelected={all} isIndeterminate={some}
+  return <Checkbox slot={null} aria-label={t(label)} isDisabled={disabled} isSelected={all} isIndeterminate={some}
     onChange={() => {
       const on = !selection(table, page).all;
       if (page) table.toggleAllPageRowsSelected(on);
