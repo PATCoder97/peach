@@ -93,7 +93,7 @@ function confirmYes() {
 
 describe('首屏', () => {
   it('接口校验提示随语言切换而更新，保留名称且不重复提交', async () => {
-    const body = { error: '播放列表名称最多 80 个字符' };
+    const body = { error: 'ValueError: 播放列表名称最多 80 个字符' };
     const server = serve({ 'POST /api/playlist': { status: 400, body } });
     await act(async()=>setLocale('en'));
     try {
@@ -109,7 +109,7 @@ describe('首屏', () => {
       expect(createInput(host)).toBe(input);
       expect(input.value).toBe('保留原始名称');
       expect(server.posts()).toHaveLength(1);
-      expect(body.error).toBe('播放列表名称最多 80 个字符');
+      expect(body.error).toBe('ValueError: 播放列表名称最多 80 个字符');
     } finally { await act(async()=>setLocale('zh-CN')) }
   });
   it('缓存里有上一次的列表也照样重取：首页刚存的 Mix 要看得到', async () => {

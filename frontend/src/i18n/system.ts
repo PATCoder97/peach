@@ -19,6 +19,11 @@ const templates = Object.keys(systemMessages).filter(source => /\{[a-zA-Z][a-zA-
 export function translateSystem(source: string, language: Locale = getLocale()): string {
   const exact = translate(source, {}, language);
   if (language === 'zh-CN' || exact !== source || source.length > 8192) return exact;
+  const exception = /^(ValueError|TypeError|RuntimeError|SettingsFileError): (.+)$/su.exec(source);
+  if (exception) {
+    const detail = translateSystem(exception[2]!, language);
+    if (detail !== exception[2]) return `${exception[1]}: ${detail}`;
+  }
   for (const template of templates) {
     const match = template.pattern.exec(source);
     if (!match) continue;

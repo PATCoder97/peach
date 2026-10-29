@@ -1,6 +1,15 @@
 import { expect, it } from 'vitest';
 import { translateSystem } from '../src/i18n/system';
 
+it('接口异常前缀保留类型，只翻译登记的原因', () => {
+  expect(translateSystem('ValueError: 播放列表名称最多 80 个字符','en'))
+    .toBe('ValueError: Playlist names can contain at most 80 characters');
+  expect(translateSystem('ValueError: 播放列表名称最多 80 个字符','vi'))
+    .toBe('ValueError: Tên danh sách phát dài tối đa 80 ký tự');
+  expect(translateSystem('RuntimeError: 未登记的来源原文','vi'))
+    .toBe('RuntimeError: 未登记的来源原文');
+});
+
 it('后端配置、下载与复核提示翻译完整模板，路径与诊断值保持原样', () => {
   expect(translateSystem('所选图片不在本机缓存：R:\\资料\\封面.jpg','en'))
     .toBe('The selected image is not in the local cache: R:\\资料\\封面.jpg');

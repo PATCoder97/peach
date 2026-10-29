@@ -1,7 +1,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "d58e74f3-e4ac-437f-806f-57b6377dd465", e._sentryDebugIdIdentifier = "sentry-dbid-d58e74f3-e4ac-437f-806f-57b6377dd465");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "b578a7cc-d8a3-4709-9b2e-9c09d028a449", e._sentryDebugIdIdentifier = "sentry-dbid-b578a7cc-d8a3-4709-9b2e-9c09d028a449");
 	} catch {}
 })();
 import { $2ec61d1d4f780267$export$a8a3e93435678ff9 as e, $542a13ca2fa5b484$export$5b6b19405a83ff9d as t, Button as n, EmptyFocusButton as r, EmptyState as i, Input as a, MENU_ITEM as o, MENU_ITEM_INTERACTIVE as s, MENU_POPOVER_SURFACE as c, MenuDialog as l, MixCard as u, ModalFrame as d, PLAYLISTS_KEY as f, RetryNote as p, __toESM as m, busyProps as h, confirmModal as g, createPlaylist as _, cx as v, deletePlaylist as y, errorMessage as b, fetchPlaylists as x, keepPlaylist as S, posterUrl as C, recreatePlaylist as w, refreshPlaylists as T, renamePlaylist as E, require_jsx_runtime as D, require_react as O, resumeAssetId as k, spriteGlyph as A, translate as j, useMutation as M, useQuery as N, useTranslation as P } from "./peach-app.js";
@@ -14,19 +14,18 @@ var F = /* @__PURE__ */ m(O(), 1), I = D(), L = A("ellipsis"), R = A("pencil"), 
 	}
 };
 function W({ toast: e }) {
-	P();
-	let [t, r] = (0, F.useState)(""), [i, o] = (0, F.useState)(""), s = M({
+	let t = P(), [r, i] = (0, F.useState)(""), [o, s] = (0, F.useState)(""), c = M({
 		mutationFn: (e) => _(e),
 		onSuccess: (t) => {
-			r(""), o(""), T(), e("已新建播放列表", { undo: U(() => y(t.playlist.id)) });
+			i(""), s(""), T(), e("已新建播放列表", { undo: U(() => y(t.playlist.id)) });
 		},
-		onError: (e) => o(b(e) || "新建失败")
+		onError: (e) => s(b(e) || "新建失败")
 	});
 	return /* @__PURE__ */ (0, I.jsxs)("form", {
 		"data-playlist-create": "",
 		"aria-label": j("新建播放列表"),
 		onSubmit: (e) => {
-			e.preventDefault(), !s.isPending && (t.trim() ? s.mutate(t) : o(H));
+			e.preventDefault(), !c.isPending && (r.trim() ? c.mutate(r) : s(H));
 		},
 		className: "flex flex-wrap items-end gap-2",
 		children: [/* @__PURE__ */ (0, I.jsx)("div", {
@@ -35,38 +34,37 @@ function W({ toast: e }) {
 				label: j("新播放列表"),
 				placeholder: j("输入名称"),
 				maxLength: 80,
-				value: t,
+				value: r,
 				onChange: (e) => {
-					r(e), o("");
+					i(e), s("");
 				},
 				validationBehavior: "aria",
-				isInvalid: !!i,
-				hint: i ? j(i) : void 0
+				isInvalid: !!o,
+				hint: o ? t(o) : void 0
 			})
 		}), /* @__PURE__ */ (0, I.jsx)(n, {
 			type: "submit",
-			...h(s.isPending),
+			...h(c.isPending),
 			children: j("新建")
 		})]
 	});
 }
 function G({ target: t, close: r, toast: i }) {
-	P();
-	let [o, s] = (0, F.useState)(""), [c, l] = (0, F.useState)(""), u = (0, F.useRef)(null);
+	let o = P(), [s, c] = (0, F.useState)(""), [l, u] = (0, F.useState)(""), f = (0, F.useRef)(null);
 	(0, F.useEffect)(() => {
 		if (!t) return;
-		s(t.name), l("");
+		c(t.name), u("");
 		let e = requestAnimationFrame(() => {
-			u.current?.focus(), u.current?.select();
+			f.current?.focus(), f.current?.select();
 		});
 		return () => cancelAnimationFrame(e);
 	}, [t]);
-	let f = M({
+	let p = M({
 		mutationFn: ({ row: e, value: t }) => E(e.id, t),
 		onSuccess: (e, { row: t }) => {
 			r(), T(), i("已重命名播放列表", { undo: U(() => E(t.id, t.name)) });
 		},
-		onError: (e) => l(b(e))
+		onError: (e) => u(b(e))
 	});
 	return /* @__PURE__ */ (0, I.jsx)(d, {
 		isOpen: !!t,
@@ -77,12 +75,12 @@ function G({ target: t, close: r, toast: i }) {
 		children: /* @__PURE__ */ (0, I.jsxs)("form", {
 			"data-playlist-rename": "",
 			onSubmit: (e) => {
-				if (e.preventDefault(), !t || f.isPending) return;
-				let n = o.trim();
-				n ? f.mutate({
+				if (e.preventDefault(), !t || p.isPending) return;
+				let n = s.trim();
+				n ? p.mutate({
 					row: t,
 					value: n
-				}) : l(H);
+				}) : u(H);
 			},
 			className: "flex min-h-0 flex-col",
 			children: [/* @__PURE__ */ (0, I.jsxs)("div", {
@@ -92,17 +90,17 @@ function G({ target: t, close: r, toast: i }) {
 					className: "text-title-2-semibold text-text-primary",
 					children: j("编辑名称")
 				}), /* @__PURE__ */ (0, I.jsx)(a, {
-					ref: u,
+					ref: f,
 					label: j("名称"),
 					placeholder: j("输入名称"),
 					maxLength: 80,
-					value: o,
+					value: s,
 					onChange: (e) => {
-						s(e), l("");
+						c(e), u("");
 					},
 					validationBehavior: "aria",
-					isInvalid: !!c,
-					hint: c ? j(c) : void 0
+					isInvalid: !!l,
+					hint: l ? o(l) : void 0
 				})]
 			}), /* @__PURE__ */ (0, I.jsxs)("div", {
 				className: "flex justify-between gap-4 p-3",
@@ -112,7 +110,7 @@ function G({ target: t, close: r, toast: i }) {
 					children: j("取消")
 				}), /* @__PURE__ */ (0, I.jsx)(n, {
 					type: "submit",
-					...h(f.isPending),
+					...h(p.isPending),
 					children: j("保存名称")
 				})]
 			})]
@@ -252,4 +250,4 @@ function q({ openPlaylist: e, openEntity: t, canFlip: n, toast: a, revision: o }
 }
 export { q as PlaylistsPage };
 
-//# debugId=d58e74f3-e4ac-437f-806f-57b6377dd465
+//# debugId=b578a7cc-d8a3-4709-9b2e-9c09d028a449

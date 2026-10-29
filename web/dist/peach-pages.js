@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "7b5417d6-18ce-429b-9f43-8513453417f3", e._sentryDebugIdIdentifier = "sentry-dbid-7b5417d6-18ce-429b-9f43-8513453417f3");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "dcbf6f1d-651b-448e-b125-f2bce3a171bc", e._sentryDebugIdIdentifier = "sentry-dbid-dcbf6f1d-651b-448e-b125-f2bce3a171bc");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -14131,6 +14131,11 @@ var He = Object.keys(ge).filter((e) => /\{[a-zA-Z][a-zA-Z0-9_]*\}/.test(e)).map(
 function Ue(e, t = Ie()) {
 	let n = P(e, {}, t);
 	if (t === "zh-CN" || n !== e || e.length > 8192) return n;
+	let r = /^(ValueError|TypeError|RuntimeError|SettingsFileError): (.+)$/su.exec(e);
+	if (r) {
+		let e = Ue(r[2], t);
+		if (e !== r[2]) return `${r[1]}: ${e}`;
+	}
 	for (let n of He) {
 		let r = n.pattern.exec(e);
 		if (!r) continue;
@@ -27682,4 +27687,4 @@ ay && oy && (0, M.createRoot)(ay).render(/* @__PURE__ */ (0, B.jsx)(ny, { childr
 	data: { ...ay.dataset }
 }) }));
 
-//# debugId=7b5417d6-18ce-429b-9f43-8513453417f3
+//# debugId=dcbf6f1d-651b-448e-b125-f2bce3a171bc
