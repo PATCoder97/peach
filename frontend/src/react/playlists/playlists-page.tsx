@@ -81,7 +81,7 @@ function CreateForm({ toast }: { toast: Toast }) {
       <div className="min-w-50 max-w-80 flex-1 basis-50 max-board-narrow:min-w-0 max-board-narrow:max-w-none">
         <Input label={t("新播放列表")} placeholder={t("输入名称")} maxLength={80} value={name}
           onChange={(value) => { setName(value); setProblem('') }}
-          validationBehavior="aria" isInvalid={Boolean(problem)} hint={problem || undefined} />
+          validationBehavior="aria" isInvalid={Boolean(problem)} hint={problem ? t(problem) : undefined} />
       </div>
       <Button type="submit" {...busyProps(create.isPending)}>{t("新建")}</Button>
     </form>
@@ -124,7 +124,7 @@ function RenameDialog({ target, close, toast }: { target: PlaylistRow | null; cl
           <Heading slot="title" className="text-title-2-semibold text-text-primary">{t("编辑名称")}</Heading>
           <Input ref={input} label={t("名称")} placeholder={t("输入名称")} maxLength={80} value={name}
             onChange={(value) => { setName(value); setProblem('') }}
-            validationBehavior="aria" isInvalid={Boolean(problem)} hint={problem || undefined} />
+            validationBehavior="aria" isInvalid={Boolean(problem)} hint={problem ? t(problem) : undefined} />
         </div>
         <div className="flex justify-between gap-4 p-3">
           <Button variant="secondary" onClick={close}>{t("取消")}</Button>

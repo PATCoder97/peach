@@ -1,7 +1,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "aa19f8c9-a4de-4e5d-9e96-e8a4b897cf73", e._sentryDebugIdIdentifier = "sentry-dbid-aa19f8c9-a4de-4e5d-9e96-e8a4b897cf73");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "d58e74f3-e4ac-437f-806f-57b6377dd465", e._sentryDebugIdIdentifier = "sentry-dbid-d58e74f3-e4ac-437f-806f-57b6377dd465");
 	} catch {}
 })();
 import { $2ec61d1d4f780267$export$a8a3e93435678ff9 as e, $542a13ca2fa5b484$export$5b6b19405a83ff9d as t, Button as n, EmptyFocusButton as r, EmptyState as i, Input as a, MENU_ITEM as o, MENU_ITEM_INTERACTIVE as s, MENU_POPOVER_SURFACE as c, MenuDialog as l, MixCard as u, ModalFrame as d, PLAYLISTS_KEY as f, RetryNote as p, __toESM as m, busyProps as h, confirmModal as g, createPlaylist as _, cx as v, deletePlaylist as y, errorMessage as b, fetchPlaylists as x, keepPlaylist as S, posterUrl as C, recreatePlaylist as w, refreshPlaylists as T, renamePlaylist as E, require_jsx_runtime as D, require_react as O, resumeAssetId as k, spriteGlyph as A, translate as j, useMutation as M, useQuery as N, useTranslation as P } from "./peach-app.js";
@@ -41,7 +41,7 @@ function W({ toast: e }) {
 				},
 				validationBehavior: "aria",
 				isInvalid: !!i,
-				hint: i || void 0
+				hint: i ? j(i) : void 0
 			})
 		}), /* @__PURE__ */ (0, I.jsx)(n, {
 			type: "submit",
@@ -102,7 +102,7 @@ function G({ target: t, close: r, toast: i }) {
 					},
 					validationBehavior: "aria",
 					isInvalid: !!c,
-					hint: c || void 0
+					hint: c ? j(c) : void 0
 				})]
 			}), /* @__PURE__ */ (0, I.jsxs)("div", {
 				className: "flex justify-between gap-4 p-3",
@@ -252,4 +252,4 @@ function q({ openPlaylist: e, openEntity: t, canFlip: n, toast: a, revision: o }
 }
 export { q as PlaylistsPage };
 
-//# debugId=aa19f8c9-a4de-4e5d-9e96-e8a4b897cf73
+//# debugId=d58e74f3-e4ac-437f-806f-57b6377dd465

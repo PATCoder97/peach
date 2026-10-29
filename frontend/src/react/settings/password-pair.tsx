@@ -25,18 +25,18 @@ export function PasswordPair({
   confirmationError?: ReactNode;
   confirmationInvalid?: boolean;
 }) {
-  useTranslation();
+  const uiText = useTranslation();
   return (
     <>
       <Input id="access-password" type="password" label={t(label)}
         autoComplete="new-password" maxLength={256} value={password} onChange={onPassword}
         isDisabled={disabled} isRequired={!disabled} validationBehavior="aria"
         isInvalid={!disabled && Boolean(passwordError)}
-        hint={disabled ? passwordHint ? t(passwordHint) : undefined : passwordError || (passwordHint ? t(passwordHint) : undefined)} />
+        hint={disabled ? passwordHint ? t(passwordHint) : undefined : (typeof passwordError === 'string' ? uiText(passwordError) : passwordError) || (passwordHint ? t(passwordHint) : undefined)} />
       <Input id="access-confirm" type="password" label={t("确认访问密码")} autoComplete="new-password" maxLength={256}
         value={confirmation} onChange={onConfirmation} isDisabled={disabled} isRequired={!disabled} validationBehavior="aria"
         isInvalid={!disabled && (Boolean(confirmationError) || confirmationInvalid)}
-        hint={disabled ? undefined : confirmationError} />
+        hint={disabled ? undefined : typeof confirmationError === 'string' ? uiText(confirmationError) : confirmationError} />
     </>
   );
 }

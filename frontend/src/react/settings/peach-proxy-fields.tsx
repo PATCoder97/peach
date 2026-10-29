@@ -21,10 +21,10 @@ export function ProxyModeSelect({ mode, onChange, labelledBy }: {
 export function ProxyAddressField({ id, value, onChange, saved = false, error }: {
   id: string; value: string; onChange(value: string): void; saved?: boolean; error?: ReactNode;
 }) {
-  useTranslation();
+  const uiText = useTranslation();
   return <Input id={id} type="password" label={t("代理地址")} autoComplete="off" spellCheck="false"
     value={value} onChange={onChange} placeholder={saved ? t('已保存，留空保留') : 'http://127.0.0.1:7890'}
-    validationBehavior="aria" isInvalid={Boolean(error)} hint={error} />;
+    validationBehavior="aria" isInvalid={Boolean(error)} hint={typeof error === 'string' ? uiText(error) : error} />;
 }
 
 export function isLoopbackProxy(address: string): boolean {

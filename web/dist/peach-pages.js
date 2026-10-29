@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "11194cca-27d1-4193-8184-9f76d690c714", e._sentryDebugIdIdentifier = "sentry-dbid-11194cca-27d1-4193-8184-9f76d690c714");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "7b5417d6-18ce-429b-9f43-8513453417f3", e._sentryDebugIdIdentifier = "sentry-dbid-7b5417d6-18ce-429b-9f43-8513453417f3");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -25942,13 +25942,12 @@ function fv({ initial: e, blank: t, pickFolder: n, describe: r, focusAfterPick: 
 	};
 }
 function pv({ label: e, path: t, onPath: n, error: r, inputRef: i, picking: a, onPick: o, onRemove: s, status: c, children: l }) {
-	F();
-	let u = (0, j.useRef)(null), d = () => {
-		let e = u.current;
+	let u = F(), d = (0, j.useRef)(null), f = () => {
+		let e = d.current;
 		e && e.ownerDocument.activeElement !== e && (e.scrollLeft = e.scrollWidth);
 	};
 	return (0, j.useLayoutEffect)(() => {
-		u.current && (u.current.title = t), d();
+		d.current && (d.current.title = t), f();
 	}, [t]), /* @__PURE__ */ (0, B.jsxs)("div", {
 		"data-folder-row": !0,
 		className: "@container flex flex-col gap-2 rounded-2lg border border-separator-border bg-background-primary-default p-3",
@@ -25962,12 +25961,12 @@ function pv({ label: e, path: t, onPath: n, error: r, inputRef: i, picking: a, o
 					value: t,
 					onChange: n,
 					ref: (e) => {
-						u.current = e, i(e);
+						d.current = e, i(e);
 					},
-					onBlur: () => requestAnimationFrame(d),
+					onBlur: () => requestAnimationFrame(f),
 					validationBehavior: "aria",
 					isInvalid: !!r,
-					hint: r || void 0
+					hint: typeof r == "string" ? u(r) : r
 				}),
 				c ? /* @__PURE__ */ (0, B.jsx)("div", {
 					className: "flex h-9 shrink-0 items-center",
@@ -26690,7 +26689,8 @@ function Iv({ id: e, name: t, value: n, onChange: r }) {
 }
 // src/react/settings/password-pair.tsx
 function Lv({ label: e, password: t, confirmation: n, onPassword: r, onConfirmation: i, disabled: a = !1, passwordError: o, passwordHint: s, confirmationError: c, confirmationInvalid: l = !1 }) {
-	return F(), /* @__PURE__ */ (0, B.jsxs)(B.Fragment, { children: [/* @__PURE__ */ (0, B.jsx)(_h, {
+	let u = F();
+	return /* @__PURE__ */ (0, B.jsxs)(B.Fragment, { children: [/* @__PURE__ */ (0, B.jsx)(_h, {
 		id: "access-password",
 		type: "password",
 		label: P(e),
@@ -26702,7 +26702,7 @@ function Lv({ label: e, password: t, confirmation: n, onPassword: r, onConfirmat
 		isRequired: !a,
 		validationBehavior: "aria",
 		isInvalid: !a && !!o,
-		hint: a ? s ? P(s) : void 0 : o || (s ? P(s) : void 0)
+		hint: a ? s ? P(s) : void 0 : (typeof o == "string" ? u(o) : o) || (s ? P(s) : void 0)
 	}), /* @__PURE__ */ (0, B.jsx)(_h, {
 		id: "access-confirm",
 		type: "password",
@@ -26715,7 +26715,7 @@ function Lv({ label: e, password: t, confirmation: n, onPassword: r, onConfirmat
 		isRequired: !a,
 		validationBehavior: "aria",
 		isInvalid: !a && (!!c || l),
-		hint: a ? void 0 : c
+		hint: a ? void 0 : typeof c == "string" ? u(c) : c
 	})] });
 }
 // src/react/settings/peach-proxy-fields.tsx
@@ -26739,7 +26739,8 @@ function zv({ mode: e, onChange: t, labelledBy: n }) {
 	});
 }
 function Bv({ id: e, value: t, onChange: n, saved: r = !1, error: i }) {
-	return F(), /* @__PURE__ */ (0, B.jsx)(_h, {
+	let a = F();
+	return /* @__PURE__ */ (0, B.jsx)(_h, {
 		id: e,
 		type: "password",
 		label: P("代理地址"),
@@ -26750,7 +26751,7 @@ function Bv({ id: e, value: t, onChange: n, saved: r = !1, error: i }) {
 		placeholder: r ? P("已保存，留空保留") : "http://127.0.0.1:7890",
 		validationBehavior: "aria",
 		isInvalid: !!i,
-		hint: i
+		hint: typeof i == "string" ? a(i) : i
 	});
 }
 function Vv(e) {
@@ -26903,7 +26904,7 @@ function $v({ setup: e, onDone: t, onRestore: n }) {
 	}, [Ce]);
 	let Te = (e) => e ? /* @__PURE__ */ (0, B.jsx)("span", {
 		role: "alert",
-		children: P(e)
+		children: r(e)
 	}, Ce) : void 0, Ee = (e) => !e.visible_when || Object.entries(e.visible_when).every(([e, t]) => b[e] === t), De = (e, t) => x((n) => ({
 		...n,
 		[e]: t
@@ -27483,24 +27484,23 @@ function $v({ setup: e, onDone: t, onRestore: n }) {
 }
 // src/react/pages/setup/setup-restore.tsx
 function ey({ onDone: e, onBack: t }) {
-	F();
-	let [n, r] = (0, j.useState)(""), [i, a] = (0, j.useState)(""), [o, s] = (0, j.useState)(!1), c = (0, j.useRef)(null);
+	let n = F(), [r, i] = (0, j.useState)(""), [a, o] = (0, j.useState)(""), [s, c] = (0, j.useState)(!1), l = (0, j.useRef)(null);
 	return (0, j.useEffect)(() => {
-		c.current?.focus({ preventScroll: !0 });
+		l.current?.focus({ preventScroll: !0 });
 	}, []), /* @__PURE__ */ (0, B.jsx)(cg, {
 		step: "restore",
 		children: /* @__PURE__ */ (0, B.jsxs)("form", {
 			"data-setup-form-panel": "",
 			onSubmit: async (t) => {
-				if (t.preventDefault(), !o) {
-					s(!0), a("");
+				if (t.preventDefault(), !s) {
+					c(!0), o("");
 					try {
-						e(await Dh(n));
+						e(await Dh(r));
 					} catch (e) {
 						let t = e instanceof Ch ? e.errors?.data_root : void 0;
-						a(typeof t == "string" ? t : kh(e));
+						o(typeof t == "string" ? t : kh(e));
 					} finally {
-						s(!1);
+						c(!1);
 					}
 				}
 			},
@@ -27522,7 +27522,7 @@ function ey({ onDone: e, onBack: t }) {
 							"data-setup-step-heading": "",
 							children: [/* @__PURE__ */ (0, B.jsx)("h1", {
 								id: "auth-card-title",
-								ref: c,
+								ref: l,
 								tabIndex: -1,
 								className: "text-title-1-semibold text-text-primary",
 								children: P("使用已有数据")
@@ -27532,16 +27532,16 @@ function ey({ onDone: e, onBack: t }) {
 							})]
 						}), /* @__PURE__ */ (0, B.jsx)("div", { children: /* @__PURE__ */ (0, B.jsx)(_h, {
 							label: P("已有数据目录"),
-							value: n,
-							onChange: r,
+							value: r,
+							onChange: i,
 							isRequired: !0,
 							autoComplete: "off",
 							spellCheck: "false",
 							validationBehavior: "aria",
-							isInvalid: !!i,
-							hint: i ? /* @__PURE__ */ (0, B.jsx)("span", {
+							isInvalid: !!a,
+							hint: a ? /* @__PURE__ */ (0, B.jsx)("span", {
 								role: "alert",
-								children: i
+								children: n(a)
 							}) : P("选择包含 config.toml 和 database 文件夹的数据目录。")
 						}) })]
 					})
@@ -27552,14 +27552,14 @@ function ey({ onDone: e, onBack: t }) {
 					children: [/* @__PURE__ */ (0, B.jsx)(On, {
 						variant: "ghost",
 						onClick: () => {
-							o || t();
+							s || t();
 						},
-						"aria-disabled": o || void 0,
+						"aria-disabled": s || void 0,
 						children: P("返回首次设置")
 					}), /* @__PURE__ */ (0, B.jsx)(On, {
 						type: "submit",
-						...rv(o),
-						children: P(o ? "正在连接数据目录…" : "使用此目录")
+						...rv(s),
+						children: P(s ? "正在连接数据目录…" : "使用此目录")
 					})]
 				})
 			]
@@ -27682,4 +27682,4 @@ ay && oy && (0, M.createRoot)(ay).render(/* @__PURE__ */ (0, B.jsx)(ny, { childr
 	data: { ...ay.dataset }
 }) }));
 
-//# debugId=11194cca-27d1-4193-8184-9f76d690c714
+//# debugId=7b5417d6-18ce-429b-9f43-8513453417f3

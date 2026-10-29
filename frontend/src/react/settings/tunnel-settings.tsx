@@ -116,7 +116,7 @@ export function TunnelSettings({ revision: initialRevision, initial, receipt }: 
           <Input id="tunnel-hostname" label={uiText("公开主机名")} autoComplete="off" maxLength={253}
             value={hostname} onChange={setHostname} isDisabled={active} validationBehavior="aria"
             isInvalid={Boolean(fields.hostname)}
-            hint={fields.hostname || uiText("Cloudflare Zero Trust 里指向这台电脑的主机名。")} />
+            hint={fields.hostname ? uiText(fields.hostname) : uiText("Cloudflare Zero Trust 里指向这台电脑的主机名。")} />
           <Input id="tunnel-token" type="password" label={uiText("隧道令牌")} autoComplete="off" maxLength={2048}
             value={token} onChange={setToken} isDisabled={active} validationBehavior="aria"
             hint={state.token_set

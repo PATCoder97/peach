@@ -117,7 +117,7 @@ export function SetupForm({ setup, onDone, onRestore }: { setup: SetupQuestions;
   // `aria-describedby` 挂在框上，文字在页面上只有这一份。`key` 跟着提交轮次换，同一句错误
   // 再提交一次也会重新播报。
   const announce = (message: string | undefined) =>
-    message ? <span key={errorRound} role="alert">{t(message)}</span> : undefined;
+    message ? <span key={errorRound} role="alert">{uiText(message)}</span> : undefined;
 
   const visible = (question: SetupQuestion) =>
     !question.visible_when || Object.entries(question.visible_when).every(([key, value]) => values[key] === value);

@@ -160,7 +160,7 @@ export function FolderRow({ label, path, onPath, error, inputRef, picking, onPic
   status?: ReactNode;
   children: ReactNode;
 }) {
-  useTranslation();
+  const uiText = useTranslation();
   /* 一组文件夹常共用很长的前缀，窄框里露开头的话每行都是同一段；不在编辑时露末段，
      分得出是哪一个文件夹。全文在 title 里。 */
   const box = useRef<HTMLInputElement | null>(null);
@@ -182,7 +182,7 @@ export function FolderRow({ label, path, onPath, error, inputRef, picking, onPic
         <Input className="min-w-0 flex-1" aria-label={label} placeholder={t("媒体目录路径")}
           value={path} onChange={onPath} ref={attach}
           onBlur={() => requestAnimationFrame(showTail)}
-          validationBehavior="aria" isInvalid={Boolean(error)} hint={error || undefined} />
+          validationBehavior="aria" isInvalid={Boolean(error)} hint={typeof error === 'string' ? uiText(error) : error} />
         {status ? <div className="flex h-9 shrink-0 items-center">{status}</div> : null}
         <IconButton icon={FolderSearchIcon} aria-label={t("选择文件夹")} onClick={onPick} {...busyProps(picking)} />
         {onRemove ? <Button variant="danger" iconOnly leadingIcon={RiDeleteBinLine} aria-label={t("移除这个文件夹")} onClick={onRemove} /> : null}

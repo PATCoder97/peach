@@ -1,7 +1,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "c89f37ea-8a0c-4bb3-b695-500440f0e245", e._sentryDebugIdIdentifier = "sentry-dbid-c89f37ea-8a0c-4bb3-b695-500440f0e245");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "e39faa1b-4c8b-4595-bfcb-99a9a436fb42", e._sentryDebugIdIdentifier = "sentry-dbid-e39faa1b-4c8b-4595-bfcb-99a9a436fb42");
 	} catch {}
 })();
 import { Button as e, CLOUD_LOCATIONS as t, ErrorText as n, Help as r, IconButton as i, Input as a, Label as o, M6 as s, MEDIA_SOURCE_ICONS as c, MEDIA_SOURCE_OPTIONS as l, Select$1 as u, SelectItem as d, SourceMark as f, __toESM as p, busyProps as m, cx as h, require_jsx_runtime as g, require_react as _, translate as v, useTranslation as y } from "./peach-app.js";
@@ -117,13 +117,12 @@ function A({ initial: e, blank: t, pickFolder: n, describe: r, focusAfterPick: i
 	};
 }
 function j({ label: t, path: n, onPath: r, error: o, inputRef: c, picking: l, onPick: u, onRemove: d, status: f, children: p }) {
-	y();
-	let h = (0, b.useRef)(null), g = () => {
-		let e = h.current;
+	let h = y(), g = (0, b.useRef)(null), _ = () => {
+		let e = g.current;
 		e && e.ownerDocument.activeElement !== e && (e.scrollLeft = e.scrollWidth);
 	};
 	return (0, b.useLayoutEffect)(() => {
-		h.current && (h.current.title = n), g();
+		g.current && (g.current.title = n), _();
 	}, [n]), /* @__PURE__ */ (0, x.jsxs)("div", {
 		"data-folder-row": !0,
 		className: "@container flex flex-col gap-2 rounded-2lg border border-separator-border bg-background-primary-default p-3",
@@ -137,12 +136,12 @@ function j({ label: t, path: n, onPath: r, error: o, inputRef: c, picking: l, on
 					value: n,
 					onChange: r,
 					ref: (e) => {
-						h.current = e, c(e);
+						g.current = e, c(e);
 					},
-					onBlur: () => requestAnimationFrame(g),
+					onBlur: () => requestAnimationFrame(_),
 					validationBehavior: "aria",
 					isInvalid: !!o,
-					hint: o || void 0
+					hint: typeof o == "string" ? h(o) : o
 				}),
 				f ? /* @__PURE__ */ (0, x.jsx)("div", {
 					className: "flex h-9 shrink-0 items-center",
@@ -190,4 +189,4 @@ function M({ index: e, value: t, onChange: n, options: r = C }) {
 }
 export { E as FolderField, D as FolderFieldLine, j as FolderRow, S as FolderSearchIcon, C as MEDIA_SOURCES, O as MediaReadPolicy, k as MediaReadPolicyHelp, M as SourceSelect, T as isCloudSource, w as sourceMark, A as useFolderRows };
 
-//# debugId=c89f37ea-8a0c-4bb3-b695-500440f0e245
+//# debugId=e39faa1b-4c8b-4595-bfcb-99a9a436fb42

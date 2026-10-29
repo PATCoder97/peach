@@ -78,7 +78,7 @@ function IssueRow({ issue }: { issue: BackgroundIssue }) {
           : null}
       </div>
     }>
-      {retry.error ? uiText("{value0}\n没有重试：{value1}", { value0: String(moment), value1: String(errorMessage(retry.error)) }) : moment}
+      {retry.error ? uiText("{value0}\n没有重试：{value1}", { value0: String(moment), value1: uiText(errorMessage(retry.error)) }) : moment}
     </Note>
   );
 }

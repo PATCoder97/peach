@@ -269,7 +269,7 @@ export function OrganizeCard(
           : null}
         <p aria-live="polite" aria-busy={example.isFetching} data-organize-example=""
           className="text-caption-1-regular text-text-secondary">{uiText("路径示例：")}<code className="wrap-anywhere">{example.data?.example || example.data?.error
-            || (example.isError ? errorMessage(example.error) : '正在预览…')}</code>
+            || (example.isError ? uiText(errorMessage(example.error)) : uiText('正在预览…'))}</code>
         </p>
         {data?.placeholders?.length ? <div className="flex flex-col gap-2" role="group" aria-label={uiText("插入参数")}>
           <p className="text-caption-1-regular text-text-secondary" aria-live="polite">

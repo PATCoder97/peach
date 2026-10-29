@@ -10,7 +10,7 @@ import { describeFailure, restoreSetup, SetupRequestError, type SetupDone } from
 import { SetupShell } from './setup-scene';
 
 export function SetupRestore({ onDone, onBack }: { onDone: (done: SetupDone) => void; onBack: () => void }) {
-  useTranslation();
+  const uiText = useTranslation();
   const [path, setPath] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -41,7 +41,7 @@ export function SetupRestore({ onDone, onBack }: { onDone: (done: SetupDone) => 
       </header>
       <div><Input label={t("已有数据目录")} value={path} onChange={setPath} isRequired autoComplete="off" spellCheck="false"
         validationBehavior="aria" isInvalid={Boolean(error)}
-        hint={error ? <span role="alert">{error}</span> : t("选择包含 config.toml 和 database 文件夹的数据目录。")} /></div>
+        hint={error ? <span role="alert">{uiText(error)}</span> : t("选择包含 config.toml 和 database 文件夹的数据目录。")} /></div>
       </div></div>
       <footer data-setup-footer="" data-copy-interact>
         <Button variant="ghost" onClick={() => { if (!busy) onBack(); }} aria-disabled={busy || undefined}>{t("返回首次设置")}</Button>

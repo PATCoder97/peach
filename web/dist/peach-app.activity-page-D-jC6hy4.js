@@ -1,7 +1,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "94040503-61ae-42d7-81af-157d5768aff8", e._sentryDebugIdIdentifier = "sentry-dbid-94040503-61ae-42d7-81af-157d5768aff8");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "80b518a2-0380-4157-a90d-56a6eb547f0f", e._sentryDebugIdIdentifier = "sentry-dbid-80b518a2-0380-4157-a90d-56a6eb547f0f");
 	} catch {}
 })();
 import { Button as e, Chip as t, Disclosure as n, DownloadsPanel as r, EmptyState as i, LinkButton as a, LoadingDots as o, Note as s, Progress as c, TASKS_KEY as l, TRIGGER_LABELS as u, __toESM as d, apiGet as f, apiSend as p, busyProps as m, cardClass as h, elapsedText as g, errorMessage as _, f1 as v, fetchEarlier as ee, fetchTasks as te, foldByKind as ne, foldRoutine as re, followupDetail as y, followupTally as b, formatNumber as x, groupFollowups as ie, hasResultProblems as S, i2 as C, isActive as w, isRoutine as ae, latestOfKind as oe, mergeFinished as T, momentText as E, pollInterval as se, problemDestination as D, progressText as O, require_jsx_runtime as k, require_react as A, statusLabel as j, summaryItems as M, taskIssues as N, uo as ce, useMutation as P, useQuery as F, useQueryClient as I, useTranslation as L } from "./peach-app.js";
@@ -57,7 +57,7 @@ function G({ issue: t }) {
 		}),
 		children: i.error ? n("{value0}\n没有重试：{value1}", {
 			value0: String(o),
-			value1: String(_(i.error))
+			value1: n(_(i.error))
 		}) : o
 	});
 }
@@ -424,4 +424,4 @@ function pe() {
 }
 export { pe as ActivityPage };
 
-//# debugId=94040503-61ae-42d7-81af-157d5768aff8
+//# debugId=80b518a2-0380-4157-a90d-56a6eb547f0f

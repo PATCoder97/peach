@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { ApiError } from '../src/api';
+import { ApiError, errorMessage } from '../src/api';
 import { requestErrorMessage, requestErrorSource } from '../src/core/request-error';
 import { LOCALE_KEY, setLocale } from '../src/i18n';
 
@@ -27,6 +27,7 @@ describe('请求反馈的界面语言', () => {
     expect(error.status).toBe(409);
     expect(error.body).toBe(body);
     expect(error.message).toContain('Ổ lưu trữ');
+    expect(errorMessage(error)).toBe(body.errors.path);
     setLocale('en');
     expect(requestErrorMessage(error)).toContain('media drive is not mounted');
     expect(requestErrorSource(body.errors.path, 409)).toBe(body.errors.path);

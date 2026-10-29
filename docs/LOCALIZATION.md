@@ -14,6 +14,8 @@ React 界面通过 `frontend/src/react/i18n.ts` 的 `useTranslation()` 订阅语
 
 请求失败由 `requestErrorSource` 保留原始原因，`requestErrorMessage` 按当前界面语言显示。`ApiError.sourceMessage`、状态码和原始响应体独立保存；切换语言时不把已有译文再次当成服务端原因解析。表单请求的 `useAction` 保存原文并订阅语言变化。
 
+React API 的 `errorMessage` 同样返回原始原因，避免保存状态时固定成失败当时的语言。字段下方的校验提示、持久错误与重试提示在渲染时翻译；语言切换保留输入节点、值与服务端原始响应。
+
 系统消息使用 `translateSystem` 或 `useSystemTranslation`，只匹配 `system-messages.ts` 中完整登记的模板。路径、名称和计数作为占位值保留；未知消息仍显示原文。设置行、提示和处理进度接在这层，不把模板匹配用于片名、标签、来源摘录或任意 DOM 文本。
 
 公共控件间接使用的固定词条登记在 `supplemental-messages.ts`，动态回执登记在 `runtime-messages.ts` 并纳入系统模板。匹配优先采用固定文字更长的完整模板，避免带系统盘说明的容量被较短模板截走。占位值保持原样，不递归翻译名称或路径。

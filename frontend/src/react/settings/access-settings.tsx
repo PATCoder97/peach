@@ -77,7 +77,7 @@ export function AccessSettings({ initial, receipt }: AccessSettingsProps) {
           {state.mode === 'password'
             ? <Input id="access-current" type="password" label={uiText("当前访问密码")} autoComplete="current-password" maxLength={256}
                 value={current} onChange={setCurrent} isRequired validationBehavior="aria"
-                isInvalid={Boolean(fields.current_password)} hint={fields.current_password} />
+                isInvalid={Boolean(fields.current_password)} hint={fields.current_password ? uiText(fields.current_password) : undefined} />
             : null}
           {editable && !disable
             ? <PasswordPair label={state.mode === 'password' ? uiText("新访问密码") : uiText("设置访问密码")}

@@ -74,10 +74,10 @@ export function PortSettings({ data, receipt }: ConfigurationGroupProps) {
         {host === '0.0.0.0' ? <ConfigurationInput id="configMdnsName" label={uiText("局域网访问地址")} value={name} onChange={setName}
           prefix={network.local_url.startsWith('https:') ? 'https://' : 'http://'} suffix=".local"
           autoComplete="off" spellCheck="false" maxLength={63} isDisabled={Boolean(action.busy)} validationBehavior="aria"
-          isInvalid={Boolean(fields.mdns_name)} hint={fields.mdns_name || undefined} /> : null}
+          isInvalid={Boolean(fields.mdns_name)} hint={fields.mdns_name ? uiText(fields.mdns_name) : undefined} /> : null}
       </> : null}
       <ConfigurationInput id="configPort" label={uiText("端口")} prefix="localhost:" inputMode="numeric" value={port} onChange={setPort}
-        isDisabled={Boolean(action.busy)} validationBehavior="aria" isInvalid={Boolean(fields.port)} hint={fields.port} />
+        isDisabled={Boolean(action.busy)} validationBehavior="aria" isInvalid={Boolean(fields.port)} hint={fields.port ? uiText(fields.port) : undefined} />
     </> : <Help>{data.notice || uiText("访问范围、名称与端口由服务启动配置管理。")}</Help>}
     {network?.editable && host === '0.0.0.0' && network.scope === 'local'
       ? <Help>{uiText("保存并重启后显示手机连接地址。可在下方设置访问密码。")}</Help> : null}

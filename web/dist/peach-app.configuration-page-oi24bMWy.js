@@ -1,13 +1,13 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "7532e093-5b34-4118-986a-6fede2e957bb", e._sentryDebugIdIdentifier = "sentry-dbid-7532e093-5b34-4118-986a-6fede2e957bb");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "323429f2-929b-4aeb-a11a-910684adf202", e._sentryDebugIdIdentifier = "sentry-dbid-323429f2-929b-4aeb-a11a-910684adf202");
 	} catch {}
 })();
 import { AnimatedItems as e, Cell as t, ChartBackground as n, ChartContainer as r, ChartLegend as i, ChartLegendContent as a, ChartTip as o, ChartTooltip as s, ChartTooltipContent as c, Curve as l, DATA_ITEM_GRAPHICAL_ITEM_ID_ATTRIBUTE_NAME as u, DATA_ITEM_INDEX_ATTRIBUTE_NAME as d, DefaultZIndexes as f, EvilBarChart as p, LabelList as m, LabelListFromLabelProp as h, Layer as g, LoadingIndicator as _, PolarChart as v, PolarLabelContextProvider as y, PolarLabelListContextProvider as b, RegisterGraphicalItemId as x, Sector as S, SetPolarGraphicalItem as C, SetPolarLegendPayload as w, SetTooltipEntrySettings as T, Shape as ee, TIP_SWATCH as te, Text as ne, ZIndexLayer as re, adaptEventsOfChild as ie, arrayTooltipSearcher as ae, createSelector as oe, defaultPolarChartProps as se, findAllByType as ce, get as le, getClassNameFromUnknown as ue, getColorsCount as de, getMaxRadius as fe, getPercentValue as pe, getTooltipNameProp as me, getValueByDataKey as he, interpolate as ge, isNumber as _e, matchAppend as ve, mathSign as ye, polarToCartesian as be, resolveDefaultProps as xe, selectActiveTooltipDataKey as Se, selectActiveTooltipGraphicalItemId as Ce, selectActiveTooltipIndex as we, selectChartDataAndAlwaysIgnoreIndexes as Te, selectChartOffsetInternal as Ee, selectUnfilteredPolarItems as De, svgPropertiesNoEvents as Oe, svgPropertiesNoEventsFromUnknown as ke, tone as Ae, useAnimationCallbacks as je, useAppSelector as Me, useMouseClickItemDispatch as Ne, useMouseEnterItemDispatch as Pe, useMouseLeaveItemDispatch as Fe, usePolarChartLayout as Ie } from "./peach-app.chart-tip-DZxr5vDp.js";
 import { $2ec61d1d4f780267$export$a8a3e93435678ff9 as Le, $3a442827418ebe87$export$eb2fcfdbd7ba97d4 as Re, $542a13ca2fa5b484$export$5b6b19405a83ff9d as ze, $72abaeab4d80592f$export$78efe591171d7d45 as Be, $bd263d78e9bf3c56$export$f5c9f3c2c4054eec as Ve, $ea3928288112382f$export$439d29a4e110a164 as He, $f2ff30fde7b014be$export$3ddf2d174ce01153 as Ue, $fe21c36db05242bb$export$a98f0dcb43a68a25 as We, $fe21c36db05242bb$export$d7b12c4107be0d61 as Ge, ACCENTS as Ke, ApiError as qe, Button as E, ButtonLink as Je, CLOUD_LOCATIONS as Ye, CLOUD_PROXY_HELP as Xe, CONFIGURATION_KEY as Ze, CONFIGURATION_URL as Qe, CREDENTIAL_STATE as $e, Checkbox as et, Chip as tt, Disclosure as D, ENTRY_LINKS_HELP as nt, ENTRY_LINKS_HINT as rt, EmptyState as it, ErrorText as O, ExternalLink as k, FEED_SCHEDULE_KEY as at, FOLLOW_CREDENTIALS_KEY as ot, FOLLOW_INITIAL_RANGE_OPTIONS as st, FOLLOW_SCHEDULE_KEY as ct, Fact as A, FactList as lt, FieldLabel as ut, Footer as j, Help as M, HintText as dt, Input as N, LIBRARY_FOLDER_HELP as ft, LIBRARY_PROCESSING_KEY as pt, Label as mt, LinkButton as ht, LoadingDots as gt, M6 as _t, MEDIA_PROCESSING_KEY as vt, MEDIA_PROCESSING_URL as yt, MEDIA_SOURCE_ICONS as bt, MENU_POPOVER_SURFACE as xt, Note as P, PICK_FOLDER_URL as St, POLICY_COLUMNS as Ct, POLICY_COVER_NOTE as wt, POLICY_MATRIX as Tt, POLICY_SUMMARY as Et, PathLine as Dt, PillTabList as Ot, Progress as kt, Rows as F, SEGMENT as At, SEGMENTED_TRACK as jt, SETTINGS_KEY as Mt, SETTINGS_URL as Nt, Section as I, SectionSkeleton as Pt, SegmentedRadioGroup as Ft, Select as It, Select$1 as L, SelectItem as R, SettingsCard as Lt, SettingsRow as z, SiteLabel as Rt, SourceLabel as zt, SourceMark as Bt, Stack as B, StatusLabel as V, Switch as H, THUMBNAIL_JOBS_KEY as Vt, TaskCenterLink as Ht, TextField as Ut, TextFieldContext as Wt, __toESM as Gt, animate as Kt, apiGet as qt, apiSend as U, appSettingsStore as Jt, boundedPreference as Yt, busyProps as W, cardClass as Xt, cloudProxySkeleton as Zt, clsx as Qt, cn as $t, confirmModal as en, credentialDone as tn, credentialsSkeleton as nn, cx as rn, errorMessage as G, fetchConfiguration as an, fetchCredentials as on, fetchFeedSchedule as sn, fetchFollowSchedule as cn, fetchMediaProcessing as ln, fetchSettings as un, fetchThumbnailJobs as dn, fmtSize as K, indexersSkeleton as fn, javBrowserSkeleton as pn, momentText as mn, motion as hn, overlayHost as gn, peachHistory$1 as _n, previewLibraryColor as vn, providerIcon as yn, queryClient as bn, randomId as xn, rememberShape as Sn, require_jsx_runtime as Cn, require_react as wn, saveCredential as Tn, schedulePollInterval as En, settingsPath as Dn, shellNavigate as On, sortCx as kn, sourceDefaultCost as An, translate as q, useAction as J, useClientUpdates as jn, useLibraryTints as Mn, useMutation as Nn, useQuery as Y, useReducedMotion as Pn, useRunSchedule as Fn, useSaveFollowSchedule as In, useSaveSettings as Ln, useSaveThumbnailMode as Rn, useSystemTranslation as zn, useTranslation as X } from "./peach-app.js";
 import { CodeBlock as Bn } from "./peach-app.code-block-BLPqm2xI.js";
-import { FolderField as Vn, FolderFieldLine as Hn, FolderRow as Un, MEDIA_SOURCES as Wn, MediaReadPolicy as Gn, MediaReadPolicyHelp as Kn, SourceSelect as qn, isCloudSource as Jn, sourceMark as Yn, useFolderRows as Xn } from "./peach-app.folder-rows-BXmcgS-S.js";
+import { FolderField as Vn, FolderFieldLine as Hn, FolderRow as Un, MEDIA_SOURCES as Wn, MediaReadPolicy as Gn, MediaReadPolicyHelp as Kn, SourceSelect as qn, isCloudSource as Jn, sourceMark as Yn, useFolderRows as Xn } from "./peach-app.folder-rows-BK9W3UH7.js";
 import { ConnectionStatus as Zn } from "./peach-app.connection-status-Usa7d0Cc.js";
 import { SourceIcon as Qn } from "./peach-app.source-view-BXb_-4C5.js";
 // src/react/settings/configuration-panel.ts
@@ -4266,7 +4266,7 @@ function vo({ receipt: e }) {
 			value: o,
 			isDisabled: !n.data,
 			isInvalid: !!s,
-			hint: s || void 0,
+			hint: s ? t(s) : void 0,
 			onChange: i
 		})] }), /* @__PURE__ */ (0, Q.jsx)(j, { children: /* @__PURE__ */ (0, Q.jsx)(E, {
 			type: "submit",
@@ -4277,7 +4277,8 @@ function vo({ receipt: e }) {
 }
 // src/react/settings/password-pair.tsx
 function yo({ label: e, password: t, confirmation: n, onPassword: r, onConfirmation: i, disabled: a = !1, passwordError: o, passwordHint: s, confirmationError: c, confirmationInvalid: l = !1 }) {
-	return X(), /* @__PURE__ */ (0, Q.jsxs)(Q.Fragment, { children: [/* @__PURE__ */ (0, Q.jsx)(N, {
+	let u = X();
+	return /* @__PURE__ */ (0, Q.jsxs)(Q.Fragment, { children: [/* @__PURE__ */ (0, Q.jsx)(N, {
 		id: "access-password",
 		type: "password",
 		label: q(e),
@@ -4289,7 +4290,7 @@ function yo({ label: e, password: t, confirmation: n, onPassword: r, onConfirmat
 		isRequired: !a,
 		validationBehavior: "aria",
 		isInvalid: !a && !!o,
-		hint: a ? s ? q(s) : void 0 : o || (s ? q(s) : void 0)
+		hint: a ? s ? q(s) : void 0 : (typeof o == "string" ? u(o) : o) || (s ? q(s) : void 0)
 	}), /* @__PURE__ */ (0, Q.jsx)(N, {
 		id: "access-confirm",
 		type: "password",
@@ -4302,7 +4303,7 @@ function yo({ label: e, password: t, confirmation: n, onPassword: r, onConfirmat
 		isRequired: !a,
 		validationBehavior: "aria",
 		isInvalid: !a && (!!c || l),
-		hint: a ? void 0 : c
+		hint: a ? void 0 : typeof c == "string" ? u(c) : c
 	})] });
 }
 // src/react/settings/access-settings.tsx
@@ -4357,7 +4358,7 @@ function xo({ initial: e, receipt: t }) {
 					isRequired: !0,
 					validationBehavior: "aria",
 					isInvalid: !!p.current_password,
-					hint: p.current_password
+					hint: p.current_password ? n(p.current_password) : void 0
 				}) : null,
 				y && !d ? /* @__PURE__ */ (0, Q.jsx)(yo, {
 					label: r.mode === "password" ? n("新访问密码") : n("设置访问密码"),
@@ -4515,7 +4516,7 @@ function To({ data: e, receipt: t }) {
 				isDisabled: !!h.busy,
 				validationBehavior: "aria",
 				isInvalid: !!d.mdns_name,
-				hint: d.mdns_name || void 0
+				hint: d.mdns_name ? n(d.mdns_name) : void 0
 			}) : null] }) : null, /* @__PURE__ */ (0, Q.jsx)(Co, {
 				id: "configPort",
 				label: n("端口"),
@@ -4526,7 +4527,7 @@ function To({ data: e, receipt: t }) {
 				isDisabled: !!h.busy,
 				validationBehavior: "aria",
 				isInvalid: !!d.port,
-				hint: d.port
+				hint: d.port ? n(d.port) : void 0
 			})] }) : /* @__PURE__ */ (0, Q.jsx)(M, { children: e.notice || n("访问范围、名称与端口由服务启动配置管理。") }),
 			r?.editable && a === "0.0.0.0" && r.scope === "local" ? /* @__PURE__ */ (0, Q.jsx)(M, { children: n("保存并重启后显示手机连接地址。可在下方设置访问密码。") }) : null,
 			h.error ? /* @__PURE__ */ (0, Q.jsx)(P, {
@@ -4589,7 +4590,8 @@ function Oo({ mode: e, onChange: t, labelledBy: n }) {
 	});
 }
 function ko({ id: e, value: t, onChange: n, saved: r = !1, error: i }) {
-	return X(), /* @__PURE__ */ (0, Q.jsx)(N, {
+	let a = X();
+	return /* @__PURE__ */ (0, Q.jsx)(N, {
 		id: e,
 		type: "password",
 		label: q("代理地址"),
@@ -4600,7 +4602,7 @@ function ko({ id: e, value: t, onChange: n, saved: r = !1, error: i }) {
 		placeholder: r ? q("已保存，留空保留") : "http://127.0.0.1:7890",
 		validationBehavior: "aria",
 		isInvalid: !!i,
-		hint: i
+		hint: typeof i == "string" ? a(i) : i
 	});
 }
 // src/react/settings/tunnel-settings.tsx
@@ -4669,7 +4671,7 @@ function No({ revision: e, initial: t, receipt: n }) {
 				isDisabled: _,
 				validationBehavior: "aria",
 				isInvalid: !!m.hostname,
-				hint: m.hostname || r("Cloudflare Zero Trust 里指向这台电脑的主机名。")
+				hint: m.hostname ? r(m.hostname) : r("Cloudflare Zero Trust 里指向这台电脑的主机名。")
 			}), /* @__PURE__ */ (0, Q.jsx)(N, {
 				id: "tunnel-token",
 				type: "password",
@@ -5482,4 +5484,4 @@ function ns({ data: e, receipt: t, reopenTutorial: n, section: r, diagnostics: i
 }
 export { $o as ConfigurationPage };
 
-//# debugId=7532e093-5b34-4118-986a-6fede2e957bb
+//# debugId=323429f2-929b-4aeb-a11a-910684adf202
