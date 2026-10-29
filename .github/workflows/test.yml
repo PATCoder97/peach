@@ -262,7 +262,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm --prefix frontend ci
       - name: 安装 Linux FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-noto-cjk
       - name: 指定 e2e 用的 Chrome
         run: echo "PEACH_E2E_CHROME=$(command -v google-chrome)" >> "$GITHUB_ENV"
       - name: 安装 Python 依赖
