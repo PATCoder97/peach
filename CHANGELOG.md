@@ -21,6 +21,18 @@ Removed / Fixed / Security。
 
 ## [未发布]
 
+## [0.52.0] - 2026-10-29
+
+### 新增
+
+- **界面**：首次设置、登录、馆藏、关注、配置、任务及播放器支持英语与越南语，语言偏好按浏览器保存，并在同一浏览器的标签页之间同步。
+
+### 修复
+
+- **界面**：补齐加载、空态、批量操作、系统进度、表单错误和可访问名称的译文；切换语言保留正在填写的内容，并更新已有错误与回执，馆藏原文、路径及 API 值保持原样。
+- **播放**：补齐播放器设置、速度、评级、播放列表与连接失败提示，详情页保存状态随语言更新。
+- **馆藏**：垃圾文件页面正常加载；标签字母表的分组标题和跳转按钮随语言显示，来源标签保留原文。
+
 ## [0.51.0] - 2026-10-28
 
 作者从 2026 年 10 月 29 日开始游玩《影之刃零》，通关前会暂缓更新和维护。
@@ -787,7 +799,8 @@ Removed / Fixed / Security。
 - **桌面**：独立包使用 UTF-8 启动日志。
 - **配置**：首次设置后的跳转目标取新鲜读到的 mDNS 名。
 
-[未发布]: https://github.com/peach-mitao/peach/compare/v0.51.0...HEAD
+[未发布]: https://github.com/PATCoder97/peach/compare/v0.52.0...HEAD
+[0.52.0]: https://github.com/PATCoder97/peach/compare/v0.51.1...v0.52.0
 [0.51.0]: https://github.com/peach-mitao/peach/compare/v0.50.0...v0.51.0
 [0.50.0]: https://github.com/peach-mitao/peach/compare/v0.49.1...v0.50.0
 [0.49.1]: https://github.com/peach-mitao/peach/compare/v0.48.2...v0.49.1
