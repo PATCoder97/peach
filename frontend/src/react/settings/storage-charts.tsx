@@ -46,7 +46,7 @@ export function storageSlices(categories: StorageCategory[]) {
 export function StorageOverview({ storage }: { storage: StorageState }) {
   const uiText = useUiTranslation();
   const usage = storage.usage!;
-  const slices = storageSlices(usage.categories);
+  const slices = storageSlices(usage.categories).map(slice => ({ ...slice, label: uiText(slice.label) }));
   const config: ChartConfig = Object.fromEntries(slices.map((slice) =>
     [slice.key, { label: slice.label, colors: tone(slice.color) }]));
   const data = slices.map((slice) => ({ slice: slice.key, value: slice.bytes }));
@@ -91,19 +91,19 @@ function DiskBar({ storage }: { storage: StorageState }) {
   const others = Math.max(0, storage.total_bytes - free - peach);
   const config = {
     /* 不用任何一类的图表色：这一段是整个数据目录，与上面某一类同色会读成「只有数据库」。 */
-    peach: { label: 'Peach 数据', colors: tone('var(--color-border-focus-ring)') },
-    others: { label: '其他文件', colors: tone(REST_COLOR) },
-    free: { label: '可用', colors: tone('var(--color-background-tertiary-default)') },
+    peach: { label: uiText('Peach 数据'), colors: tone('var(--color-border-focus-ring)') },
+    others: { label: uiText('其他文件'), colors: tone(REST_COLOR) },
+    free: { label: uiText('可用'), colors: tone('var(--color-background-tertiary-default)') },
   } satisfies ChartConfig;
   const share = (part: number) => {
     const percent = (part / storage.total_bytes!) * 100;
-    return percent < 0.1 ? '不到 0.1%' : `${percent.toFixed(percent < 10 ? 1 : 0)}%`;
+    return percent < 0.1 ? uiText('不到 0.1%') : `${percent.toFixed(percent < 10 ? 1 : 0)}%`;
   };
   return (
     <div className="flex flex-col gap-2">
       <p className="text-caption-1-regular text-text-secondary">{uiText("所在磁盘共 ")}{size(storage.total_bytes)}{storage.system_drive ? uiText("（系统盘）") : ''}{uiText("，Peach 占 ")}{share(peach)}{uiText("， 可用 ")}{size(free)}
       </p>
-      <EvilBarChart data={[{ disk: '磁盘', peach, others, free }]} config={config}
+      <EvilBarChart data={[{ disk: uiText('磁盘'), peach, others, free }]} config={config}
         layout="horizontal" stackType="percent" barRadius={4}
         chartProps={{ margin: { top: 0, right: 0, bottom: 0, left: 0 } }}
         className="aspect-auto h-6 flex-none">

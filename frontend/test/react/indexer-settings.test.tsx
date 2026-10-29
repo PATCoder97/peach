@@ -1,4 +1,6 @@
 import { notifyManager, QueryClientProvider } from '@tanstack/react-query';
+import { act } from 'react';
+import { setLocale } from '../../src/i18n';
 import { afterEach, expect, it, vi } from 'vitest';
 import { queryClient } from '../../src/react/query';
 import { IndexerSettings } from '../../src/react/settings/indexer-settings';
@@ -27,7 +29,23 @@ it('普通 HTTP 的随机源支持添加、编辑、移除和保存索引器', a
   expect(sent.indexers[0]).toMatchObject({ name: '第二个', url: 'https://indexer.example/api', enabled: true });
   expect(sent.indexers[0].key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 });
-afterEach(() => queryClient.clear());
+afterEach(async () => { queryClient.clear(); await act(async () => setLocale('zh-CN')) });
+
+it('索引器摘要随语言切换，保留名称、地址和输入草稿', async () => {
+  const row = { key: 'one', name: '原始名称', url: 'https://indexer.example/api', enabled: true, api_key_set: true };
+  vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ indexers: [row], max_indexers: 4 }) })));
+  const host = await mount(<QueryClientProvider client={queryClient}><IndexerSettings receipt={vi.fn()} /></QueryClientProvider>);
+  await settle();
+  const input = host.querySelector<HTMLInputElement>('input[type="url"]')!;
+  for (const locale of ['en', 'vi'] as const) {
+    await act(async () => setLocale(locale));
+    expect(host.querySelector('input[type="url"]')).toBe(input);
+    expect(input.value).toBe(row.url);
+    const summary = [...host.querySelectorAll('summary')].find(node => node.textContent?.includes(row.name))!;
+    expect(summary.textContent).toContain('indexer.example');
+    expect(summary.textContent?.replaceAll(row.name, '')).not.toMatch(/\p{Script=Han}/u);
+  }
+});
 it('进入资源搜索设置时先读取当前值，再创建表单草稿', async () => {
   const row = { key: 'one', name: '缓存名称', url: 'https://example.com/api', enabled: true, api_key_set: false };
   queryClient.setQueryData(['indexers'], { indexers: [row], max_indexers: 4 });

@@ -26,12 +26,12 @@ export function CloudDriveGuide() {
         <ul aria-label={uiText("按缓存所在硬盘分档")} className="flex flex-col gap-2">
           {CLOUDDRIVE_PROFILES.map((profile) => (
             <li key={profile.name} className="flex flex-col gap-2 rounded-2lg border border-separator-border bg-background-primary-default p-3">
-              <p className="text-body-medium text-text-primary">{profile.name}</p>
+              <p className="text-body-medium text-text-primary">{uiText(profile.name)}</p>
               <dl className="inline-grid grid-cols-1 gap-2 @md:grid-cols-3">
                 {READINGS.map(([key, term]) => (
                   <div key={key} className="flex flex-col">
-                    <dt className="text-caption-1-regular text-text-secondary">{term}</dt>
-                    <dd className="text-body-regular text-text-primary">{profile[key]}</dd>
+                    <dt className="text-caption-1-regular text-text-secondary">{uiText(term)}</dt>
+                    <dd className="text-body-regular text-text-primary">{uiText(profile[key])}</dd>
                   </div>
                 ))}
               </dl>

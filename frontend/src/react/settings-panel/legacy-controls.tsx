@@ -101,6 +101,9 @@ export function DialRow({ field, label, max, value, hidden, onStep, onSettle }: 
   useLayoutEffect(() => {
     if (dial.current && dial.current.value !== value) dial.current.set(value);
   }, [value]);
+  useLayoutEffect(() => {
+    row.current?.querySelector('[data-dial-slider]')?.setAttribute('aria-label', label);
+  }, [label]);
   return (
     <div data-glow-field={field} hidden={hidden} ref={row}>
       <span data-glow-field-label="">{label}</span>

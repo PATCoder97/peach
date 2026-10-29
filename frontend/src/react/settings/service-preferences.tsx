@@ -190,9 +190,9 @@ function ScheduleFailure({ kind, status, title }: {
   if (!status?.enabled || status.running || !status.last_error) return null;
   const failures = status.consecutive_failures ?? 0;
   const next = momentText(status.next_run_at);
-  const detail = [failures > 1 ? `已连续失败 ${failures} 次` : '', next ? `下一轮 ${next}` : '']
-    .filter(Boolean).join('，');
-  const reason = [status.last_error, detail, run.error ? `没有重试：${errorMessage(run.error)}` : '']
+  const detail = [failures > 1 ? uiText('已连续失败 {count} 次', { count: failures }) : '', next ? uiText('下一轮 {time}', { time: next }) : '']
+    .filter(Boolean).join(', ');
+  const reason = [uiText(status.last_error), detail, run.error ? uiText('没有重试：{reason}', { reason: uiText(errorMessage(run.error)) }) : '']
     .filter(Boolean).join('\n');
   return (
     <Stack>

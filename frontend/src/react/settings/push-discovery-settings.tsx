@@ -73,9 +73,9 @@ export function PushDiscoveryForm({ initial, receipt }: {
       (next) => settle(next, '已更换共享密钥'), (cause) => setFailure(errorMessage(cause)));
   };
 
-  const ingested = `已入库 ${live.queue.ingested} 个文件`
-    + (live.queue.failed ? `，${live.queue.failed} 个入库失败` : '')
-    + (live.queue.pending ? `，队列里还有 ${live.queue.pending} 条` : '');
+  const ingested = uiText('已入库 {count} 个文件', { count: live.queue.ingested })
+    + (live.queue.failed ? uiText('，{count} 个入库失败', { count: live.queue.failed }) : '')
+    + (live.queue.pending ? uiText('，队列里还有 {count} 条', { count: live.queue.pending }) : '');
   const watching = live.local_running
     ? `正在监视 ${live.local_roots.join('、')}` : live.local_message || '没有运行';
 

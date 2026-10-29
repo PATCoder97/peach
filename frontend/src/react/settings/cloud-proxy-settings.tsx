@@ -125,7 +125,7 @@ function ProxyEditor({ label, value, disabled, onChange }: {
     <Select aria-label={label} selectedKey={value.mode} isDisabled={disabled}
       onSelectionChange={key => { if (key) onChange({ ...value, mode: String(key) as Mode }); }}>
       {value.mode === 'unknown' ? <SelectItem id="unknown">{uiText("无法识别的代理类型")}</SelectItem> : null}
-      {options.map(([id, name]) => <SelectItem key={id} id={id}>{name}</SelectItem>)}
+      {options.map(([id, name]) => <SelectItem key={id} id={id}>{uiText(name)}</SelectItem>)}
     </Select>
     {proxy ? <>
       <div className="flex flex-wrap gap-3">
