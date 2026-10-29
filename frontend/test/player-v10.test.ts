@@ -49,6 +49,23 @@ describe('Video.js 10 播放会话', () => {
     player.dispose();
   });
 
+  it('中央控件间隙切换显隐，跳转按钮保持控件显示', () => {
+    const { video, player } = mounted(true);
+    mountPlayerTransport(player, video, player.el().querySelector<HTMLElement>('.vjs-control-bar')!);
+    Object.defineProperty(video, 'duration', { configurable: true, value: 100 });
+    video.dispatchEvent(new Event('loadedmetadata'));
+    const group = player.el().querySelector<HTMLElement>('.vjs-peach-transport')!;
+    const tap = (target: Element) => target.dispatchEvent(new PointerEvent('click', { pointerType: 'touch', bubbles: true }));
+    tap(group);
+    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
+    tap(group);
+    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
+    tap(group.querySelector('[data-player-skip="30"]')!);
+    expect(video.currentTime).toBe(30);
+    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
+    player.dispose();
+  });
+
   it.each([true, false])('点击画面显示控件并保持 paused=%s，触屏移动不抢先唤起控件', paused => {
     const { video, player } = mounted(true);
     Object.defineProperty(video, 'paused', { configurable: true, value: paused });

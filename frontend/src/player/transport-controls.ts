@@ -24,7 +24,7 @@ export function mountPlayerTransport(player: VjsPlayer, video: HTMLVideoElement,
       button.disabled = !Number.isFinite(video.duration) || video.duration <= 0;
     }
   };
-  group.addEventListener('click', event => event.stopPropagation());
+  group.addEventListener('click', event => { if ((event.target as Element).closest('button')) event.stopPropagation() });
   play.onclick = () => { if (player.paused() || player.ended()) void player.play()?.catch(() => {}); else player.pause() };
   skips.forEach(button => { button.onclick = () => seekVideoBy(video, Number(button.dataset.playerSkip)) });
   const events = ['play', 'pause', 'ended', 'loadedmetadata', 'durationchange', 'emptied'];

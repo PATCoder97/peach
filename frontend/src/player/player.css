@@ -35,7 +35,7 @@
 .video-js .vjs-error-display{display:none;position:absolute;inset:0;pointer-events:none}
 .video-js.vjs-error .vjs-error-display{display:flex;align-items:center;justify-content:center}
 .video-js.vjs-user-inactive .vjs-control-bar{opacity:0;pointer-events:none}
-.vjs-peach-transport{position:absolute;z-index:18;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:24px;pointer-events:none}
+.vjs-peach-transport{position:absolute;z-index:18;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:24px}
 .vjs-peach-transport>button{display:grid;place-items:center;position:relative;flex:none;width:52px;height:52px;padding:0;border:0;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;touch-action:manipulation;pointer-events:auto}
 .vjs-peach-transport>button:focus-visible{outline:2px solid var(--tungsten);outline-offset:3px}
 .vjs-peach-transport>button:disabled{opacity:.45;cursor:default}
