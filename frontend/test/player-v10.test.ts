@@ -25,6 +25,18 @@ function mounted(controls = false) {
 }
 
 describe('Video.js 10 播放会话', () => {
+  it('连续触屏点击保持画面显隐手势，鼠标双击进入全屏', () => {
+    const { video, player } = mounted(true);
+    const fullscreen = vi.spyOn(player.el().querySelector<HTMLElement>('media-fullscreen-button')!, 'click');
+    video.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
+    video.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(fullscreen).not.toHaveBeenCalled();
+    video.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'mouse', bubbles: true }));
+    video.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(fullscreen).toHaveBeenCalledOnce();
+    player.dispose();
+  });
+
   it.each([true, false])('触屏点击空白交替隐藏与显示控件，保持 paused=%s', paused => {
     vi.useFakeTimers();
     const { video, player } = mounted(true);

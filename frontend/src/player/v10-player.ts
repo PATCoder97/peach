@@ -73,6 +73,8 @@ export const createV10Player: VideojsFactory = (video, options) => {
   };
   root.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') active() }, { signal });
   root.addEventListener('focusin', active, { signal });
+  let touchGesture = false;
+  root.addEventListener('pointerdown', event => { touchGesture = event.pointerType === 'touch' }, { signal });
   if (options.controls !== false) {
     let touchActive: boolean | undefined;
     const isBlank = (target: EventTarget | null) => target === video || target === container || target === media
@@ -95,7 +97,7 @@ export const createV10Player: VideojsFactory = (video, options) => {
       if ((event.target as Element).closest('button,media-play-button,media-mute-button,media-fullscreen-button,media-pip-button,[role="slider"]')) active();
     }, { signal, capture: true });
   }
-  video.addEventListener('dblclick', () => root.querySelector<HTMLElement>('media-fullscreen-button')?.click(), { signal });
+  video.addEventListener('dblclick', () => { if (!touchGesture) root.querySelector<HTMLElement>('media-fullscreen-button')?.click() }, { signal });
   const update = () => {
     root.classList.toggle('vjs-paused', video.paused); root.classList.toggle('vjs-playing', !video.paused);
     root.classList.toggle('vjs-ended', video.ended); root.classList.toggle('vjs-has-started', video.currentTime > 0 || !video.paused);
