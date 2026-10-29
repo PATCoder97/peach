@@ -36,7 +36,9 @@ describe('Video.js 10 播放会话', () => {
     expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
     vi.advanceTimersByTime(3000);
     expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
-    tap(player.el().querySelector('media-container')!);
+    video.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
+    video.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    tap(video);
     expect(player.el().classList.contains('vjs-user-active')).toBe(true);
     tap(player.el().querySelector('media-play-button')!);
     expect(player.el().classList.contains('vjs-user-active')).toBe(true);

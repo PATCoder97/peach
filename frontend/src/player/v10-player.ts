@@ -74,11 +74,20 @@ export const createV10Player: VideojsFactory = (video, options) => {
   root.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') active() }, { signal });
   root.addEventListener('focusin', active, { signal });
   if (options.controls !== false) {
+    let touchActive: boolean | undefined;
+    const isBlank = (target: EventTarget | null) => target === video || target === container || target === media;
+    container.addEventListener('pointerdown', event => {
+      touchActive = event.pointerType === 'touch' && isBlank(event.target)
+        ? root.classList.contains('vjs-user-active') : undefined;
+    }, { signal });
+    container.addEventListener('pointercancel', () => { touchActive = undefined }, { signal });
     container.addEventListener('click', event => {
-      if (![video, container, media].includes(event.target as MediaElement)) return;
+      const wasActive = touchActive ?? root.classList.contains('vjs-user-active');
+      touchActive = undefined;
+      if (!isBlank(event.target)) return;
       const touch = (event as PointerEvent).pointerType === 'touch'
         || window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-      if (touch && root.classList.contains('vjs-user-active')) inactive();
+      if (touch && wasActive) inactive();
       else active();
     }, { signal });
     container.addEventListener('click', event => {
