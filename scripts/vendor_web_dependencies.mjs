@@ -271,8 +271,8 @@ index = index.replace(
   new RegExp(`<symbol id="i-sperm" viewBox="${SPERM_VIEWBOX}">[\\s\\S]*?<\\/symbol>`),
   `<symbol id="i-sperm" viewBox="${SPERM_VIEWBOX}">${healthInner}</symbol>`);
 index = index.replace(/Lucide static [0-9.]+, ISC/, `Lucide static ${versions["lucide-static"]}, ISC`);
-index = index.replace(/Health Icons sperm outline-24px, CC0\/public domain/,
-  `Health Icons ${versions.healthicons} sperm outline-24px, CC0/public domain`);
+index = index.replace(/Climax uses Health Icons [0-9.]+ sperm outline-24px, CC0\/public domain/,
+  `Climax uses Health Icons ${versions.healthicons} sperm outline-24px, CC0/public domain`);
 index = index.replace(/Phosphor [0-9.]+ regular, MIT/,
   `Phosphor ${versions["@phosphor-icons/core"]} regular, MIT`);
 index = index.replaceAll(/\/vendor\/videojs\/[0-9.]+\//g, `/vendor/videojs/${versions[videoPackage]}/`);
