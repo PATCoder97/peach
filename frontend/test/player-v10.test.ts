@@ -56,7 +56,7 @@ describe('Video.js 10 播放会话', () => {
     video.dispatchEvent(new Event('loadedmetadata'));
     const group = player.el().querySelector<HTMLElement>('.vjs-peach-transport')!;
     const tap = (target: Element) => target.dispatchEvent(new PointerEvent('click', { pointerType: 'touch', bubbles: true }));
-    tap(group);
+    tap(group.querySelector('[data-player-transport-gap]')!);
     expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
     tap(group);
     expect(player.el().classList.contains('vjs-user-active')).toBe(true);

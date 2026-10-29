@@ -76,7 +76,7 @@ export const createV10Player: VideojsFactory = (video, options) => {
   if (options.controls !== false) {
     let touchActive: boolean | undefined;
     const isBlank = (target: EventTarget | null) => target === video || target === container || target === media
-      || target instanceof Element && target.classList.contains('vjs-peach-transport');
+      || target instanceof Element && (target.classList.contains('vjs-peach-transport') || target.hasAttribute('data-player-transport-gap'));
     container.addEventListener('pointerdown', event => {
       touchActive = event.pointerType === 'touch' && isBlank(event.target)
         ? root.classList.contains('vjs-user-active') : undefined;

@@ -9,11 +9,13 @@ export function mountPlayerTransport(player: VjsPlayer, video: HTMLVideoElement,
   group.className = 'vjs-peach-transport';
   group.setAttribute('role', 'group');
   group.innerHTML = `<button type="button" data-player-skip="-30">${icon('rotate-ccw')}<span aria-hidden="true">30</span></button>
-    <button type="button" data-player-transport-play>${icon('player-play')}</button>
+    <span data-player-transport-gap aria-hidden="true"></span><button type="button" data-player-transport-play>${icon('player-play')}</button><span data-player-transport-gap aria-hidden="true"></span>
     <button type="button" data-player-skip="30">${icon('rotate-cw')}<span aria-hidden="true">30</span></button>`;
   anchor.before(group);
   const play = group.querySelector<HTMLButtonElement>('[data-player-transport-play]')!;
   const skips = [...group.querySelectorAll<HTMLButtonElement>('[data-player-skip]')];
+  // 独立可点击间隙避免触屏把空白吸附到相邻按钮；显隐由播放器容器处理。
+  group.querySelectorAll<HTMLElement>('[data-player-transport-gap]').forEach(gap => { gap.onclick = () => {} });
   const sync = () => {
     const paused = player.paused() || player.ended();
     play.setAttribute('aria-label', t(paused ? '播放' : '暂停'));
