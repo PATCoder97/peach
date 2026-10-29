@@ -21,9 +21,11 @@ Removed / Fixed / Security。
 
 ## [未发布]
 
+## [0.53.1] - 2026-10-29
+
 ### 修复
 
-- 播放：触屏点击画面空白或中央按钮间隙可交替隐藏、显示播放控件，播放与暂停时均可操作。
+- **播放**：触屏点击画面空白或中央按钮间隙可交替隐藏、显示播放控件，播放与暂停时均可操作。
 
 ## [0.53.0] - 2026-10-29
 
@@ -814,7 +816,8 @@ Removed / Fixed / Security。
 - **桌面**：独立包使用 UTF-8 启动日志。
 - **配置**：首次设置后的跳转目标取新鲜读到的 mDNS 名。
 
-[未发布]: https://github.com/PATCoder97/peach/compare/v0.53.0...HEAD
+[未发布]: https://github.com/PATCoder97/peach/compare/v0.53.1...HEAD
+[0.53.1]: https://github.com/PATCoder97/peach/compare/v0.53.0...v0.53.1
 [0.53.0]: https://github.com/PATCoder97/peach/compare/v0.52.0...v0.53.0
 [0.52.0]: https://github.com/PATCoder97/peach/compare/v0.51.1...v0.52.0
 [0.51.0]: https://github.com/peach-mitao/peach/compare/v0.50.0...v0.51.0
