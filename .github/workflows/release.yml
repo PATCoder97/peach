@@ -25,8 +25,8 @@ env:
 jobs:
   validate:
     name: 核对发布提交与版本
-    # 分叉仓库的版本标签由 Docker 工作流发布个人镜像；完整发行保留给主仓库。
-    if: "${{ (github.ref_type == 'tag' && github.repository == 'peach-mitao/peach') || github.event_name == 'workflow_dispatch' || (github.ref_type != 'tag' && startsWith(github.event.head_commit.message, 'chore(release): 版本 ')) }}"
+    # 分叉仓库的版本提交与标签由 Docker 工作流验收个人镜像；完整发行保留给主仓库和手动入口。
+    if: "${{ github.event_name == 'workflow_dispatch' || (github.repository == 'peach-mitao/peach' && (github.ref_type == 'tag' || startsWith(github.event.head_commit.message, 'chore(release): 版本 '))) }}"
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

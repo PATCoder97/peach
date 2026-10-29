@@ -197,14 +197,16 @@ def require_rehearsal(repo: str, sha: str, checked: dict, *, timeout: float = TE
     """版本提交的发布演练全部通过才打标签（ADR-0121）。
 
     GitGud 上演练就在版本提交自己的主线流水线里，Test 绿了以后再核对演练作业都在、都成功；
-    GitHub 上演练是同一提交推送触发的 Release 工作流（不带标签时只构建、验收不发布），等它跑完。
+    GitHub 主仓库等待同一提交的完整 Release 演练；分叉仓库等待个人镜像的 Docker 演练。
+    两种发布都要求该提交的主线 Test 与对应制品验收通过。
     """
     if GITLAB:
         GITLAB.require_rehearsal(repo, checked["id"])
         return
+    workflow, label = ("release.yml", "Release") if repo.casefold() == "peach-mitao/peach" else ("docker.yml", "Docker")
     start = clock()
     while True:
-        runs = api(repo, f"actions/workflows/release.yml/runs?head_sha={sha}&event=push&per_page=100")["workflow_runs"]
+        runs = api(repo, f"actions/workflows/{workflow}/runs?head_sha={sha}&event=push&per_page=100")["workflow_runs"]
         latest = latest_run(runs, sha)
         now = clock()
         if latest is not None and latest.get("status") == "completed":
@@ -212,8 +214,8 @@ def require_rehearsal(repo: str, sha: str, checked: dict, *, timeout: float = TE
                 raise ValueError(f"版本提交的发布演练没有通过，不打标签：{latest.get('html_url', '')}")
             return
         if latest is None and now - start >= STALL_SECONDS:
-            raise ValueError(f"推送后 {(now - start) / 60:.0f} 分钟仍没有 {sha[:8]} 的 Release 演练记录；"
-                             "检查 release.yml 的触发条件，演练跑起来后再跑一次 --ship --apply")
+            raise ValueError(f"推送后 {(now - start) / 60:.0f} 分钟仍没有 {sha[:8]} 的 {label} 演练记录；"
+                             f"检查 {workflow} 的触发条件，演练跑起来后再跑一次 --ship --apply")
         if now - start >= timeout:
             raise ValueError(f"等了 {timeout / 60:.0f} 分钟，{sha[:8]} 的发布演练还没有结果；"
                              "版本提交已在 master 上，演练跑完后再跑一次 --ship --apply")

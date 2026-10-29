@@ -74,11 +74,11 @@ def build(destination: Path, *, dmg: bool = True, target_arch: str | None = None
           require_reporting: bool = False) -> dict[str, str]:
     if sys.platform != "darwin":
         raise SystemExit("macOS 应用必须在 macOS 上构建")
-    from peach import seed_pack
-    seed_pack.load(ROOT / "resources/seed/entities.json")
     architecture = target_arch or platform.machine()
     if architecture not in {"arm64", "x86_64"} or architecture != platform.machine():
         raise SystemExit("目标架构必须与当前 Python 一致；请使用 arm64 或 x86_64 Python 及对应依赖构建")
+    from peach import seed_pack
+    seed_pack.load(ROOT / "resources/seed/entities.json")
     from write_reporting_config import reporting_config, write as write_reporting_config
     reporting_config(require=require_reporting)
     from build_macos_app import build_frontend_bundles

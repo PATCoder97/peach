@@ -5823,7 +5823,7 @@ class ShipTests(unittest.TestCase):
         return mock.patch.object(self.release, "command",
                                  side_effect=lambda *args, **_: answers.get(args, ""))
 
-    def _api(self, *, tags=(), remote="old", runs=(SUCCESS,), rehearsal=(SUCCESS,)):
+    def _api(self, *, tags=(), remote="old", runs=(SUCCESS,), rehearsal=(SUCCESS,), docker=(SUCCESS,)):
         def answer(_repo, endpoint):
             if endpoint.startswith("git/matching-refs/tags/"):
                 return list(tags)
@@ -5833,6 +5833,8 @@ class ShipTests(unittest.TestCase):
                 return {"workflow_runs": list(runs)}
             if endpoint.startswith("actions/workflows/release.yml/runs"):
                 return {"workflow_runs": list(rehearsal)}
+            if endpoint.startswith("actions/workflows/docker.yml/runs"):
+                return {"workflow_runs": list(docker)}
             raise AssertionError(f"没预料到的调用：{endpoint}")
         return mock.patch.object(self.release, "api", side_effect=answer)
 
@@ -5869,8 +5871,33 @@ class ShipTests(unittest.TestCase):
         with self._shell() as command, self._api(remote="abc", rehearsal=(red,)), self._version(), \
                 self._document(), mock.patch.object(self.release, "GITLAB", None), \
                 self.assertRaisesRegex(ValueError, "发布演练没有通过.*rehearsal-url"):
+            self.release.ship("peach-mitao/peach", apply=True)
+        self.assertFalse([args for args in self._writes(command) if args[:3] == ("git", "tag", "-a")])
+
+    def test_a_personal_image_requires_its_docker_rehearsal_before_tagging(self):
+        """分叉仓库发布个人镜像，失败的桌面演练不替代对应 Docker 制品的验收。"""
+        red = {**self.SUCCESS, "conclusion": "failure", "html_url": "desktop-url"}
+        with self._shell() as command, self._api(remote="abc", rehearsal=(red,)), \
+                self._version(), self._document(), mock.patch.object(self.release, "GITLAB", None):
+            self.release.ship("owner/repo", apply=True)
+        self.assertTrue([args for args in self._writes(command) if args[:3] == ("git", "tag", "-a")])
+
+    def test_a_red_personal_docker_rehearsal_stops_even_when_desktop_is_green(self):
+        red = {**self.SUCCESS, "conclusion": "failure", "html_url": "docker-url"}
+        with self._shell() as command, self._api(remote="abc", docker=(red,)), \
+                self._version(), self._document(), mock.patch.object(self.release, "GITLAB", None), \
+                self.assertRaisesRegex(ValueError, "发布演练没有通过.*docker-url"):
             self.release.ship("owner/repo", apply=True)
         self.assertFalse([args for args in self._writes(command) if args[:3] == ("git", "tag", "-a")])
+
+    def test_an_unrelated_green_docker_run_does_not_authorize_a_personal_tag(self):
+        for changed in ({"head_sha":"other"}, {"head_branch":"feature"}, {"event":"workflow_dispatch"}):
+            with self.subTest(changed=changed), \
+                    self._api(docker=({**self.SUCCESS, **changed},)), \
+                    mock.patch.object(self.release, "GITLAB", None), \
+                    self.assertRaisesRegex(ValueError, "没有 abc 的 Docker 演练记录"):
+                self.release.require_rehearsal("owner/repo", "abc", self.SUCCESS,
+                                             clock=iter([0, 301]).__next__, sleep=lambda _: None)
 
     def test_a_plan_without_apply_writes_nothing(self):
         with self._shell() as command, self._api(), self._version(), self._document():
