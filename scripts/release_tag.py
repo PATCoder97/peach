@@ -202,7 +202,7 @@ def require_rehearsal(repo: str, sha: str, checked: dict, *, timeout: float = TE
     if GITLAB:
         GITLAB.require_rehearsal(repo, checked["id"])
         return
-    workflow, label = "test.yml", "Test"
+    workflow, label = "test.yml", "Kiểm thử"
     start = clock()
     while True:
         runs = api(repo, f"actions/workflows/{workflow}/runs?head_sha={sha}&event=push&per_page=100")["workflow_runs"]
@@ -342,14 +342,14 @@ def ship(repo: str, *, apply: bool, timeout: float = TEST_TIMEOUT) -> dict:
     if pending:
         command("git", "add", *RELEASE_FILES)
         command("git", "-c", f"{MASTER_WRITER}=release", "commit",
-                "-m", f"chore(release): 版本 {version}")
+                "-m", f"chore(release): Phát hành phiên bản {version}")
     sha = command("git", "rev-parse", "HEAD")
     if master_sha(repo) != sha:
         command("git", "push", remote_url(repo), "refs/heads/master")
     checked = await_test(repo, sha, timeout=timeout)
     require_rehearsal(repo, sha, checked, timeout=timeout)
     require_clean_dependencies()
-    command("git", "tag", "-a", tag, sha, "-m", f"Peach {tag} Windows 测试版")
+    command("git", "tag", "-a", tag, sha, "-m", f"Peach {tag} bản thử nghiệm Windows")
     command("git", "push", remote_url(repo), f"refs/tags/{tag}")
     return {**result, "sha": sha, "test": checked["html_url"],
             "release": release_url(repo, tag)}
@@ -444,14 +444,14 @@ def main(argv=None) -> int:
             elif master_sha(args.repo) != result["sha"]:
                 raise ValueError("检查期间 master 已更新，请重新执行")
             command("git", "tag", "-a", result["tag"], result["sha"],
-                    "-m", f"Peach {result['tag']} Windows 测试版")
+                    "-m", f"Peach {result['tag']} bản thử nghiệm Windows")
             command("git", "push", remote_url(args.repo),
                     f"refs/tags/{result['tag']}")
         print(json.dumps({**result, "applied": args.apply}, ensure_ascii=False, indent=2))
         return 0
     except (OSError, ValueError, version_bump.VersionError, subprocess.CalledProcessError) as exc:
         detail = exc.stderr if isinstance(exc, subprocess.CalledProcessError) else str(exc)
-        print(f"发布检查未通过：{detail}")
+        print(f"Kiểm tra phát hành thất bại: {detail}")
         return 1
     finally:
         GITLAB = None

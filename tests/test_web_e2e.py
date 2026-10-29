@@ -347,14 +347,14 @@ class WebE2ESmokeTests(unittest.TestCase):
         # 修一处、再等一轮全量才看见下一处。
         failures, finished = [], 0
         for files, lanes in pools:
-            print(f"浏览器文件 {len(files)} 个、同时 {lanes} 个：{', '.join(files)}", flush=True)
+            print(f"Kiểm thử trình duyệt: {len(files)} tệp, {lanes} tệp đồng thời: {', '.join(files)}", flush=True)
             with ThreadPoolExecutor(max_workers=lanes) as pool:
                 running = [pool.submit(self._run_e2e_file, env, path) for path in files]
                 for done in as_completed(running):
                     finished += 1
                     path, seconds, failure = done.result()
-                    print(f"浏览器文件 {finished}/{total} {'失败' if failure else '通过'}"
-                          f"（{seconds:.1f}s）：{path}", flush=True)
+                    print(f"Tệp trình duyệt {finished}/{total}: {'thất bại' if failure else 'thành công'}"
+                          f" ({seconds:.1f}s): {path}", flush=True)
                     if failure:
                         failures.append(failure)
         if failures:

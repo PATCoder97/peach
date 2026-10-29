@@ -16,7 +16,7 @@ from support.ledger import fresh_ledger
 
 
 class CIFrontendOwnershipTests(unittest.TestCase):
-    CI = {'GITHUB_ACTIONS': 'true', 'GITHUB_WORKFLOW': 'Test', 'GITHUB_JOB': 'python'}
+    CI = {'GITHUB_ACTIONS': 'true', 'GITHUB_WORKFLOW': 'Kiểm thử', 'GITHUB_JOB': 'python'}
 
     @staticmethod
     def ids(suite):
@@ -38,12 +38,13 @@ class CIFrontendOwnershipTests(unittest.TestCase):
                      'test_frontend_preflight.FrontendPreflightTests.test_the_frontend_sources_typecheck',
                      'test_frontend_preflight.FrontendPreflightTests.test_frontend_sources_and_tests_pass_lint'}
         self.assertLessEqual(delegated, local)
-        for job in ('python', 'web-e2e'):
-            with self.subTest(job=job):
-                selected = set(self.frontend_ids({**self.CI, 'GITHUB_JOB': job}))
-                self.assertEqual(local - selected, delegated)
-                self.assertEqual(selected - local, set())
-                self.assertIn('test_frontend_build.VitestTests.test_the_island_suite_has_a_bounded_worker_pool', selected)
+        for workflow in ('Kiểm thử', 'Ứng dụng desktop', 'Phát hành'):
+            for job in ('python', 'web-e2e'):
+                with self.subTest(workflow=workflow, job=job):
+                    selected = set(self.frontend_ids({**self.CI, 'GITHUB_WORKFLOW': workflow, 'GITHUB_JOB': job}))
+                    self.assertEqual(local - selected, delegated)
+                    self.assertEqual(selected - local, set())
+                    self.assertIn('test_frontend_build.VitestTests.test_the_island_suite_has_a_bounded_worker_pool', selected)
         for environment in ({}, {'GITHUB_ACTIONS': 'true'},
                             {**self.CI, 'GITHUB_ACTIONS': 'false'},
                             {**self.CI, 'GITHUB_WORKFLOW': 'Unknown'},
@@ -181,7 +182,7 @@ class TestPlanningTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, '3'):
                 runner.main(['--scope', 'checks'])
         self.assertIn('uv', output.getvalue())
-        self.assertIn('正常 PowerShell 权限', output.getvalue())
+        self.assertIn('cấp quyền có kiểm soát trong PowerShell', output.getvalue())
 
     def test_a_tool_this_scope_never_starts_only_warns(self):
         """受限环境里起不动的工具，只有本次真会用到时才判失败。
@@ -200,7 +201,7 @@ class TestPlanningTests(unittest.TestCase):
             runner.environment_preflight(('checks',))
             with self.assertRaisesRegex(SystemExit, '3'):
                 runner.environment_preflight(('media',))
-        self.assertIn('本次范围不需要', output.getvalue())
+        self.assertIn('Phạm vi này không cần', output.getvalue())
 
     def test_shards_and_the_explicit_switch_skip_the_preflight(self):
         """分片子进程的域由父进程定下，父进程已经查过同一套工具；开关留给判断过的人。"""

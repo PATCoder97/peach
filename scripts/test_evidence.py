@@ -463,8 +463,8 @@ def held(lock_path: Path, *, wait_seconds: float = 0, **note: object):
                 raise Timeout(str(lock_path))
             if announced != len(ahead):
                 announced = len(ahead)
-                place = f"；前面还有 {announced} 个在排队" if announced else ""
-                print(f"等待 {lock_path.name}（{describe_holder(lock_path)}{place}），最长 {wait_seconds:g} 秒。",
+                place = f"; còn {announced} lượt xếp hàng phía trước" if announced else ""
+                print(f"Đang chờ {lock_path.name} ({describe_holder(lock_path)}{place}), tối đa {wait_seconds:g} giây.",
                       file=sys.stderr, flush=True)
             time.sleep(min(QUEUE_POLL_SECONDS, max(0.0, deadline - time.monotonic())))
     finally:
@@ -499,12 +499,12 @@ def describe_holder(lock_path: Path) -> str:
         with FileLock(record.with_suffix(".lock"), timeout=1):
             note = json.loads(record.read_text(encoding="utf-8"))
     except Timeout:
-        return "持有者信息暂未取得"
+        return "chưa lấy được thông tin tiến trình giữ khóa"
     except (OSError, ValueError):
-        return "持有者刚退出或没留记录"
-    parts = [f"pid {note.get('pid')}", f"{note.get('started_at')} 起"]
+        return "tiến trình giữ khóa vừa thoát hoặc chưa lưu bản ghi"
+    parts = [f"pid {note.get('pid')}", f"bắt đầu lúc {note.get('started_at')}"]
     parts.extend(f"{key} {note[key]}" for key in ("scope", "branch", "root") if note.get(key))
-    return "、".join(parts)
+    return ", ".join(parts)
 
 
 def run_lock(repo: Path, state: str, **note: object):

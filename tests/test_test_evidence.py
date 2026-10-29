@@ -1252,7 +1252,7 @@ class VerificationTests(unittest.TestCase):
             self.assertIn("pid", evidence.describe_holder(lock))
             self.assertIn("scope full", evidence.describe_holder(lock))
         self.assertFalse(evidence.holder_path(lock).exists())
-        self.assertIn("刚退出或没留记录", evidence.describe_holder(lock))
+        self.assertIn("vừa thoát hoặc chưa lưu bản ghi", evidence.describe_holder(lock))
 
     def test_holder_note_cleanup_waits_for_a_reader_to_close_the_file(self):
         lock = evidence.evidence_dir(self.repo) / "full-suite.lock"
@@ -1326,7 +1326,7 @@ class VerificationTests(unittest.TestCase):
             first.result(timeout=20)
             second.result(timeout=20)
         self.assertEqual(order, ["first", "second"])
-        self.assertIn("前面还有 1 个在排队", errors.getvalue())
+        self.assertIn("còn 1 lượt xếp hàng phía trước", errors.getvalue())
         self.assertEqual(list(queue.glob("*.json")), [], "拿到锁或放弃等待都要撤票")
         self.assertFalse(queue.exists(), "最后一位撤票后不留空的排队目录，每次验证的状态锁也走这里")
 
@@ -1358,7 +1358,7 @@ class VerificationTests(unittest.TestCase):
                 mock.patch.object(runner, "ROOT", self.repo), \
                 mock.patch.object(runner, "build_suite", side_effect=AssertionError("不该开跑")):
             self.assertEqual(runner.main(["--scope", "full", "--lock-timeout", "0"]), 2)
-        self.assertIn("本仓库全量测试正在运行", output.getvalue())
+        self.assertIn("Kiểm thử đầy đủ của kho mã đang chạy", output.getvalue())
         self.assertIn(f"pid {os.getpid()}", output.getvalue())
         self.assertIn("root elsewhere", output.getvalue())
 
@@ -1384,8 +1384,8 @@ class VerificationTests(unittest.TestCase):
                 run.assert_not_called()
                 (self.repo / "README.md").write_text("集成完成\n", encoding="utf-8")
             self.assertEqual(future.result(timeout=15), 0)
-        self.assertIn("等待 full-suite.lock", errors.getvalue())
-        self.assertNotIn("等待 full-suite.lock", output.getvalue())
+        self.assertIn("Đang chờ full-suite.lock", errors.getvalue())
+        self.assertNotIn("Đang chờ full-suite.lock", output.getvalue())
         self.assertTrue(evidence.covers(evidence.read(self.repo, evidence.key(self.repo)), ("full",)))
 
     def test_full_verification_holds_the_lock_through_record_publication(self):

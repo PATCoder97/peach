@@ -1,4 +1,4 @@
-name: 项目看板同步
+name: Đồng bộ bảng dự án
 
 on:
   issues:
@@ -22,6 +22,7 @@ concurrency:
 
 jobs:
   sync:
+    name: Đồng bộ bảng dự án
     if: github.repository == 'peach-mitao/peach'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -34,13 +35,13 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
-      - name: 同步 Issue、PR、已发布版本与看板
+      - name: Đồng bộ issue, PR, phiên bản đã phát hành và bảng dự án
         env:
           GH_TOKEN: ${{ secrets.PROJECT_BOARD_TOKEN }}
           PYTHONUTF8: '1'
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo '缺少 PROJECT_BOARD_TOKEN：需要 repo 与 project 权限的项目自动化凭据。' >&2
+            echo 'Thiếu PROJECT_BOARD_TOKEN: cần thông tin xác thực tự động hóa có quyền repo và project.' >&2
             exit 1
           fi
           python scripts/project_board.py --apply --event "$GITHUB_EVENT_PATH"

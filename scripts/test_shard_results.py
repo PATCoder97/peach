@@ -75,7 +75,7 @@ def completed_processes(running, folder: Path, completed_at: dict, *, now: float
         if report.get('complete') is True:
             completed_at.setdefault(index, now)
             if now - completed_at[index] >= EXIT_GRACE_SECONDS:
-                print(f'分片 {index + 1} 已写出完成报告，正在回收其未退出的进程。', flush=True)
+                print(f'Phân mảnh {index + 1} đã ghi báo cáo hoàn tất; đang thu hồi các tiến trình chưa thoát của phân mảnh này.', flush=True)
                 stop_process_tree(process)
                 finished.append(index)
     return finished

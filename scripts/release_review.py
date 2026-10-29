@@ -72,7 +72,7 @@ def collect(root: Path, repo: str, *, public_github: bool = False,
               "checks": [], "complete": True}
 
     def check(label, action):
-        print(f"检查：{label}", flush=True)
+        print(f"Kiểm tra: {label}", flush=True)
         try:
             report["checks"].append({"id": label, "status": "已取得", "result": action()})
         except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:

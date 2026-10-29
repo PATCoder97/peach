@@ -2,10 +2,10 @@
 # 在 Linux 使用 MinGW-w64 构建 Windows x64 FFmpeg 与完整对应源码包。
 set -euo pipefail
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-output="$(realpath -m -- "${1:?用法: build_ffmpeg_windows.sh <输出目录>}")"
+output="$(realpath -m -- "${1:?Cách dùng: build_ffmpeg_windows.sh <thu_muc_dau_ra>}")"
 for tool in python3 make nasm pkg-config clang meson ninja cmake \
         x86_64-w64-mingw32-gcc x86_64-w64-mingw32-g++ x86_64-w64-mingw32-strip; do
-    command -v "$tool" >/dev/null || { echo "缺少构建工具: $tool" >&2; exit 1; }
+    command -v "$tool" >/dev/null || { echo "Thiếu công cụ xây dựng: $tool" >&2; exit 1; }
 done
 python3 "$script_dir/fetch_ffmpeg_sources.py" prepare "$output"
 work="$output/work"

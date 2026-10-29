@@ -1,4 +1,4 @@
-name: Test
+name: Kiểm thử
 
 on:
   push:
@@ -27,7 +27,7 @@ env:
 
 jobs:
   workflow-lint:
-    name: Actions 工作流静态检查
+    name: Kiểm tra cú pháp workflow Actions
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -35,6 +35,7 @@ jobs:
       - uses: ./.github/actions/actionlint
 
   plan:
+    name: Lập kế hoạch kiểm tra
     needs: workflow-lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -58,7 +59,7 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: uv.lock
-      - name: 生成验证矩阵
+      - name: Tạo ma trận kiểm tra
         id: plan
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -67,20 +68,21 @@ jobs:
         run: uv run --locked --python 3.14 scripts/ci_plan.py --event "$EVENT_NAME" --base "$BASE_SHA"
 
   frontend-ready:
-    name: 前端检查结果
+    name: Kết quả kiểm tra frontend
     needs: [plan, web-bundle, web-vendor]
     if: ${{ always() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-      - name: 所选前端检查均成功
+      - name: Xác nhận các kiểm tra frontend đã chọn đều thành công
         env:
           RESULTS: ${{ toJSON(needs) }}
           REQUIRED_JOBS: ${{ needs.plan.outputs.required_jobs }}
         run: python scripts/ci_plan.py --verify-results --phase frontend
 
   wheel-build:
+    name: Xây dựng gói wheel
     needs: plan
     if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.wheel == 'true' }}
     runs-on: ubuntu-latest
@@ -105,7 +107,7 @@ jobs:
             wheelhouse/*.whl
             scripts/smoke_wheel.py
   wheel-smoke:
-    name: wheel 最小安装 / ${{ matrix.os }} / ${{ matrix.python }}
+    name: Cài đặt wheel tối thiểu / ${{ matrix.os }} / ${{ matrix.python }}
     needs: [plan, wheel-build]
     if: ${{ !cancelled() && needs.wheel-build.result == 'success' && needs.plan.outputs.wheel == 'true' }}
     strategy:
@@ -119,18 +121,18 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
-      - name: 安装正式 wheel
+      - name: Cài đặt wheel phát hành
         shell: bash
         run: |
           python -m pip install --no-cache-dir wheelhouse/*.whl
           python -m pip check
-      - name: 源码树外冒烟
+      - name: Kiểm tra smoke bên ngoài cây mã nguồn
         shell: bash
         run: |
           cd "$RUNNER_TEMP"
           python "$GITHUB_WORKSPACE/scripts/smoke_wheel.py"
   python:
-    name: ${{ matrix.os }} / Python ${{ matrix.python }} / ${{ matrix.scope }} / ${{ matrix.shard_index }}
+    name: Kiểm thử Python / ${{ matrix.os }} / ${{ matrix.python }} / ${{ matrix.scope }} / ${{ matrix.shard_index }}
     needs: plan
     if: ${{ !cancelled() && needs.plan.result == 'success' }}
     runs-on: ${{ matrix.os }}
@@ -144,7 +146,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: 取得分叉仓库的旧版更新兼容样本
+      - name: Lấy mẫu tương thích cập nhật phiên bản cũ của fork
         if: github.repository != 'peach-mitao/peach'
         shell: bash
         run: |
@@ -170,17 +172,17 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: 安装前端依赖
+      - name: Cài đặt phụ thuộc frontend
         if: matrix.runtime_tools
         run: npm --prefix frontend ci
-      - name: 安装 Linux FFmpeg
+      - name: Cài đặt FFmpeg trên Linux
         if: matrix.runtime_tools
         run: sudo apt-get update && sudo apt-get install -y ffmpeg xvfb xauth
-      - name: 安装 Linux 依赖
+      - name: Cài đặt phụ thuộc trên Linux
         run: |
           uv sync --locked --all-extras --python python
           uv pip check --python .venv/bin/python
-      - name: 运行 Linux 正式测试
+      - name: Chạy kiểm thử chính thức trên Linux
         shell: bash
         run: |
           mkdir -p build
@@ -189,7 +191,7 @@ jobs:
           else
             ./scripts/test.sh ${{ matrix.scope }} --fresh --base "$BASE_SHA" --shard-index ${{ matrix.shard_index }} --shard-count ${{ matrix.shard_count }} 2>&1 | tee build/ci-tests.log
           fi
-      - name: 保存分片测试日志
+      - name: Lưu log kiểm thử từng phân mảnh
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -199,7 +201,7 @@ jobs:
           retention-days: 14
 
   web-bundle:
-    name: island 产物与前端测试
+    name: Kiểm tra bản dựng island và frontend
     runs-on: ubuntu-latest
     needs: plan
     if: needs.plan.outputs.frontend == 'true'
@@ -213,12 +215,12 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm --prefix frontend ci
       - run: npm --prefix frontend run typecheck
-      - name: 前端文案
+      - name: Kiểm tra nội dung frontend
         run: npm --prefix frontend run check:copy
-      - name: 前端 lint 与扫描范围
+      - name: Kiểm tra lint frontend và phạm vi quét
         run: |
           npm --prefix frontend run lint --silent -- --format=json > frontend-lint.json
-          node --input-type=module -e 'import { readFileSync } from "node:fs"; import assert from "node:assert/strict"; const report = JSON.parse(readFileSync("frontend-lint.json", "utf8")); assert.deepEqual(report.diagnostics, []); assert.ok(report.number_of_files > 0, "lint 必须扫描文件");'
+          node --input-type=module -e 'import { readFileSync } from "node:fs"; import assert from "node:assert/strict"; const report = JSON.parse(readFileSync("frontend-lint.json", "utf8")); assert.deepEqual(report.diagnostics, []); assert.ok(report.number_of_files > 0, "lint phải quét ít nhất một tệp");'
       - run: npm --prefix frontend test
       - run: npm --prefix frontend run build
       # 产物提交进 Git，因为运行时和打包都没有 Node（ADR-0022）。一旦源码改了却忘了
@@ -227,7 +229,7 @@ jobs:
       #
       # 先 `git add -N`：光 `git diff` 只看已跟踪的文件，构建新出的产物（某个 island
       # 开始带自己的 CSS 就会多一份 peach-ui.css）是未跟踪的，那条门槛会直接放过去。
-      - name: 核对 web/dist 与源码一致
+      - name: Kiểm tra web/dist khớp với mã nguồn
         run: |
           git add --intent-to-add -- web/dist
           git diff --exit-code --stat -- web/dist
@@ -236,7 +238,7 @@ jobs:
 
   # 每片拥有独立服务与演示库；文件内的浏览器交互保持串行。
   web-e2e:
-    name: 浏览器回归 / ${{ matrix.index }}
+    name: Kiểm thử hồi quy trình duyệt / ${{ matrix.index }}
     needs: plan
     if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.browser == 'true' }}
     runs-on: ubuntu-latest
@@ -261,18 +263,18 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm --prefix frontend ci
-      - name: 安装 Linux FFmpeg
+      - name: Cài đặt FFmpeg trên Linux
         run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-noto-cjk
-      - name: 指定 e2e 用的 Chrome
+      - name: Chọn Chrome cho kiểm thử e2e
         run: echo "PEACH_E2E_CHROME=$(command -v google-chrome)" >> "$GITHUB_ENV"
-      - name: 安装 Python 依赖
+      - name: Cài đặt phụ thuộc Python
         run: uv sync --locked --all-extras --python python
-      - name: 运行本片浏览器用例
+      - name: Chạy kiểm thử trình duyệt của phân mảnh này
         shell: bash
         run: |
           mapfile -t peach_browser_args < <(python -c 'import json, os; print("\n".join(part for name in json.loads(os.environ["BROWSER_FILES"]) for part in ("--focus", name)))')
           ./scripts/test.sh web "${peach_browser_args[@]}"
-      - name: 保存浏览器测试日志
+      - name: Lưu log kiểm thử trình duyệt
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -286,7 +288,7 @@ jobs:
           retention-days: 14
 
   web-vendor:
-    name: 固定前端依赖
+    name: Kiểm tra phụ thuộc frontend cố định
     runs-on: ubuntu-latest
     needs: plan
     if: needs.plan.outputs.vendor == 'true'
@@ -303,20 +305,20 @@ jobs:
         run: python scripts/npm_audit.py
 
   docker:
-    name: Docker 构建与冒烟
+    name: Xây dựng Docker và kiểm tra smoke
     needs: plan
     if: needs.plan.outputs.docker == 'true'
     uses: ./.github/workflows/docker.yml
 
   verified:
-    name: 完整验证结果
+    name: Kết quả kiểm tra đầy đủ
     if: always()
     needs: [plan, workflow-lint, frontend-ready, python, wheel-build, wheel-smoke, web-bundle, web-e2e, web-vendor, docker]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-      - name: 所有必需任务均成功
+      - name: Xác nhận mọi tác vụ bắt buộc đều thành công
         env:
           RESULTS: ${{ toJSON(needs) }}
           REQUIRED_JOBS: ${{ needs.plan.outputs.required_jobs }}

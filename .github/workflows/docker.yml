@@ -9,15 +9,15 @@ on:
   workflow_dispatch:
     inputs:
       source_ref:
-        description: '构建源码的分支、标签或提交；留空使用所选工作流分支'
+        description: 'Nhánh, tag hoặc commit để xây dựng; để trống để dùng nhánh workflow đã chọn'
         type: string
         required: false
       publish:
-        description: '验收成功后推送到 DOCKERHUB_USERNAME/peach'
+        description: 'Đẩy lên DOCKERHUB_USERNAME/peach sau khi kiểm tra thành công'
         type: boolean
         default: false
       image_tag:
-        description: '个人镜像标签'
+        description: 'Tag ảnh Docker cá nhân'
         type: string
         default: vi-en
         required: true
@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   image:
-    name: Linux amd64 镜像验收
+    name: Kiểm tra ảnh Docker Linux amd64
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -40,7 +40,7 @@ jobs:
         with:
           ref: ${{ inputs.source_ref || github.ref }}
           persist-credentials: false
-      - name: 核对个人镜像目标
+      - name: Kiểm tra đích ảnh Docker cá nhân
         if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
         id: target
         env:
@@ -51,33 +51,33 @@ jobs:
         run: |
           if [[ "$VERSION_TAG" == true ]]; then
             if [[ ! "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo '自动发布需要 vX.Y.Z 格式的版本标签。' >&2
+              echo 'Phát hành tự động yêu cầu tag phiên bản dạng vX.Y.Z.' >&2
               exit 1
             fi
             IMAGE_TAG="${IMAGE_TAG#v}"
           fi
           if [[ ! "$DOCKERHUB_USERNAME" =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
-            echo '请在 Actions Variables 设置有效的 DOCKERHUB_USERNAME。' >&2
+            echo 'Hãy đặt DOCKERHUB_USERNAME hợp lệ trong Actions Variables.' >&2
             exit 1
           fi
           if [[ ! "$IMAGE_TAG" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$ ]]; then
-            echo '镜像标签无效；请使用字母、数字、下划线、点或连字符。' >&2
+            echo 'Tag ảnh Docker không hợp lệ; hãy dùng chữ, số, dấu gạch dưới, dấu chấm hoặc dấu gạch nối.' >&2
             exit 1
           fi
           echo "image=$DOCKERHUB_USERNAME/peach:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
-      - name: 读取构建提交
+      - name: Đọc commit xây dựng
         id: source
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: 核对版本标签的 Linux CI
+      - name: Kiểm tra CI Linux của tag phiên bản
         if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: python scripts/release_tag.py --repo "$GITHUB_REPOSITORY" --verify-sha "$GITHUB_SHA"
       - uses: docker/setup-buildx-action@v4
-      - name: 构建候选镜像
+      - name: Xây dựng ảnh Docker ứng viên
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -86,15 +86,15 @@ jobs:
           labels: org.opencontainers.image.revision=${{ steps.source.outputs.sha }}
           cache-from: type=gha,scope=peach-linux-amd64
           cache-to: type=gha,mode=max,scope=peach-linux-amd64
-      - name: 验收临时容器
+      - name: Kiểm tra container tạm
         run: python3 scripts/smoke_docker.py peach:ci
-      - name: 登录个人 Docker Hub
+      - name: Đăng nhập Docker Hub cá nhân
         if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
         uses: docker/login-action@v4
         with:
           username: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: 推送已验收镜像
+      - name: Đẩy ảnh Docker đã kiểm tra
         if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
         env:
           IMAGE: ${{ steps.target.outputs.image }}
@@ -108,8 +108,8 @@ jobs:
             docker push "$DOCKERHUB_USERNAME/peach:edge"
           fi
           {
-            echo '### Docker Hub 镜像'
-            echo "镜像：\`$IMAGE\`"
-            echo "源码提交：\`$(git rev-parse HEAD)\`"
-            echo "拉取命令：\`docker pull $IMAGE\`"
+            echo '### Ảnh Docker Hub'
+            echo "Ảnh Docker: \`$IMAGE\`"
+            echo "Commit mã nguồn: \`$(git rev-parse HEAD)\`"
+            echo "Lệnh tải ảnh: \`docker pull $IMAGE\`"
           } >> "$GITHUB_STEP_SUMMARY"
