@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import type { Browser } from 'playwright-core';
@@ -21,6 +21,9 @@ describe('Video.js 10 播放链', () => {
     execFileSync(requiredEnv('PEACH_E2E_FFMPEG'), ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi',
       '-i', 'testsrc2=size=160x90:rate=15', '-t', '3', '-an', '-c:v', 'libx264', '-pix_fmt', 'yuv420p',
       '-f', 'dash', 'video.mpd'], { cwd: fixture });
+    execFileSync(requiredEnv('PEACH_E2E_FFMPEG'), ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi',
+      '-i', 'testsrc2=size=160x90:rate=5', '-t', '90', '-an', '-c:v', 'libx264', '-pix_fmt', 'yuv420p',
+      '-movflags', '+faststart', join(fixture, 'transport.mp4')]);
     files = new Map(readdirSync(fixture).map(name => [name, readFileSync(join(fixture, name))]));
     assert.ok(files.has('init-stream0.m4s'), [...files.keys()].join(', '));
     browser = await launch();
@@ -109,6 +112,78 @@ describe('Video.js 10 播放链', () => {
   });
 
   for (const viewport of VIEWPORTS) {
+    it(`${viewport.name}：点画面只显示控件，中央按钮暂停并前后跳转 30 秒`, { timeout: 60_000 }, async () => {
+      const opened = await visit(browser, `/assets/${requiredEnv('PEACH_E2E_ITEM')}`, viewport, async page => {
+        await page.addInitScript(() => {
+          localStorage.setItem('peach.locale.v1', 'vi');
+          localStorage.setItem('peach.settings.v1', JSON.stringify({ detailAutoplay: false }));
+        });
+        await page.route(url => url.pathname === '/api/item', async route => {
+          const response = await route.fetch();
+          const item = await response.json();
+          return route.fulfill({ response, json: { ...item, duration: 90 } });
+        });
+        await page.route(url => url.pathname === '/stream', route => {
+          const file = files.get('transport.mp4')!;
+          const range = /^bytes=(\d+)-(\d*)$/.exec(route.request().headers().range || '');
+          if (!range) return route.fulfill({ body: file, contentType: 'video/mp4', headers: { 'accept-ranges': 'bytes' } });
+          const start = Number(range[1]), end = range[2] ? Math.min(Number(range[2]), file.length - 1) : file.length - 1;
+          return route.fulfill({ status: 206, body: file.subarray(start, end + 1), contentType: 'video/mp4',
+            headers: { 'accept-ranges': 'bytes', 'content-range': `bytes ${start}-${end}/${file.length}` } });
+        });
+      });
+      const { page, problems } = opened;
+      try {
+        const video = page.locator('#stage video.vjs-tech');
+        const player = page.locator('#stage .video-js');
+        const controls = player.locator('.vjs-peach-transport');
+        await controls.waitFor({ state: 'visible' });
+        await video.evaluate((node: HTMLVideoElement) => { node.muted = true });
+        await controls.getByRole('button', { name: 'Phát', exact: true }).click();
+        await page.waitForFunction(() => {
+          const video = document.querySelector<HTMLVideoElement>('#stage video.vjs-tech');
+          return !!video && !video.paused && video.currentTime > .1;
+        });
+        await player.evaluate(node => { node.classList.remove('vjs-user-active'); node.classList.add('vjs-user-inactive') });
+        const screen = await video.boundingBox();
+        assert.ok(screen);
+        const position = { x: screen.width / 2, y: screen.height / 4 };
+        if (viewport.mobile) await video.tap({ position });
+        else await video.click({ position });
+        await controls.waitFor({ state: 'visible' });
+        assert.equal(await video.evaluate((node: HTMLVideoElement) => node.paused), false);
+        await controls.getByRole('button', { name: 'Tạm dừng', exact: true }).click();
+        assert.equal(await video.evaluate((node: HTMLVideoElement) => node.paused), true);
+        await video.evaluate((node: HTMLVideoElement) => { node.currentTime = 40 });
+        await page.waitForFunction(() => !document.querySelector<HTMLVideoElement>('#stage video.vjs-tech')!.seeking);
+        await controls.getByRole('button', { name: 'Tiến 30 giây', exact: true }).click();
+        const afterForward = await video.evaluate((node: HTMLVideoElement) => ({ time: node.currentTime, duration: node.duration, paused: node.paused }));
+        assert.ok(Math.abs(afterForward.time - 70) < .5, JSON.stringify(afterForward));
+        await page.waitForFunction(() => !document.querySelector<HTMLVideoElement>('#stage video.vjs-tech')!.seeking);
+        await controls.getByRole('button', { name: 'Lùi 30 giây', exact: true }).click();
+        assert.ok(Math.abs(await video.evaluate((node: HTMLVideoElement) => node.currentTime) - 40) < .5);
+        assert.equal(await video.evaluate((node: HTMLVideoElement) => node.paused), true);
+        const geometry = await controls.getByRole('button').evaluateAll(nodes => nodes.map(node => {
+          const box = node.getBoundingClientRect(); return { x: box.x, width: box.width, height: box.height };
+        }));
+        assert.equal(geometry.length, 3);
+        assert.ok(geometry.every(box => box.width >= 44 && box.height >= 44), JSON.stringify(geometry));
+        assert.ok(geometry[0]!.x + geometry[0]!.width <= geometry[1]!.x && geometry[1]!.x + geometry[1]!.width <= geometry[2]!.x);
+        assert.ok((await layout(page)).scrollWidth <= viewport.width + 1);
+        mkdirSync('../build/agent-verification/mobile-player-controls', { recursive: true });
+        await page.screenshot({ path: `../build/agent-verification/mobile-player-controls/${viewport.name}.png` });
+        if (viewport.mobile) await player.locator('[data-player-expand]').click();
+        await player.locator('media-fullscreen-button').click();
+        await page.waitForFunction(() => !!document.fullscreenElement);
+        await controls.waitFor({ state: 'visible' });
+        await controls.getByRole('button', { name: 'Tiến 30 giây', exact: true }).click();
+        assert.ok(Math.abs(await video.evaluate((node: HTMLVideoElement) => node.currentTime) - 70) < .5);
+        await page.screenshot({ path: `../build/agent-verification/mobile-player-controls/${viewport.name}-fullscreen.png` });
+        await page.evaluate(() => document.exitFullscreen());
+        assert.deepEqual(problems, []);
+      } finally { await opened.close() }
+    });
+
     it(`${viewport.name}：播放、暂停、倍速、进度、字幕与卸载`, { timeout: 60_000 }, async () => {
       const opened = await visit(browser, `/assets/${requiredEnv('PEACH_E2E_ITEM')}`, viewport);
       const { page, problems } = opened;

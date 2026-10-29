@@ -13,6 +13,7 @@ import { timelineFrame, type TimelineSheets } from './timeline';
 import { mountPlayerRotation } from './rotation';
 import { mountPlayerPipControl } from './pip';
 import { mountPlaybackRate, playerMemory } from './memory';
+import { mountPlayerTransport } from './transport-controls';
 import { subscribeLocale, translate as t } from '../i18n';
 
 type TooltipSync = (label?: string, aria?: string) => void;
@@ -420,6 +421,8 @@ function mountPlayerChromeLayout(player: VjsPlayer): void {
   const controlBar = player.el().querySelector<HTMLElement>('.vjs-control-bar');
   if (!controlBar || controlBar.querySelector('.vjs-peach-right-controls')) return;
   const play = controlBar.querySelector<HTMLElement>(':scope>.vjs-play-control');
+  const video = player.el().querySelector<HTMLVideoElement>('video');
+  if (video) mountPlayerTransport(player, video, controlBar);
   if (play && !play.querySelector(':scope>.vjs-peach-hover')) play.insertAdjacentHTML('beforeend', '<span class="vjs-peach-hover" aria-hidden="true"></span>');
   const explicitIcon = (button: HTMLElement | null, name: string) => {
     if (!button) return null;
@@ -469,14 +472,8 @@ function mountPlayerChromeLayout(player: VjsPlayer): void {
     syncMuteTooltip(silent ? '取消静音' : '静音');
   };
   player.on('volumechange', syncVolumeIcon); syncVolumeIcon();
-  /* 中心提示照 YouTube delhi-modern（player 9470c977 的 www-player.css 与 base.js）：一块
-     78px 的毛玻璃圆闪一下当前动作的图标，1s 走完 0→1.33→1 的缩放淡出。捕获阶段读的是
-     切换之前的状态，闪出来的正好是这一次做的事：暂停中点播放键闪播放。键盘快捷键走的
-     也是同一个按钮的点击路径，所以键盘不用另挂一处。
-     画面中心只允许有这一块提示圆：整个播放器里凡是能切换播放的入口——控制条的播放键、
-     静音键、点画面本身——都汇到这个 flashBezel 上。同一块画面上再挂第二个 78px 圆，
-     两边各按自己的时机取状态，点一下就会一个闪播放一个闪暂停，叠在一起看不清哪个才是
-     刚做的事。 */
+  /* 控制条的播放和静音动作共用中心提示，取自 YouTube delhi-modern（player 9470c977）。
+     捕获阶段读取动作之前的状态；点击画面只显示控件，不触发动作提示。 */
   const bezel = document.createElement('div');
   bezel.className = 'vjs-peach-bezel'; bezel.setAttribute('role', 'status'); bezel.hidden = true;
   bezel.innerHTML = `<span class="vjs-peach-bezel-icon">${icon('player-play')}</span>`;
@@ -494,7 +491,7 @@ function mountPlayerChromeLayout(player: VjsPlayer): void {
     if (target.closest('.vjs-mute-control')) {
       const silent = player.muted() || player.volume() === 0;
       flashBezel(silent ? 'player-volume' : 'player-volume-muted', silent ? '取消静音' : '静音');
-    } else if (target.closest('.vjs-play-control,.vjs-tech,.vjs-poster')) {
+    } else if (target.closest('.vjs-play-control')) {
       const paused = player.paused() || player.ended();
       flashBezel(paused ? 'player-play' : 'player-pause', paused ? '播放' : '暂停');
     }

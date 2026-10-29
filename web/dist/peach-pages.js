@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "dcbf6f1d-651b-448e-b125-f2bce3a171bc", e._sentryDebugIdIdentifier = "sentry-dbid-dcbf6f1d-651b-448e-b125-f2bce3a171bc");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "6e2ebf5c-19b3-4cb3-ad00-8b8e6562b81e", e._sentryDebugIdIdentifier = "sentry-dbid-6e2ebf5c-19b3-4cb3-ad00-8b8e6562b81e");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -10548,6 +10548,7 @@ var D = /* @__PURE__ */ o(((e) => {
 	其它文件: ["Other file", "Tệp khác"],
 	网址快捷方式: ["Web shortcut", "Lối tắt trang web"]
 }, me = {
+	播放控制: ["Playback controls", "Điều khiển phát video"],
 	播放器菜单: ["Player menu", "Menu trình phát"],
 	循环播放: ["Loop", "Phát lặp lại"],
 	展开: ["Expand", "Mở rộng"],
@@ -27687,4 +27688,4 @@ ay && oy && (0, M.createRoot)(ay).render(/* @__PURE__ */ (0, B.jsx)(ny, { childr
 	data: { ...ay.dataset }
 }) }));
 
-//# debugId=dcbf6f1d-651b-448e-b125-f2bce3a171bc
+//# debugId=6e2ebf5c-19b3-4cb3-ad00-8b8e6562b81e

@@ -67,9 +67,14 @@ export const createV10Player: VideojsFactory = (video, options) => {
       root.classList.remove('vjs-user-active'); root.classList.add('vjs-user-inactive');
     }, 2500);
   };
-  root.addEventListener('pointermove', active, { signal });
+  root.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') active() }, { signal });
   root.addEventListener('focusin', active, { signal });
-  video.addEventListener('click', () => { if (video.paused) void video.play().catch(() => {}); else video.pause() }, { signal });
+  if (options.controls !== false) {
+    video.addEventListener('click', active, { signal });
+    container.addEventListener('click', event => {
+      if ((event.target as Element).closest('button,media-play-button,media-mute-button,media-fullscreen-button,media-pip-button,[role="slider"]')) active();
+    }, { signal, capture: true });
+  }
   video.addEventListener('dblclick', () => root.querySelector<HTMLElement>('media-fullscreen-button')?.click(), { signal });
   const update = () => {
     root.classList.toggle('vjs-paused', video.paused); root.classList.toggle('vjs-playing', !video.paused);

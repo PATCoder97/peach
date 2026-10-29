@@ -1,5 +1,6 @@
 /** 播放器控件、菜单与读屏提示。 */
 export const playerMessages: Readonly<Record<string, readonly [string, string]>> = {
+  '播放控制': ['Playback controls', 'Điều khiển phát video'],
   '播放器菜单': ['Player menu', 'Menu trình phát'],
   '循环播放': ['Loop', 'Phát lặp lại'],
   '展开': ['Expand', 'Mở rộng'],
