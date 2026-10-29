@@ -246,7 +246,7 @@ class GitHubCandidateTests(unittest.TestCase):
             github.ArtifactRedirect().redirect_request(original, None, 302, "Found", {}, "http://artifacts.example/package")
 
     def test_expired_artifacts_and_skipped_smoke_are_not_successful_candidates(self):
-        run = {"id": 7, "head_sha": "a" * 40, "head_branch": "master", "event": "push", "status": "completed", "conclusion": "success"}
+        run = {"id": 7, "head_sha": "a" * 40, "head_branch": "master", "event": "workflow_dispatch", "status": "completed", "conclusion": "success"}
         jobs = [{"name": name, "conclusion": "success"} for name in github.REQUIRED_JOBS]
         artifacts = [{"name": name, "id": index, "expired": False, "digest": "sha256:" + "b" * 64}
                      for index, name in enumerate(sorted(github.REQUIRED_ARTIFACTS))]
@@ -261,15 +261,3 @@ class GitHubCandidateTests(unittest.TestCase):
             jobs[0]["conclusion"] = "skipped"
             with self.assertRaises(ValueError):
                 github.select("owner/repo", "a" * 40)
-
-    def test_loaded_docker_image_must_match_the_recorded_image_id(self):
-        image = {"Id": "sha256:" + "b" * 64, "Config": {"Labels": {
-            "org.opencontainers.image.version": "1.2.3", "org.opencontainers.image.revision": "a" * 40}}}
-        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(os.environ, {"GITHUB_SHA": "a" * 40}), \
-                mock.patch.object(github.subprocess, "check_output", side_effect=lambda *_a, **_kw: json.dumps(image)):
-            receipt = Path(directory) / "image.json"
-            github.image_receipt(receipt, "1.2.3", verify=False)
-            github.image_receipt(receipt, "1.2.3", verify=True)
-            image["Id"] = "sha256:" + "c" * 64
-            with self.assertRaises(ValueError):
-                github.image_receipt(receipt, "1.2.3", verify=True)

@@ -1,0 +1,205 @@
+name: Desktop
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: desktop-checks-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PYTHONUTF8: '1'
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      base: ${{ steps.plan.outputs.base }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      wheel_matrix: ${{ steps.plan.outputs.wheel_matrix }}
+      active: ${{ steps.plan.outputs.active }}
+      required_jobs: ${{ steps.plan.outputs.required_jobs }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: 生成验证矩阵
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+        run: uv run --locked --python 3.14 scripts/ci_plan.py --target desktop --event "$EVENT_NAME" --base "$BASE_SHA"
+
+  python:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }} / ${{ matrix.scope }} / ${{ matrix.shard_index }}
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.active == 'true' }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      BASE_SHA: ${{ needs.plan.outputs.base }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: 取得分叉仓库的旧版更新兼容样本
+        if: github.repository != 'peach-mitao/peach'
+        shell: bash
+        run: |
+          git fetch --no-tags https://github.com/peach-mitao/peach.git \
+            refs/tags/v0.47.3:refs/tags/v0.47.3 \
+            refs/tags/v0.48.0:refs/tags/v0.48.0 \
+            refs/tags/v0.48.1:refs/tags/v0.48.1 \
+            refs/tags/v0.48.2:refs/tags/v0.48.2 \
+            refs/tags/v0.49.1:refs/tags/v0.49.1 \
+            refs/tags/v0.50.0:refs/tags/v0.50.0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          check-latest: true
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      # checks 只验收文档与仓库契约；运行时域保留完整工具，未知输入使用全量。
+      - uses: actions/setup-node@v7
+        if: matrix.runtime_tools
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: 安装前端依赖
+        if: matrix.runtime_tools
+        run: npm --prefix frontend ci
+      # 抽帧与 AV1 软件解码回归在两端执行；浏览器冒烟的 Chrome 仅在 Windows 装配。
+      - name: 安装固定版本 FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        if: runner.os == 'Windows' && matrix.runtime_tools
+        with:
+          ffmpeg-version: "9.0.1"
+          github-token: ${{ github.token }}
+      - name: 安装 macOS FFmpeg
+        if: runner.os == 'macOS' && matrix.runtime_tools
+        run: brew install ffmpeg
+      - name: 指定 e2e 用的 Chrome
+        if: runner.os == 'Windows' && matrix.runtime_tools
+        shell: pwsh
+        run: |
+          $peachChrome = Join-Path $env:ProgramFiles 'Google\Chrome\Application\chrome.exe'
+          if (-not (Test-Path -LiteralPath $peachChrome)) { throw "runner 上没有 Chrome：$peachChrome" }
+          "PEACH_E2E_CHROME=$peachChrome" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: 安装 Windows 依赖
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          uv sync --locked --all-extras --python python
+          if ($LASTEXITCODE -ne 0) { throw 'uv 锁定安装失败' }
+          uv pip check --python .venv/Scripts/python.exe
+          if ($LASTEXITCODE -ne 0) { throw 'uv 依赖检查失败' }
+      - name: 运行 Windows 正式测试
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path build -Force | Out-Null
+          & .\scripts\test.ps1 -Scope ${{ matrix.scope }} -Fresh -Base $env:BASE_SHA -ShardIndex ${{ matrix.shard_index }} -ShardCount ${{ matrix.shard_count }} *>&1 | Tee-Object -FilePath build/ci-tests.log
+          if ($LASTEXITCODE -ne 0) { throw 'Python 分片未通过，详见 ci-tests.log' }
+      - name: 安装 macOS 依赖
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          uv sync --locked --all-extras --python python
+          uv pip check --python .venv/bin/python
+      - name: 运行 macOS 正式测试
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          mkdir -p build
+          ./scripts/test.sh ${{ matrix.scope }} --fresh --base "$BASE_SHA" --shard-index ${{ matrix.shard_index }} --shard-count ${{ matrix.shard_count }} 2>&1 | tee build/ci-tests.log
+      - name: 保存分片测试日志
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-${{ matrix.os }}-${{ matrix.scope }}-${{ matrix.shard_index }}
+          path: build/ci-tests.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+  wheel-build:
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.active == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - run: uv lock --check
+      - run: uv build --wheel --out-dir wheelhouse
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheel-smoke
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            wheelhouse/*.whl
+            scripts/smoke_wheel.py
+  wheel-smoke:
+    name: wheel 最小安装 / ${{ matrix.os }} / ${{ matrix.python }}
+    needs: [plan, wheel-build]
+    if: ${{ !cancelled() && needs.wheel-build.result == 'success' && needs.plan.outputs.active == 'true' }}
+    strategy:
+      matrix: ${{ fromJSON(needs.plan.outputs.wheel_matrix) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: wheel-smoke
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: 安装正式 wheel
+        shell: bash
+        run: |
+          python -m pip install --no-cache-dir wheelhouse/*.whl
+          python -m pip check
+      - name: 源码树外冒烟
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP"
+          python "$GITHUB_WORKSPACE/scripts/smoke_wheel.py"
+  verified:
+    name: 桌面验证结果
+    if: always()
+    needs: [plan, python, wheel-build, wheel-smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: 核对所选桌面任务
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+          REQUIRED_JOBS: ${{ needs.plan.outputs.required_jobs }}
+        run: python scripts/ci_plan.py --verify-results --phase desktop

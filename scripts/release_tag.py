@@ -194,16 +194,15 @@ def await_test(repo: str, sha: str, *, timeout: float = TEST_TIMEOUT, poll: floa
 
 def require_rehearsal(repo: str, sha: str, checked: dict, *, timeout: float = TEST_TIMEOUT,
                       poll: float = TEST_POLL, sleep=time.sleep, clock=time.monotonic) -> None:
-    """版本提交的发布演练全部通过才打标签（ADR-0121）。
+    """版本提交的适用验证全部通过才打标签。
 
     GitGud 上演练就在版本提交自己的主线流水线里，Test 绿了以后再核对演练作业都在、都成功；
-    GitHub 主仓库等待同一提交的完整 Release 演练；分叉仓库等待个人镜像的 Docker 演练。
-    两种发布都要求该提交的主线 Test 与对应制品验收通过。
+    GitHub 的 Test 包含 Linux 回归与 Docker 冒烟，桌面发行由手动 Release 独立验收。
     """
     if GITLAB:
         GITLAB.require_rehearsal(repo, checked["id"])
         return
-    workflow, label = ("release.yml", "Release") if repo.casefold() == "peach-mitao/peach" else ("docker.yml", "Docker")
+    workflow, label = "test.yml", "Test"
     start = clock()
     while True:
         runs = api(repo, f"actions/workflows/{workflow}/runs?head_sha={sha}&event=push&per_page=100")["workflow_runs"]

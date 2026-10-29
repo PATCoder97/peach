@@ -46,7 +46,7 @@ class CIFrontendOwnershipTests(unittest.TestCase):
                 self.assertIn('test_frontend_build.VitestTests.test_the_island_suite_has_a_bounded_worker_pool', selected)
         for environment in ({}, {'GITHUB_ACTIONS': 'true'},
                             {**self.CI, 'GITHUB_ACTIONS': 'false'},
-                            {**self.CI, 'GITHUB_WORKFLOW': 'Release'},
+                            {**self.CI, 'GITHUB_WORKFLOW': 'Unknown'},
                             {**self.CI, 'GITHUB_JOB': 'another-job'}):
             with self.subTest(environment=environment):
                 self.assertEqual(set(self.frontend_ids(environment)), local)
@@ -71,7 +71,7 @@ class CIFrontendOwnershipTests(unittest.TestCase):
         })
         self.assertTrue(any('.MissingPrerequisiteTests.' in name for name in selected))
         for environment in ({**self.CI, 'GITHUB_JOB': 'web-e2e'},
-                            {**self.CI, 'GITHUB_WORKFLOW': 'Release'}):
+                            {**self.CI, 'GITHUB_WORKFLOW': 'Unknown'}):
             self.assertEqual(collect(environment), local)
 
     def test_delegated_ci_returns_results_without_local_evidence(self):
@@ -97,12 +97,12 @@ class CIFrontendOwnershipTests(unittest.TestCase):
 
 
 class TestPlanningTests(unittest.TestCase):
-    def test_checks_ci_omits_runtime_tool_installation_and_keeps_platforms(self):
+    def test_checks_ci_omits_runtime_tool_installation_on_linux(self):
         for path in ("README.md", "CONTRIBUTING.md", ".github/PULL_REQUEST_TEMPLATE.md", "docs/TESTING.md"):
             with self.subTest(path=path):
                 result = ci_plan.plan("push", [path])
                 rows = result["matrix"]["include"]
-                self.assertEqual({row["os"] for row in rows}, {"windows-latest", "macos-latest"})
+                self.assertEqual({row["os"] for row in rows}, {"ubuntu-latest"})
                 self.assertTrue(all(not row["runtime_tools"] for row in rows))
                 self.assertIn("python", result["required_jobs"])
                 self.assertFalse(result["browser"])
@@ -228,14 +228,14 @@ class TestPlanningTests(unittest.TestCase):
                 self.assertEqual(scopes, expected)
         self.assertEqual(runner.scopes_for_changes(['pyproject.toml'])[0], ('full',))
 
-    def test_matrix_keeps_full_manual_and_platform_coverage(self):
+    def test_manual_linux_matrix_keeps_full_coverage(self):
         result = ci_plan.plan('workflow_dispatch', ['web/app.js'])
         rows = result['matrix']['include']
-        self.assertEqual(len([r for r in rows if r['scope'] == 'full']), 6)
-        self.assertEqual({r['os'] for r in rows}, {'windows-latest', 'macos-latest'})
+        self.assertEqual(len([r for r in rows if r['scope'] == 'full']), 2)
+        self.assertEqual({r['os'] for r in rows}, {'ubuntu-latest'})
         self.assertEqual({r['python'] for r in rows}, {'3.14'})
         self.assertTrue(all(r['scope'] == 'full' for r in rows))
-        self.assertEqual(len(result['wheel_matrix']['include']), 2)
+        self.assertEqual(len(result['wheel_matrix']['include']), 1)
 
     def test_browser_partitions_cover_every_file_once_and_balance_recorded_duration(self):
         matrix = ci_plan.browser_matrix()['include']
@@ -302,16 +302,64 @@ class TestPlanningTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ci_plan.validate_results(results, required, phase='unknown')
 
-    def test_dependency_and_manual_runs_cover_both_systems(self):
+    def test_dependency_and_manual_runs_keep_full_linux_coverage(self):
         for event, paths in [('push', ['uv.lock']), ('pull_request', ['migrations/0025.sql']),
                              ('workflow_dispatch', [])]:
             result = ci_plan.plan(event, paths)
             self.assertTrue(result['wide'])
             self.assertEqual({r['os'] for r in result['matrix']['include'] if r['scope'] == 'full'},
-                             {'macos-latest', 'windows-latest'})
+                             {'ubuntu-latest'})
             wheels = result['wheel_matrix']['include']
-            self.assertCountEqual(wheels, [{'os': 'windows-latest', 'python': '3.14'},
-                                          {'os': 'macos-latest', 'python': '3.14'}])
+            self.assertCountEqual(wheels, [{'os': 'ubuntu-latest', 'python': '3.14'}])
+
+    def test_desktop_platform_changes_select_only_the_matching_system(self):
+        fixtures = {
+            'src/peach/windows_update.py': {'windows-latest'},
+            'scripts/build_windows.ps1': {'windows-latest'},
+            'scripts/build_macos.sh': {'macos-latest'},
+            'src/peach/platform.py': {'windows-latest', 'macos-latest'},
+            'src/peach/tray.py': {'windows-latest', 'macos-latest'},
+            'frontend/src/player/v10-player.ts': set(),
+            'src/peach/server.py': set(),
+            'uv.lock': set(),
+            'unknown.file': set(),
+            'README.md': set(),
+        }
+        for path, expected in fixtures.items():
+            with self.subTest(path=path):
+                result = ci_plan.plan('pull_request', [path], target='desktop')
+                self.assertEqual({row['os'] for row in result['matrix']['include']}, expected)
+                self.assertEqual(result['active'], bool(expected))
+                results = {name: {'result': 'success'} for name in result['required_jobs']}
+                ci_plan.validate_results(results, result['required_jobs'], phase='desktop')
+                if expected:
+                    with self.assertRaises(ValueError):
+                        ci_plan.validate_results({**results, 'python': {'result': 'skipped'}},
+                                                 result['required_jobs'], phase='desktop')
+        manual = ci_plan.plan('workflow_dispatch', [], target='desktop')
+        self.assertEqual({row['os'] for row in manual['matrix']['include']},
+                         {'windows-latest', 'macos-latest'})
+        self.assertEqual(len(manual['matrix']['include']), 6)
+
+    def test_docker_inputs_require_a_successful_container_smoke(self):
+        for path in ('Dockerfile', 'src/peach/server.py', 'tools/amane-bridge/uv.lock',
+                     'scripts/build_amane_runtime.py', '.github/workflows/docker.yml'):
+            with self.subTest(path=path):
+                result = ci_plan.plan('pull_request', [path])
+                self.assertTrue(result['docker'])
+                required = result['required_jobs']
+                results = {name: {'result': 'success'} for name in required}
+                ci_plan.validate_results(results, required)
+                for status in ('failure', 'cancelled', 'skipped'):
+                    with self.assertRaises(ValueError):
+                        ci_plan.validate_results({**results, 'docker': {'result': status}}, required)
+        self.assertFalse(ci_plan.plan('pull_request', ['docs/TESTING.md'])['docker'])
+
+    def test_desktop_cannot_skip_when_the_diff_is_unavailable(self):
+        with patch.object(sys, 'argv', ['ci_plan.py', '--target', 'desktop', '--event', 'pull_request', '--base', 'missing']), \
+                patch.object(runner, 'changed_files', side_effect=subprocess.CalledProcessError(1, 'git')), \
+                self.assertRaisesRegex(ValueError, '不能判为无需验证'):
+            ci_plan.main()
 
     def test_pull_request_uses_changed_domains(self):
         rows = ci_plan.plan('pull_request', ['src/peach/follow_store.py'])['matrix']['include']
