@@ -18,14 +18,18 @@ const routes = ['/', '/jav', '/jav?tab=wants', '/follow', '/subscriptions', '/st
 const indexSourceText = ['林晚晴', '顾清和', '苏念安', '陈知夏', '周见山', '何以宁', '白露', '江小满',
   '山间小屋', '城市步行者', '厨房观察员', '晨雾映画', '海岸线工作室', '山谷工房', '极光影像', '四季纪录',
   '城市漫步', '慢生活厨房', '山野四季', '手作日常', '夜景延时',
-  '延时摄影', '自然风景', '城市夜景', '航拍', '料理', '手工', '旅行日记', '音乐现场', '横屏', '竖屏'];
+  '延时摄影', '自然风景', '城市夜景', '航拍', '料理', '手工', '旅行日记', '音乐现场', '横屏', '竖屏', '巨乳'];
+
+// canonical-routes 会向共享临时馆藏写入这一条原始标签；只扣除该资料值，不扣除「中文」分组标题。
+const sharedFixtureTag = '巨乳';
 
 // 合成馆藏原始字段保留中文；界面断言只扣除当前路由中的这些已知资料。
 const fixtureText: Readonly<Record<string, readonly string[]>> = {
   ...Object.fromEntries(['/performers', '/creators', '/studios', '/agencies', '/series', '/tags'].map(route => [route, indexSourceText])),
-  '/': ['河畔慢跑.mp4', '阳台花园.mp4', '车站的傍晚.mp4', '雪后山径.mp4'],
+  '/': ['河畔慢跑.mp4', '阳台花园.mp4', '车站的傍晚.mp4', '雪后山径.mp4', sharedFixtureTag],
+  '/junk-files': [sharedFixtureTag],
   '/review': ['厨房里的周末', '陈知夏', '苏念安', '极光影像', '慢生活厨房', '横屏', '料理', '音乐现场',
-    '雨后街道', '顾清和', '江小满', '海岸线工作室', '城市漫步', '竖屏', '自然风景', '湖面航拍', '夜景延时'],
+    '雨后街道', '顾清和', '江小满', '海岸线工作室', '城市漫步', '竖屏', '自然风景', '湖面航拍', '夜景延时', sharedFixtureTag],
 };
 
 it('从语言选择器切换后保留设置值、控件节点和持久偏好', async () => {
@@ -71,7 +75,7 @@ for (const language of ['en', 'vi']) {
       await view.page.locator('[data-player-quality-view]').click();
       assert.doesNotMatch(await menu.innerText(), /\p{Script=Han}/u);
       assert.ok(await menu.locator('[data-player-quality-option]').count() > 0);
-      assert.doesNotMatch(await view.page.locator('#stage').innerText(), /\p{Script=Han}/u);
+      assert.doesNotMatch((await view.page.locator('#stage').innerText()).replaceAll(sharedFixtureTag, ''), /\p{Script=Han}/u);
       const geometry = await layout(view.page);
       assert.ok(geometry.scrollWidth <= geometry.viewportWidth + 1, JSON.stringify(geometry));
       mkdirSync('../build/agent-verification/localization', { recursive: true });

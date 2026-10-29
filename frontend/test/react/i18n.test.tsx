@@ -7,8 +7,29 @@ import { ErrorText } from '../../src/react/settings/section';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '../../src/react/query';
 import { BrowserSources } from '../../src/react/taste/browser-sources';
+import { TagAlphabet, TagFilters } from '../../src/react/index/index-tags';
 
 afterEach(() => setLocale('zh-CN'));
+
+it('标签字母表翻译分组标题，来源标签原文保持不变', async () => {
+  setLocale('en');
+  const host = await mount(<><TagAlphabet groups={[
+    ['中文', [{ k: '来源原词', label: '来源原词', n: 1 }]],
+    ['其他', [{ k: 'あ', label: 'あ', n: 1 }]],
+  ]} actions={{ online:false, favorites:false, picked:new Set(), press:()=>{} }} />
+    <TagFilters categories={[]} category="all" online={false} readout="2" letters={['中文','其他']}
+      view="alphabet" onCategory={()=>{}} onJump={()=>{}} onView={()=>{}} /></>);
+  const headings = () => [...host.querySelectorAll('h3')].map(node=>node.textContent);
+  expect(headings()[0]).toContain('Chinese');
+  expect(headings()[1]).toContain('Other');
+  expect(host.querySelector('[data-alpha-jump]')?.textContent).toBe('ChineseOther');
+  expect(host.querySelector('[data-alpha-tag]')?.textContent).toContain('来源原词');
+  await act(async()=>setLocale('vi'));
+  expect(headings()[0]).toContain('Tiếng Trung');
+  expect(headings()[1]).toContain('Khác');
+  expect(host.querySelector('[data-alpha-jump]')?.textContent).toBe('Tiếng TrungKhác');
+  expect(host.querySelector('[data-alpha-tag]')?.textContent).toContain('来源原词');
+});
 
 it('浏览器来源的启用与停止读取按钮具有本地化名称，保留浏览器原名', async () => {
   const browsers = [true, false].map((enabled, index) => ({

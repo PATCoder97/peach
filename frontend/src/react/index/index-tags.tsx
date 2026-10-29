@@ -63,13 +63,14 @@ function AlphaTag({ tag, actions }: { tag: TagEntry; actions: TagActions }) {
 /** 字母表：每个首字一张卡，字头是卡的标题，右边挂这一组有几个。`data-alpha-group` 是浮层
  *  下排那排跳转键的落点，卡顶给吸顶的浮层让出位置。 */
 export function TagAlphabet({ groups, actions }: { groups: [string, TagEntry[]][]; actions: TagActions }) {
+  const uiText = useUiTranslation();
   return (
     <div data-alphabet="" className="flex flex-col gap-4">
       {groups.map(([letter, tags], at) => (
         <section key={letter} data-alpha-group={at}
           className={cardClass({ radius: 'plain', padding: 'none', className: 'px-5 pt-4 pb-3' })}>
           <h3 className="mb-2 flex items-center text-title-2-medium text-text-primary">
-            {letter}<TabCount value={tags.length} />
+            {uiText(letter)}<TabCount value={tags.length} />
           </h3>
           <div className="index-tag-list gap-x-4 gap-y-0.5">
             {tags.map((tag) => <AlphaTag key={tag.k} tag={tag} actions={actions} />)}
@@ -157,7 +158,7 @@ export function TagFilters(
             {letters.map((letter, at) => (
               <button key={letter} type="button" onClick={() => onJump(at)}
                 className="h-8 min-w-8 flex-none cursor-pointer rounded-glass-key px-1.5 text-caption-1-regular leading-5 text-(--glass-text)/60 outline-none hover:text-(--glass-text) focus-visible:ring-2 focus-visible:ring-border-focus-ring">
-                {letter}
+                {uiText(letter)}
               </button>
             ))}
           </nav>
