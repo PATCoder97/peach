@@ -4,8 +4,26 @@ import { setLocale } from '../../src/i18n';
 import { useTranslation } from '../../src/react/i18n';
 import { mount } from './render';
 import { ErrorText } from '../../src/react/settings/section';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../../src/react/query';
+import { BrowserSources } from '../../src/react/taste/browser-sources';
 
 afterEach(() => setLocale('zh-CN'));
+
+it('浏览器来源的启用与停止读取按钮具有本地化名称，保留浏览器原名', async () => {
+  const browsers = [true, false].map((enabled, index) => ({
+    id: `browser-${index}`, name: 'Edge 原名', path: 'R:\\资料', enabled, available: true, profiles: 1,
+  }));
+  setLocale('en');
+  const host = await mount(<QueryClientProvider client={queryClient}>
+    <BrowserSources browsers={browsers} sources={[]} range="all" />
+  </QueryClientProvider>);
+  expect(host.querySelector('[aria-label="Stop reading Edge 原名"]')).not.toBeNull();
+  expect(host.querySelector('[aria-label="Enable Edge 原名"]')).not.toBeNull();
+  await act(async()=>setLocale('vi'));
+  expect(host.querySelector('[aria-label="Dừng đọc Edge 原名"]')).not.toBeNull();
+  expect(host.querySelector('[aria-label="Bật Edge 原名"]')).not.toBeNull();
+});
 
 it('接口校验错误随语言切换，保持表单输入节点与原始服务端原因', async () => {
   const source = '媒体库名称请使用 1 到 80 个可见字符';

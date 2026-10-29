@@ -1,7 +1,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "ecff3d45-d82e-4dac-9dd6-98f51edaaa32", e._sentryDebugIdIdentifier = "sentry-dbid-ecff3d45-d82e-4dac-9dd6-98f51edaaa32");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "21842aa9-d80c-42a1-b1c5-c9928dd83f06", e._sentryDebugIdIdentifier = "sentry-dbid-21842aa9-d80c-42a1-b1c5-c9928dd83f06");
 	} catch {}
 })();
 import { ActivePoints as e, AnimatedItems as t, CHART_CARD as n, CHART_COLORS as r, CartesianLabelListContextProvider as i, CategoryTick as a, ChartBackground as o, ChartContainer as s, ChartHead as c, ChartLegend as l, ChartLegendContent as u, ChartTip as d, ChartTooltip as f, ChartTooltipContent as p, DefaultZIndexes as m, Dots as h, EvilBarChart as g, LabelListFromLabelProp as _, Layer as v, LoadingIndicator as y, PolarChart as ee, PolarLabelContextProvider as b, PolarLabelFromLabelProp as x, RegisterGraphicalItemId as S, SetPolarGraphicalItem as C, SetPolarLegendPayload as te, SetTooltipEntrySettings as w, Text as T, ZIndexLayer as E, adaptEventsOfChild as ne, addRadiusAxis as re, arrayTooltipSearcher as ie, categoryAxisWidth as ae, cn as oe, createSelector as D, defaultPolarChartProps as se, defaultPolarRadiusAxisProps as ce, fitLabel as le, getAxisTypeBasedOnLayout as ue, getBandSizeOfAxis as de, getClassNameFromUnknown as fe, getColorsCount as pe, getTooltipNameProp as me, getValueByDataKey as he, identity as ge, interpolate as _e, isArrayLike as ve, isCategoricalAxis as ye, isNullish as be, iteratee as xe, matchAnimationItems as Se, matchByIndex as Ce, noop as we, polarToCartesian as O, removeRadiusAxis as Te, resolveDefaultProps as Ee, selectAngleAxis as De, selectChartDataAndAlwaysIgnoreIndexes as Oe, selectChartLayout as ke, selectPolarViewBox as Ae, selectRadiusAxis as je, selectUnfilteredPolarItems as Me, svgPropertiesAndEvents as Ne, svgPropertiesNoEvents as k, svgPropertiesNoEventsFromUnknown as Pe, tone as Fe, useAnimationCallbacks as Ie, useAnimationStartSnapshot as Le, useAppDispatch as Re, useAppSelector as A, useIsPanorama as ze, usePolarChartLayout as Be } from "./peach-app.chart-tip-DZxr5vDp.js";
@@ -2386,7 +2386,7 @@ function zi({ browsers: e, sources: t, range: n, children: r }) {
 									...P(d.isPending),
 									iconOnly: !0,
 									leadingIcon: e.enabled ? it : Xe,
-									"aria-label": `${e.enabled ? "停止读取" : "启用"} ${e.name}`,
+									"aria-label": e.enabled ? i("停止读取 {value0}", { value0: e.name }) : i("启用 {value0}", { value0: e.name }),
 									onClick: () => {
 										e.enabled ? Ct({
 											title: `停止读取 ${e.name}`,
@@ -3326,4 +3326,4 @@ function _a({ term: e, value: t, rest: n }) {
 }
 export { aa as TASTE_GUIDE_KEY, ga as TastePage };
 
-//# debugId=ecff3d45-d82e-4dac-9dd6-98f51edaaa32
+//# debugId=21842aa9-d80c-42a1-b1c5-c9928dd83f06

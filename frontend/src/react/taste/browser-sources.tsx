@@ -65,7 +65,7 @@ export function BrowserSources({ browsers, sources, range, children }:
         <span className="flex shrink-0 gap-1">
         <Button variant="secondary" size="small" {...busyProps(change.isPending)} iconOnly
           leadingIcon={browser.enabled ? RiPauseLine : RiPlayLine}
-          aria-label={`${browser.enabled ? '停止读取' : '启用'} ${browser.name}`} onClick={() => {
+          aria-label={browser.enabled ? uiText('停止读取 {value0}', { value0: browser.name }) : uiText('启用 {value0}', { value0: browser.name })} onClick={() => {
             if (!browser.enabled) change.mutate({ operation: 'enable', id: browser.id });
             else void confirmModal({ title: `停止读取 ${browser.name}`, body: '已导入的历史与书签仍用于口味分析。', confirmLabel: '停止读取',
               onConfirm: () => change.mutateAsync({ operation: 'disable', id: browser.id }) });
