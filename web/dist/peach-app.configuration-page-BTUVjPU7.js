@@ -1,7 +1,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "9b914250-2b64-4fe1-9cfe-f8dd6eee9058", e._sentryDebugIdIdentifier = "sentry-dbid-9b914250-2b64-4fe1-9cfe-f8dd6eee9058");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "2fe9b8bc-dc09-4d65-9c59-13c8a82d08a5", e._sentryDebugIdIdentifier = "sentry-dbid-2fe9b8bc-dc09-4d65-9c59-13c8a82d08a5");
 	} catch {}
 })();
 import { AnimatedItems as e, Cell as t, ChartBackground as n, ChartContainer as r, ChartLegend as i, ChartLegendContent as a, ChartTip as o, ChartTooltip as s, ChartTooltipContent as c, Curve as l, DATA_ITEM_GRAPHICAL_ITEM_ID_ATTRIBUTE_NAME as u, DATA_ITEM_INDEX_ATTRIBUTE_NAME as d, DefaultZIndexes as f, EvilBarChart as p, LabelList as m, LabelListFromLabelProp as h, Layer as g, LoadingIndicator as _, PolarChart as v, PolarLabelContextProvider as y, PolarLabelListContextProvider as b, RegisterGraphicalItemId as x, Sector as S, SetPolarGraphicalItem as C, SetPolarLegendPayload as w, SetTooltipEntrySettings as T, Shape as ee, TIP_SWATCH as te, Text as ne, ZIndexLayer as re, adaptEventsOfChild as ie, arrayTooltipSearcher as ae, createSelector as oe, defaultPolarChartProps as se, findAllByType as ce, get as le, getClassNameFromUnknown as ue, getColorsCount as de, getMaxRadius as fe, getPercentValue as pe, getTooltipNameProp as me, getValueByDataKey as he, interpolate as ge, isNumber as _e, matchAppend as ve, mathSign as ye, polarToCartesian as be, resolveDefaultProps as xe, selectActiveTooltipDataKey as Se, selectActiveTooltipGraphicalItemId as Ce, selectActiveTooltipIndex as we, selectChartDataAndAlwaysIgnoreIndexes as Te, selectChartOffsetInternal as Ee, selectUnfilteredPolarItems as De, svgPropertiesNoEvents as Oe, svgPropertiesNoEventsFromUnknown as ke, tone as Ae, useAnimationCallbacks as je, useAppSelector as Me, useMouseClickItemDispatch as Ne, useMouseEnterItemDispatch as Pe, useMouseLeaveItemDispatch as Fe, usePolarChartLayout as Ie } from "./peach-app.chart-tip-DZxr5vDp.js";
@@ -2382,7 +2382,7 @@ function _a({ initial: e, initialJob: t }) {
 								value: a.progress,
 								stops: ma
 							}),
-							/* @__PURE__ */ (0, Q.jsxs)(M, { children: [n("下载 → 校验 → 解压 → 准备安装 · "), n(a.message)] }),
+							/* @__PURE__ */ (0, Q.jsxs)(M, { children: [n("下载 → 校验 → 解压 → 准备安装 · "), n(a.message || "")] }),
 							/* @__PURE__ */ (0, Q.jsx)(M, { children: v })
 						]
 					}) : null
@@ -5500,4 +5500,4 @@ function ns({ data: e, receipt: t, reopenTutorial: n, section: r, diagnostics: i
 }
 export { $o as ConfigurationPage };
 
-//# debugId=9b914250-2b64-4fe1-9cfe-f8dd6eee9058
+//# debugId=2fe9b8bc-dc09-4d65-9c59-13c8a82d08a5
