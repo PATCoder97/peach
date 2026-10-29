@@ -115,7 +115,7 @@ class HistoryFileTests(unittest.TestCase):
         with contextlib.redirect_stderr(errors):
             self.assertIsNone(history.append(runner.ROOT, scope='full:full', files=[], rows=[],
                                              folder=blocked))
-        self.assertIn('不影响本次判定', errors.getvalue())
+        self.assertIn('không ảnh hưởng kết luận lượt này', errors.getvalue())
 
     def test_runs_started_by_a_test_do_not_write_the_real_history_or_take_outer_rows(self):
         saved = list(history._external)
