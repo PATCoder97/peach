@@ -4,11 +4,11 @@ name: Docker
 # 官方版本号与 edge 仍由 release.yml 发布（ADR-0121）。
 on:
   pull_request:
-    paths: [Dockerfile, .dockerignore, compose.yaml, 'src/**', 'migrations/**', 'web/**', 'resources/**', pyproject.toml, uv.lock, setup.py, MANIFEST.in, scripts/smoke_docker.py, .github/workflows/docker.yml]
+    paths: [Dockerfile, .dockerignore, compose.yaml, 'src/**', 'migrations/**', 'web/**', 'resources/**', pyproject.toml, uv.lock, setup.py, MANIFEST.in, scripts/smoke_docker.py, scripts/release_tag.py, .github/workflows/docker.yml, .github/workflows/release.yml]
   push:
     branches: [master]
     tags: ['v[0-9]*.[0-9]*.[0-9]*']
-    paths: [Dockerfile, .dockerignore, compose.yaml, 'src/**', 'migrations/**', 'web/**', 'resources/**', pyproject.toml, uv.lock, setup.py, MANIFEST.in, scripts/smoke_docker.py, .github/workflows/docker.yml]
+    paths: [Dockerfile, .dockerignore, compose.yaml, 'src/**', 'migrations/**', 'web/**', 'resources/**', pyproject.toml, uv.lock, setup.py, MANIFEST.in, scripts/smoke_docker.py, scripts/release_tag.py, .github/workflows/docker.yml, .github/workflows/release.yml]
   workflow_dispatch:
     inputs:
       source_ref:
