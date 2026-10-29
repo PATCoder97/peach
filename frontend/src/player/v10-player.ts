@@ -59,18 +59,28 @@ export const createV10Player: VideojsFactory = (video, options) => {
   const signal = cleanup.signal;
   let disposed = false, sourceGeneration = 0, playGeneration = 0, expectedDuration = 0, source: PlayerSource = { src: '', type: '' }, failure: unknown = null;
   let idle: ReturnType<typeof setTimeout> | undefined;
+  const inactive = () => {
+    if (idle) clearTimeout(idle);
+    root.classList.remove('vjs-user-active'); root.classList.add('vjs-user-inactive');
+  };
   const active = () => {
     root.classList.add('vjs-user-active'); root.classList.remove('vjs-user-inactive');
     if (idle) clearTimeout(idle);
     if (!video.paused) idle = setTimeout(() => {
       if (root.matches(':focus-within,:hover') && root.querySelector('[aria-expanded="true"]')) return;
-      root.classList.remove('vjs-user-active'); root.classList.add('vjs-user-inactive');
+      inactive();
     }, 2500);
   };
   root.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') active() }, { signal });
   root.addEventListener('focusin', active, { signal });
   if (options.controls !== false) {
-    video.addEventListener('click', active, { signal });
+    container.addEventListener('click', event => {
+      if (![video, container, media].includes(event.target as MediaElement)) return;
+      const touch = (event as PointerEvent).pointerType === 'touch'
+        || window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      if (touch && root.classList.contains('vjs-user-active')) inactive();
+      else active();
+    }, { signal });
     container.addEventListener('click', event => {
       if ((event.target as Element).closest('button,media-play-button,media-mute-button,media-fullscreen-button,media-pip-button,[role="slider"]')) active();
     }, { signal, capture: true });

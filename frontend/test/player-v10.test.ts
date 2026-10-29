@@ -25,6 +25,28 @@ function mounted(controls = false) {
 }
 
 describe('Video.js 10 播放会话', () => {
+  it.each([true, false])('触屏点击空白交替隐藏与显示控件，保持 paused=%s', paused => {
+    vi.useFakeTimers();
+    const { video, player } = mounted(true);
+    Object.defineProperty(video, 'paused', { configurable: true, value: paused });
+    const pause = vi.spyOn(video, 'pause').mockImplementation(() => {});
+    const play = vi.spyOn(video, 'play').mockResolvedValue(undefined);
+    const tap = (target: Element) => target.dispatchEvent(new PointerEvent('click', { pointerType: 'touch', bubbles: true }));
+    tap(video);
+    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
+    vi.advanceTimersByTime(3000);
+    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
+    tap(player.el().querySelector('media-container')!);
+    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
+    tap(player.el().querySelector('media-play-button')!);
+    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
+    tap(video);
+    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
+    expect(play).not.toHaveBeenCalled();
+    expect(pause).not.toHaveBeenCalled();
+    player.dispose();
+  });
+
   it.each([true, false])('点击画面显示控件并保持 paused=%s，触屏移动不抢先唤起控件', paused => {
     const { video, player } = mounted(true);
     Object.defineProperty(video, 'paused', { configurable: true, value: paused });

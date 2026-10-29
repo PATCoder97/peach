@@ -30,4 +30,4 @@
 .vjs-peach-captions[hidden]{display:none}
 .vjs-peach-caption-window{max-width:100%;padding:.15em .3em;background:var(--peach-caption-window)}
 .vjs-peach-caption-line{display:block;width:fit-content;max-width:100%;margin:0 auto;padding:0 .15em;white-space:pre-line;overflow-wrap:anywhere;background:var(--peach-caption-background);box-decoration-break:clone}
-.video-js.vjs-user-inactive.vjs-playing .vjs-peach-captions{bottom:5%}
+.video-js.vjs-user-inactive .vjs-peach-captions{bottom:5%}
