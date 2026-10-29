@@ -10,6 +10,7 @@ import { notifyManager, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, expect, it, vi } from 'vitest';
 
 import * as legacyUi from '@peach/legacy/ui';
+import { setLocale } from '../../src/i18n';
 
 import { JOB_RUNNING_POLL_MS } from '../../src/react/background-job';
 import { queryClient } from '../../src/react/query';
@@ -24,7 +25,10 @@ import { TastePage } from '../../src/react/taste/taste-page';
 import { choose, click, mount, mountRoot, settle } from './render';
 
 // 客户端是模块级的单例（所有 React 根共用一个），用例之间不清就互相喂数据。
-afterEach(() => queryClient.clear());
+afterEach(async () => {
+  queryClient.clear();
+  await act(async () => setLocale('zh-CN'));
+});
 
 /* Query 派发更新用的是它自己抓住的那个真 `setTimeout(0)`，假时钟推不动它：推完时钟
    断言到的还是上一帧的 DOM。用例里改成当场派发。 */
@@ -138,6 +142,25 @@ async function open(plan: Plan = {}, props = legacyProps()) {
 
 /** 轮询是组件里的定时器，推进时钟会引起重画，得在 act 里推。 */
 const tick = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) });
+
+it('口味总结随语言切换翻译动态结论与建议，保留标签原文', async () => {
+  const view = await open({ taste: [payload({ analysis: {
+    headline: 'Peach 观看行为目前更集中在标签甲。',
+    confidence: { level: 'high', label: '可信度较高' },
+    points: [{ label: 'Peach 印证', text: '标签甲' }],
+    explore: [{ tag: '标签甲', title: '探索 标签甲', detail: '浏览信号 12 次 · 馆藏 3 部 · 已有观看印证' }],
+    next_steps: [],
+  } })] });
+  await act(async () => setLocale('en'));
+  expect(view.host.textContent).toContain('Viewing activity in Peach currently focuses more on 标签甲.');
+  expect(view.host.textContent).toContain('Explore 标签甲');
+  expect(view.host.textContent).toContain('High confidence');
+  await act(async () => setLocale('vi'));
+  expect(view.host.textContent).toContain('Hoạt động xem trong Peach hiện tập trung hơn vào 标签甲.');
+  expect(view.host.textContent).toContain('Khám phá 标签甲');
+  expect(view.host.textContent).toContain('Độ tin cậy cao');
+  expect(view.host.textContent).toContain('12 tín hiệu duyệt web · 3 tác phẩm trong thư viện · Đã đối chiếu với lượt xem');
+});
 
 /** 按可见文字找那一枚控件。名次行与线索行都是整行一个按钮。 */
 const rowNamed = (root: ParentNode, text: string) =>

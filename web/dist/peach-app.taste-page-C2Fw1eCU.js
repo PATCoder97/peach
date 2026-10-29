@@ -1,7 +1,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "21842aa9-d80c-42a1-b1c5-c9928dd83f06", e._sentryDebugIdIdentifier = "sentry-dbid-21842aa9-d80c-42a1-b1c5-c9928dd83f06");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "8dc4f31a-9d2e-4374-adff-fd90416dbbc6", e._sentryDebugIdIdentifier = "sentry-dbid-8dc4f31a-9d2e-4374-adff-fd90416dbbc6");
 	} catch {}
 })();
 import { ActivePoints as e, AnimatedItems as t, CHART_CARD as n, CHART_COLORS as r, CartesianLabelListContextProvider as i, CategoryTick as a, ChartBackground as o, ChartContainer as s, ChartHead as c, ChartLegend as l, ChartLegendContent as u, ChartTip as d, ChartTooltip as f, ChartTooltipContent as p, DefaultZIndexes as m, Dots as h, EvilBarChart as g, LabelListFromLabelProp as _, Layer as v, LoadingIndicator as y, PolarChart as ee, PolarLabelContextProvider as b, PolarLabelFromLabelProp as x, RegisterGraphicalItemId as S, SetPolarGraphicalItem as C, SetPolarLegendPayload as te, SetTooltipEntrySettings as w, Text as T, ZIndexLayer as E, adaptEventsOfChild as ne, addRadiusAxis as re, arrayTooltipSearcher as ie, categoryAxisWidth as ae, cn as oe, createSelector as D, defaultPolarChartProps as se, defaultPolarRadiusAxisProps as ce, fitLabel as le, getAxisTypeBasedOnLayout as ue, getBandSizeOfAxis as de, getClassNameFromUnknown as fe, getColorsCount as pe, getTooltipNameProp as me, getValueByDataKey as he, identity as ge, interpolate as _e, isArrayLike as ve, isCategoricalAxis as ye, isNullish as be, iteratee as xe, matchAnimationItems as Se, matchByIndex as Ce, noop as we, polarToCartesian as O, removeRadiusAxis as Te, resolveDefaultProps as Ee, selectAngleAxis as De, selectChartDataAndAlwaysIgnoreIndexes as Oe, selectChartLayout as ke, selectPolarViewBox as Ae, selectRadiusAxis as je, selectUnfilteredPolarItems as Me, svgPropertiesAndEvents as Ne, svgPropertiesNoEvents as k, svgPropertiesNoEventsFromUnknown as Pe, tone as Fe, useAnimationCallbacks as Ie, useAnimationStartSnapshot as Le, useAppDispatch as Re, useAppSelector as A, useIsPanorama as ze, usePolarChartLayout as Be } from "./peach-app.chart-tip-DZxr5vDp.js";
@@ -2603,7 +2603,7 @@ function fa({ data: e, onSignal: t, navigate: n }) {
 					}),
 					/* @__PURE__ */ (0, X.jsx)("p", {
 						className: "max-w-prose text-title-2-regular wrap-anywhere text-text-primary",
-						children: r(a.headline)
+						children: i(a.headline)
 					}),
 					/* @__PURE__ */ (0, X.jsxs)("p", {
 						className: "flex flex-wrap items-center gap-2 text-body-2-regular text-text-secondary",
@@ -2640,7 +2640,7 @@ function fa({ data: e, onSignal: t, navigate: n }) {
 						className: "flex min-w-0 grow flex-col gap-1",
 						children: [/* @__PURE__ */ (0, X.jsx)("b", {
 							className: "text-body-2-medium wrap-anywhere text-text-primary",
-							children: r(e.title)
+							children: i(e.title)
 						}), /* @__PURE__ */ (0, X.jsx)("small", {
 							className: "text-caption-1-regular wrap-anywhere text-text-secondary",
 							children: i(e.detail)
@@ -3326,4 +3326,4 @@ function _a({ term: e, value: t, rest: n }) {
 }
 export { aa as TASTE_GUIDE_KEY, ga as TastePage };
 
-//# debugId=21842aa9-d80c-42a1-b1c5-c9928dd83f06
+//# debugId=8dc4f31a-9d2e-4374-adff-fd90416dbbc6

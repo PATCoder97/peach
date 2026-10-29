@@ -1,6 +1,29 @@
 import { expect, it } from 'vitest';
 import { translateSystem } from '../src/i18n/system';
 
+it.each([
+  ['浏览兴趣以自然风景为主，Peach 中稳定出现标签甲、标签乙。',
+    'Browsing interests mainly focus on 自然风景; 标签甲、标签乙 appear consistently in Peach.',
+    'Sở thích duyệt web chủ yếu là 自然风景; 标签甲、标签乙 xuất hiện thường xuyên trong Peach.'],
+  ['浏览兴趣目前以自然风景为主，Peach 观看证据仍偏少。',
+    'Browsing interests currently focus on 自然风景; viewing evidence in Peach is still limited.',
+    'Sở thích duyệt web hiện chủ yếu là 自然风景; bằng chứng xem trong Peach còn ít.'],
+  ['Peach 观看行为目前更集中在标签甲、标签乙。',
+    'Viewing activity in Peach currently focuses more on 标签甲、标签乙.',
+    'Hoạt động xem trong Peach hiện tập trung hơn vào 标签甲、标签乙.'],
+  ['探索 标签甲', 'Explore 标签甲', 'Khám phá 标签甲'],
+  ['浏览信号 1,234 次 · 馆藏 56 部 · 已有观看印证',
+    '1,234 browsing signals · 56 library titles · Corroborated by viewing',
+    '1,234 tín hiệu duyệt web · 56 tác phẩm trong thư viện · Đã đối chiếu với lượt xem'],
+  ['浏览信号 1,234 次 · 馆藏 56 部 · 尚无观看印证',
+    '1,234 browsing signals · 56 library titles · No viewing corroboration yet',
+    '1,234 tín hiệu duyệt web · 56 tác phẩm trong thư viện · Chưa đối chiếu với lượt xem'],
+])('口味系统文案翻译并保留来源名称与计数：%s', (source, english, vietnamese) => {
+  expect(translateSystem(source, 'en')).toBe(english);
+  expect(translateSystem(source, 'vi')).toBe(vietnamese);
+  expect(translateSystem(source, 'zh-CN')).toBe(source);
+});
+
 it('接口异常前缀保留类型，只翻译登记的原因', () => {
   expect(translateSystem('ValueError: 播放列表名称最多 80 个字符','en'))
     .toBe('ValueError: Playlist names can contain at most 80 characters');

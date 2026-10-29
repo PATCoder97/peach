@@ -253,7 +253,7 @@ function AnalysisCard({ data, onSignal, navigate }:
         <h3 className="text-title-2-medium text-text-primary">{uiText("口味总结")}</h3>
         {/* 结论句是这张卡的主角：旧 `.tasteleads .tastelede p` 是 20/30 的主文字色，比正文
             大一档、限宽 64ch。「有多少把握」是它的注脚，旧版就是一句灰字配一枚 8px 圆点。 */}
-        <p className="max-w-prose text-title-2-regular wrap-anywhere text-text-primary">{uiText(analysis.headline)}</p>
+        <p className="max-w-prose text-title-2-regular wrap-anywhere text-text-primary">{systemText(analysis.headline)}</p>
         <p className="flex flex-wrap items-center gap-2 text-body-2-regular text-text-secondary">
           <i aria-hidden className={`size-2 shrink-0 rounded-full ${confidence.level === 'high'
             ? 'bg-status-lime-text'
@@ -277,7 +277,7 @@ function AnalysisCard({ data, onSignal, navigate }:
             <button key={lead.key} type="button" onClick={lead.act}
               className={`flex w-full min-w-0 cursor-pointer items-center gap-3 ${TILE} text-left outline-none hover:bg-background-primary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring`}>
               <span className="flex min-w-0 grow flex-col gap-1">
-                <b className="text-body-2-medium wrap-anywhere text-text-primary">{uiText(lead.title)}</b>
+                <b className="text-body-2-medium wrap-anywhere text-text-primary">{systemText(lead.title)}</b>
                 <small className="text-caption-1-regular wrap-anywhere text-text-secondary">{systemText(lead.detail)}</small>
               </span>
               <RiArrowRightSLine aria-hidden className="size-4 shrink-0 text-text-tertiary" />

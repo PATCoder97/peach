@@ -20,6 +20,8 @@ export const tasteMessages: Readonly<Record<string, readonly [string, string]>> 
   '常访问网站': ['Frequently visited sites', 'Trang thường truy cập'],
   '证据还不足以形成稳定口味结论。': ['There is not enough evidence for a stable preference conclusion yet.', 'Chưa đủ bằng chứng để đưa ra kết luận sở thích ổn định.'],
   '仍在学习': ['Still learning', 'Đang tìm hiểu'],
+  '可信度较高': ['High confidence', 'Độ tin cậy cao'],
+  '可信度中等': ['Moderate confidence', 'Độ tin cậy trung bình'],
   '去馆藏评价作品': ['Rate titles in your library', 'Đánh giá tác phẩm trong thư viện'],
   '停止公网入口': ['Stop public access', 'Dừng truy cập công khai'],
   '计费': ['Metered', 'Tính phí'],
