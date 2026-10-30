@@ -459,6 +459,7 @@ class TestPlanningTests(unittest.TestCase):
             with patch.object(Path, 'resolve', side_effect=AssertionError('不能解引用 venv 解释器')):
                 self.assertEqual(runner.test_evidence.interpreter(root), executable)
 
+    @patch.dict(os.environ, {'PYSTRAY_BACKEND': 'dummy'})
     def test_shards_cover_every_case_once_including_supplements(self):
         def ids(suite):
             for case in suite:
@@ -548,6 +549,7 @@ class TestPlanningTests(unittest.TestCase):
             self.assertTrue(all(plan))
             self.assertCountEqual([name for group in plan for name in group], names)
 
+    @patch.dict(os.environ, {'PYSTRAY_BACKEND': 'dummy'})
     def test_planned_shards_cover_every_case_once_and_reject_foreign_files(self):
         def ids(suite):
             for case in suite:
