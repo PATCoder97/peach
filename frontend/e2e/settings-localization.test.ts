@@ -31,7 +31,8 @@ for (const locale of ['vi', 'en']) for (const viewport of VIEWPORTS) {
       await section.locator('[data-category="playback"]').waitFor();
       assert.doesNotMatch(await section.innerText(), /\p{Script=Han}/u);
       const box = section.locator('[data-category="playback"] input[type="checkbox"]');
-      await box.check();
+      await section.locator('[data-category="playback"] label').click();
+      assert.equal(await box.isChecked(), true);
       await section.getByRole('button', { name: locale === 'vi' ? 'Dọn mục đã chọn' : 'Clean selected', exact: true }).click();
       const dialog = view.page.getByRole('dialog', { name: locale === 'vi' ? 'Dọn dữ liệu đã chọn' : 'Clean selected data', exact: true });
       await dialog.waitFor();

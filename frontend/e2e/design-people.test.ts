@@ -85,7 +85,12 @@ describe('设计决定：人物与厂牌资料页', () => {
         const page_ = await layout(page);
         assert.ok(page_.scrollWidth <= page_.viewportWidth, `下拉把页面撑出了横向滚动：${page_.offenders.join('，')}`);
 
+        const performerSuggestions = page.waitForResponse(response => {
+          const url = new URL(response.url());
+          return url.pathname === '/api/suggest' && url.searchParams.get('kind') === 'performer';
+        });
         await menu.getByRole('tab', { name: /^女优/ }).click();
+        await (await performerSuggestions).finished();
         await page.waitForFunction(() => document.querySelectorAll('#searchMenu [data-search-group][data-kind]').length === 1);
         assert.equal(await menu.isVisible(), true, '点页签把下拉栏收掉了');
         assert.ok(kinds.includes('performer'), '选了一类没有按这一类去拉满');
