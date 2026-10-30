@@ -244,6 +244,16 @@ class ScrapingAccessTests(unittest.TestCase):
                 SourceTransport(self.root)(request, 1, 100)
         factory.assert_not_called()
 
+    def test_pause_preserves_runtime_error_arguments_and_adds_safe_diagnostics(self):
+        from peach.scraping_access import SourcePaused
+
+        for args in ((), ("冷却中",), ("mgstage", 0.0, "冷却中")):
+            with self.subTest(args=args):
+                paused = SourcePaused(*args)
+                self.assertEqual(paused.args, RuntimeError(*args).args)
+                self.assertEqual(str(paused), str(RuntimeError(*args)))
+                self.assertEqual((paused.reason, paused.request_sent, paused.status), ("cooldown", False, None))
+
     def test_connection_check_distinguishes_a_fresh_refusal_from_a_paused_request(self):
         from peach.scraping_access import source_checks
 
