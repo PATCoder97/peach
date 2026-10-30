@@ -4,6 +4,8 @@
  * 来源配置、封面任务、amane 桥和自定义来源各自缓存；后台任务按自己的节律读取状态，
  * 不重取正在编辑的来源配置。 */
 import { apiGet } from '../../api';
+import { getLocale, translate } from '../../i18n';
+import { translateSystem } from '../../i18n/system';
 import { queryClient } from '../query';
 import { CUSTOM_SOURCES_KEY, fetchCustomSources } from './custom-source-data';
 
@@ -30,6 +32,7 @@ export interface Source {
   accepts_cookie: boolean;
   network: string;
   cookie_saved: boolean;
+  user_agent?: string;
   /** 这台机器上这个来源的请求由本机浏览器发、验证由它自己过（ADR-0065）；为真时不需要 Cookie。 */
   browser: boolean;
   cooldown_until?: number | null;
@@ -43,13 +46,15 @@ export interface ScrapingData {
 export interface Check {
   label: string;
   ok: boolean;
-  status?: number;
+  status?: number | null;
   message?: string;
   width?: number;
   height?: number;
   reason?: string;
   elapsed_s?: number;
   checked_at?: number;
+  request_sent?: boolean;
+  cooldown_until?: number | null;
 }
 
 /** 抓封面的后台任务快照（`scraping_cover_job`）。`status` 是 `idle|running|complete|failed`。 */
@@ -105,9 +110,11 @@ export async function prefetchScraping(signal: AbortSignal): Promise<void> {
  *
  * 结果里的 `label` 是这一跳查的是什么；只有一跳时它就是来源页面本身，句子里不必再说一遍。 */
 export function checkText(check: Check, sourceLabel: string): string {
-  return `${sourceLabel}${check.label === '来源页面' ? '' : ' 高清图片'}`
-    + `：${check.ok ? '可连接' : '不能连接'}`
+  const chinese = getLocale() === 'zh-CN';
+  return `${sourceLabel}${check.label === '来源页面' ? '' : translate(' 高清图片')}`
+    + `${chinese ? '：' : ': '}${translate(check.ok ? '可连接' : '不能连接')}`
+    + (check.status ? ` · HTTP ${check.status}` : '')
     + (check.width ? ` · ${check.width} × ${check.height}` : '')
-    + (check.elapsed_s !== undefined ? ` · ${check.elapsed_s.toFixed(2)} 秒` : '')
-    + (check.message ? `。${check.message}` : '');
+    + (check.elapsed_s !== undefined ? ` · ${check.elapsed_s.toFixed(2)} ${translate('秒')}` : '')
+    + (check.message ? `${chinese ? '。' : '. '}${translateSystem(check.message)}` : '');
 }

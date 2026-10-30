@@ -244,6 +244,114 @@ class ScrapingAccessTests(unittest.TestCase):
                 SourceTransport(self.root)(request, 1, 100)
         factory.assert_not_called()
 
+    def test_pause_preserves_runtime_error_arguments_and_adds_safe_diagnostics(self):
+        from peach.scraping_access import SourcePaused
+
+        for args in ((), ("冷却中",), ("mgstage", 0.0, "冷却中")):
+            with self.subTest(args=args):
+                paused = SourcePaused(*args)
+                self.assertEqual(paused.args, RuntimeError(*args).args)
+                self.assertEqual(str(paused), str(RuntimeError(*args)))
+                self.assertEqual((paused.reason, paused.request_sent, paused.status), ("cooldown", False, None))
+
+    def test_connection_check_distinguishes_a_fresh_refusal_from_a_paused_request(self):
+        from peach.scraping_access import source_checks
+
+        contract = SimpleNamespace(follow_secrets_root=self.root)
+        for status, headers, body, reason in (
+                (403, {}, b"Forbidden", "http_forbidden"),
+                (403, {"cf-mitigated": "challenge"}, b"verification", "cloudflare_challenge"),
+                (403, {}, b"<title>Just a moment...</title>", "cloudflare_challenge"),
+                (429, {"retry-after": "600"}, b"slow down", "rate_limited")):
+            with self.subTest(reason=reason, headers=headers):
+                save(self.root, "fc2ppvdb", {"cookie": "cf_clearance=private-cookie"})
+                calls = []
+
+                def respond(request, status=status, headers=headers, body=body, calls=calls):
+                    calls.append(request)
+                    return httpx.Response(status, headers=headers, content=body)
+
+                def client(root, source, respond=respond, **kwargs):
+                    return client_for(root, source, transport=httpx.MockTransport(respond), **kwargs)
+
+                with patch("peach.scraping_access.client_for", side_effect=client):
+                    first = w_scraping_check(contract, {"source": "fc2ppvdb"})
+                    second = w_scraping_check(contract, {"source": "fc2ppvdb"})
+                result = first["results"][0]
+                self.assertEqual((result["reason"], result["status"], result["request_sent"]),
+                                 (reason, status, True))
+                self.assertGreater(result["cooldown_until"], time.time())
+                self.assertEqual(first["source"]["cooldown_until"], result["cooldown_until"])
+                self.assertEqual(len(calls), 1)
+                paused = second["results"][0]
+                self.assertEqual((paused["reason"], paused["status"], paused["request_sent"]),
+                                 ("cooldown", None, False))
+                stored = source_checks(self.root, "fc2ppvdb")["connection"]
+                self.assertFalse(stored["request_sent"])
+                self.assertEqual(stored["cooldown_until"], result["cooldown_until"])
+                self.assertNotIn("private-cookie", json.dumps([first, second, stored]))
+
+    def test_cookie_and_browser_user_agent_reach_the_docker_http_path_after_saving(self):
+        from peach.scraping_access import pause_source, paused_until
+        from peach.user_agent import USER_AGENT
+
+        contract = SimpleNamespace(follow_secrets_root=self.root)
+        browser_agent = "Browser-Fixture/1.0 (Linux)"
+        pause_source(self.root, "fc2ppvdb", refused=True)
+        saved = save(self.root, "fc2ppvdb", {"cookie": "cf_clearance=fixture-clearance; age-verified=true",
+                     "user_agent": browser_agent, "network": "direct"})
+        self.assertIsNone(saved["cooldown_until"])
+        self.assertFalse(saved["browser"])
+        seen = []
+
+        def respond(request):
+            seen.append(request)
+            accepted = (request.headers["user-agent"] == browser_agent
+                        and "cf_clearance=fixture-clearance" in request.headers.get("cookie", ""))
+            return httpx.Response(200 if accepted else 403, text="source page")
+
+        def client(root, source, **kwargs):
+            return client_for(root, source, transport=httpx.MockTransport(respond), **kwargs)
+
+        with patch("peach.scraping_access.client_for", side_effect=client):
+            result = w_scraping_check(contract, {"source": "fc2ppvdb"})["results"][0]
+        self.assertEqual((result["ok"], result["status"], result["request_sent"]), (True, 200, True))
+        self.assertEqual(len(seen), 1)
+        self.assertFalse(result.get("cooldown_until"))
+        self.assertEqual(paused_until(self.root, "fc2ppvdb"), 0)
+        with client_for(self.root, "javten") as other:
+            self.assertEqual(other.headers["user-agent"], USER_AGENT)
+        pause_source(self.root, "fc2ppvdb", refused=True)
+        save(self.root, "fc2ppvdb", {"user_agent": ""})
+        self.assertEqual(paused_until(self.root, "fc2ppvdb"), 0)
+        self.assertTrue(describe(self.root, "fc2ppvdb")["cookie_saved"])
+        with client_for(self.root, "fc2ppvdb") as restored:
+            self.assertEqual(restored.headers["user-agent"], USER_AGENT)
+
+    def test_http_path_reports_proxy_and_timeout_failures_without_private_details(self):
+        contract = SimpleNamespace(follow_secrets_root=self.root)
+        for error, reason in ((httpx.ProxyError("https://user:private-proxy@example.org"), "proxy"),
+                              (httpx.ReadTimeout("private-cookie"), "timeout")):
+            with self.subTest(reason=reason):
+                def respond(request, error=error):
+                    raise error
+
+                def client(root, source, respond=respond, **kwargs):
+                    return client_for(root, source, transport=httpx.MockTransport(respond), **kwargs)
+
+                with patch("peach.scraping_access.client_for", side_effect=client):
+                    result = w_scraping_check(contract, {"source": "fc2ppvdb"})
+                self.assertEqual(result["results"][0]["reason"], reason)
+                self.assertNotIn("private", json.dumps(result))
+
+    def test_browser_user_agent_rejects_header_injection_without_replacing_saved_values(self):
+        save(self.root, "fc2ppvdb", {"cookie": "cf_clearance=fixture", "user_agent": "Browser-Fixture/1"})
+        for value in ("a\r\nCookie: injected", "a\x00b", "a" * 1025, "浏览器", 123, ["a"]):
+            with self.subTest(value=repr(value)), self.assertRaises(ValueError):
+                save(self.root, "fc2ppvdb", {"user_agent": value, "cookie": "cf_clearance=replacement"})
+            self.assertEqual(values_for(self.root, "fc2ppvdb")["cookie"], "cf_clearance=fixture")
+            self.assertEqual(describe(self.root, "fc2ppvdb")["user_agent"], "Browser-Fixture/1")
+
     def test_a_spent_budget_says_what_to_do_instead_of_naming_the_counter(self):
         """三条闸门按任务重新计数，所以话说到「再跑一次接着采」为止。
 
@@ -365,10 +473,10 @@ class ScrapingAccessTests(unittest.TestCase):
                 "GET", "https://fc2cmadb.com/articles/4030617").headers["cookie"])
 
     def test_the_cloudflare_sources_carry_the_pasted_cookie_under_the_shared_browser_user_agent(self):
-        """`cf_clearance` 绑着解题那台浏览器的 UA：整站 UA 与用户的 Chrome 一致，Cookie 由用户贴，卡上不另收 UA。"""
+        """未配置来源 User-Agent 时使用默认值，Cookie 由用户提供。"""
         from peach.user_agent import USER_AGENT
         shown = save(self.root, "fc2ppvdb", {"cookie": "cf_clearance=abc"})
-        self.assertEqual(set(shown), {"source", "label", "login", "accepts_cookie", "network", "cookie_saved", "browser", "cooldown_until"})
+        self.assertEqual(set(shown), {"source", "label", "login", "accepts_cookie", "network", "cookie_saved", "browser", "cooldown_until", "user_agent"})
         self.assertTrue(shown["cookie_saved"])
         self.assertFalse(shown["browser"], "没有浏览器的机器上这张卡照旧收 Cookie")
         for name in ("fc2ppvdb", "javten"):

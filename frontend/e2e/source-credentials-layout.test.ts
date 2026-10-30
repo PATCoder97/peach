@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
+import { mkdirSync } from 'node:fs';
 import type { Browser } from 'playwright-core';
 import { launch, layout, settle, visit, VIEWPORTS } from './harness.ts';
 
@@ -8,6 +9,39 @@ describe('来源链接与凭据布局', () => {
   before(async () => { browser = await launch(); });
   after(async () => { await browser?.close(); });
   for (const viewport of VIEWPORTS) {
+    for (const locale of ['vi', 'en']) {
+      it(`Cookie 的 User-Agent 与拒绝原因使用所选语言且无溢出（${locale}/${viewport.name}）`, async () => {
+        const source = { source: 'fc2ppvdb', label: 'FC2PPV-DB', login: 'https://fc2ppv-db.com/',
+          accepts_cookie: true, cookie_saved: true, browser: false, network: 'direct', user_agent: '' };
+        const opened = await visit(browser, '/sources', viewport, async page => {
+          await page.addInitScript(language => localStorage.setItem('peach.locale.v1', language), locale);
+          await page.route('**/api/scraping', route => route.fulfill({ json: { sources: [source] } }));
+          await page.route('**/api/scraping/check', route => route.fulfill({ json: {
+            ok: true, source: { ...source, cooldown_until: Date.now() / 1000 + 900 },
+            results: [{ label: '来源页面', ok: false, status: 403, request_sent: true, reason: 'http_forbidden',
+              message: '来源本次返回 HTTP 403，已暂停请求。Cookie 已保存不代表站方接受；请核对 Cookie、User-Agent 与浏览器的网络出口。' }],
+          } }));
+        });
+        try {
+          const card = opened.page.getByRole('form', { name: 'FC2PPV-DB', exact: true });
+          const agent = card.getByRole('textbox', { name: locale === 'vi'
+            ? 'User-Agent của trình duyệt lấy Cookie' : 'User-Agent of the browser used to obtain the Cookie', exact: true });
+          await agent.waitFor({ timeout: 15_000 }).catch(async error => {
+            throw new Error(`${error.message}\n${await opened.page.locator('#main').ariaSnapshot()}`);
+          });
+          await agent.fill('Browser-Fixture/1.0');
+          await card.getByRole('button', { name: locale === 'vi' ? 'Kiểm tra kết nối' : 'Check connection', exact: true }).click();
+          await card.getByText(locale === 'vi' ? /Nguồn vừa trả HTTP 403/ : /The source returned HTTP 403 on this attempt/).waitFor();
+          assert.doesNotMatch(await card.innerText(), /\p{Script=Han}/u);
+          assert.equal(await agent.inputValue(), 'Browser-Fixture/1.0');
+          const dimensions = await layout(opened.page);
+          assert.ok(dimensions.scrollWidth <= dimensions.viewportWidth + 1, JSON.stringify(dimensions));
+          mkdirSync('../build/agent-verification/browser', { recursive: true });
+          await card.screenshot({ path: `../build/agent-verification/browser/source-cookie-${locale}-${viewport.name}.png` });
+          assert.deepEqual(opened.problems, []);
+        } finally { await opened.close() }
+      });
+    }
     it(`自定义来源可试查、保存且表单无横向溢出（${viewport.name}）`, { timeout: 60_000 }, async () => {
       const opened = await visit(browser, '/sources', viewport);
       const page = opened.page;

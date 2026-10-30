@@ -49,7 +49,7 @@ SOURCES = {
     # FC2 商品的两个存档站都在 Cloudflare 的 JS 验证后面：httpx 与模拟 Chrome 指纹的直连都回 403，
     # 只有浏览器过完验证发下的 `cf_clearance` 能进，而它绑着解题那台浏览器的 User-Agent 与出口。
     # `browser`：请求在本机 Edge/Chrome 的页面里发，验证由它自己过（ADR-0065）；这台机器没有可驱动的
-    # 浏览器时才退回下面这条路——整站 UA 与用户的 Chrome 一致、Cookie 由用户贴、连接方式选成与浏览器
+    # 浏览器时才退回下面这条路——来源 UA 与取 Cookie 的浏览器一致、Cookie 由用户贴、连接方式选成与浏览器
     # 同一个出口。验证没过或 Cookie 过期都按 `blocked_pause` 停下，不反复撞。
     # `browser_gate`：新 profile 第一次进站会被送到年龄确认页（`/ja/age-verify?returnTo=…`），点那颗
     # 「18 岁以上」的按钮才回到要看的页；浏览器传输落到这个路径就替用户点。
@@ -104,7 +104,15 @@ FIRST_BLOCKED_PAUSE = 900
 
 
 class SourcePaused(RuntimeError):
-    """来源冷却期内停止请求，保留已有图像。"""
+    """来源停止请求的原因与脱敏诊断，区分已有冷却和本次响应。"""
+
+    def __init__(self, *args: object, reason: str = "cooldown", status: int | None = None,
+                 request_sent: bool = False, cooldown_until: float | None = None):
+        super().__init__(*args)
+        self.reason = reason
+        self.status = status
+        self.request_sent = request_sent
+        self.cooldown_until = cooldown_until
 
 
 def cooldown_path(root: Path, source: str) -> Path:
@@ -271,6 +279,15 @@ def cookie_jar(values: dict[str, str], source: str) -> http.cookiejar.CookieJar:
 def save(root: Path, source: str, body: dict) -> dict:
     with _LOCK:
         values = values_for(root, source)
+        user_agent = body.get("user_agent")
+        previous_agent = values.get("user_agent", "")
+        if user_agent is not None:
+            if not isinstance(user_agent, str) or len(user_agent) > 1024 or any(
+                    ord(char) < 32 or ord(char) > 126 for char in user_agent):
+                raise ValueError("User-Agent 须为不超过 1024 个字符的单行 ASCII 文本")
+            if not SOURCES[source].get("cookie"):
+                raise ValueError("此来源不接受 Cookie 的 User-Agent")
+            values["user_agent"] = user_agent.strip()
         previous_network = "direct" if values.get("network") == "direct" else "peach"
         mode = body.get("network", "direct" if values.get("network") == "direct" else "peach")
         if mode not in {"direct", "peach"}:
@@ -300,6 +317,8 @@ def save(root: Path, source: str, body: dict) -> dict:
         _write_values(root, source, values)
         if mode != previous_network:
             cooldown_path(root, source).unlink(missing_ok=True)
+        if values.get("user_agent", "") != previous_agent:
+            cooldown_path(root, source).unlink(missing_ok=True)
     return describe(root, source)
 
 
@@ -316,6 +335,7 @@ def describe(root: Path, source: str) -> dict:
             "login": SOURCES[source]["login"], "accepts_cookie": bool(SOURCES[source].get("cookie")),
             "network": "direct" if values.get("network") == "direct" else "peach",
             "cookie_saved": bool(values.get("cookie") or values.get("cookies_text")),
+            "user_agent": values.get("user_agent", ""),
             "cooldown_until": until or None,
             # 这台机器上这个来源是不是由本机浏览器过验证：该走浏览器（`wants_browser`）且找得到浏览器。
             "browser": wants_browser(root, source) and browser_transport.find_browser() is not None}
@@ -341,7 +361,9 @@ def source_checks(root: Path, source: str) -> dict:
                      "kind": record.get("kind") if record.get("kind") in ("ok", "auth", "unavailable", "not_found") else "unavailable",
                      "reason": record.get("reason") if isinstance(record.get("reason"), str) and len(record["reason"]) <= 64 else "unexpected",
                      "status": record.get("status") if type(record.get("status")) is int and 100 <= record["status"] <= 599 else 0}
-            for key in ("checked_at", "last_success_at", "elapsed_s"):
+            if type(record.get("request_sent")) is bool:
+                clean["request_sent"] = record["request_sent"]
+            for key in ("checked_at", "last_success_at", "elapsed_s", "cooldown_until"):
                 raw = record.get(key)
                 if isinstance(raw, bool) or raw is None:
                     continue
@@ -366,7 +388,7 @@ def record_source_check(root: Path, source: str, stage: str, record: dict) -> No
     """保存脱敏状态，保留连接检查与元数据解析的独立时间戳。"""
     if source not in SOURCES or stage not in {"connection", "metadata"}:
         return
-    allowed = {"ok", "kind", "reason", "status", "elapsed_s", "checked_at"}
+    allowed = {"ok", "kind", "reason", "status", "elapsed_s", "checked_at", "request_sent", "cooldown_until"}
     with _LOCK:
         state = source_checks(root, source)
         clean = {key: value for key, value in record.items() if key in allowed}
@@ -389,7 +411,7 @@ def client_for(root: Path, source: str, *, session: bool = False, **kwargs) -> h
     values = values_for(root, source)
     network = {"trust_env": False} if values.get("network") == "direct" else peach_proxy.client_options(root)
     options = {**network, "follow_redirects": True,
-               "headers": {"User-Agent": USER_AGENT}}
+               "headers": {"User-Agent": values.get("user_agent") or USER_AGENT}}
     if session:
         options["cookies"] = cookie_jar(values, source)
     options.update(kwargs)
@@ -443,15 +465,15 @@ class SourceTransport:
             request = HttpRequest(request.method, request.url,
                                   {**headers, "Accept-Language": "zh-CN,zh;q=0.9"}, request.body)
         if self.max_requests and self.requests >= self.max_requests:
-            raise SourcePaused("本趟采集次数已用完，再跑一次接着采；已有图片保留")
+            raise SourcePaused("本趟采集次数已用完，再跑一次接着采；已有图片保留", reason="budget_exhausted")
         if self.deadline:
             timeout = min(timeout, self.deadline - time.monotonic())
             if timeout <= 0:
-                raise SourcePaused("本趟采集时间已用完，再跑一次接着采；已有图片保留")
+                raise SourcePaused("本趟采集时间已用完，再跑一次接着采；已有图片保留", reason="budget_exhausted")
         if self.max_bytes:
             remaining = self.max_bytes - self.bytes
             if remaining <= 0:
-                raise SourcePaused("本趟下载量已用完，再跑一次接着采；已有图片保留")
+                raise SourcePaused("本趟下载量已用完，再跑一次接着采；已有图片保留", reason="budget_exhausted")
             max_bytes = min(max_bytes, remaining - 1)
         key = source or hashlib.sha256(hostname_of(request.url).encode()).hexdigest()
         cooldown = cooldown_path(self.root, key)
@@ -459,20 +481,26 @@ class SourceTransport:
         via = self._via(source)
         until, blocks = _state_for(self.root, key, via)
         if until > time.time():
-            raise SourcePaused("来源正在冷却，请稍后重试；已有图片保留")
+            raise SourcePaused("来源正在冷却，请稍后重试；已有图片保留", cooldown_until=until)
         if source not in self.transports:
             self.transports[source] = self._transport_for(source)
         self.requests += 1
         try:
             response = self.transports[source](request, timeout, max_bytes)
+        except httpx.ProxyError:
+            raise httpx.ProxyError("来源代理连接失败") from None
+        except httpx.TimeoutException:
+            raise httpx.TimeoutException("来源连接超时") from None
         except (httpx.HTTPError, browser_transport.BrowserUnavailable):
             raise httpx.TransportError("来源连接未取得，请检查该来源的网络设置") from None
         except browser_transport.ChallengeUnsolved:
             blocks += 1
-            _pause(cooldown, time.time() + min(FIRST_BLOCKED_PAUSE * 2 ** (blocks - 1),
-                                               SOURCES[source]["blocked_pause"]), blocks, via)
+            until = time.time() + min(FIRST_BLOCKED_PAUSE * 2 ** (blocks - 1),
+                                      SOURCES[source]["blocked_pause"])
+            _pause(cooldown, until, blocks, via)
             raise SourcePaused("来源的人机验证没有在限时内通过，暂停向它请求一段时间；"
-                               "浏览器窗口再弹出时点一下验证即可；已有图片保留")
+                               "浏览器窗口再弹出时点一下验证即可；已有图片保留",
+                               reason="challenge_unsolved", request_sent=True, cooldown_until=until)
         if via == VIA_HTTP and source and SOURCES[source].get("browser_fallback") and _refused(response):
             verified = self._verify_in_browser(source, request, timeout, max_bytes)
             if verified is not None:
@@ -480,6 +508,12 @@ class SourceTransport:
                 cooldown.unlink(missing_ok=True)
                 response, via, blocks = verified, VIA_BROWSER, 0
         self.bytes += len(response.body)
+        self._apply_response_cooldown(response, source, cooldown=cooldown, blocks=blocks, via=via)
+        return response
+
+    def _apply_response_cooldown(self, response, source: str | None, *, cooldown: Path,
+                                 blocks: int, via: str) -> None:
+        """按本次响应写入冷却或清除旧记录，拒绝访问时保留状态与原因。"""
         if response.status == 429:
             retry = response.headers.get("retry-after", "")
             try:
@@ -489,22 +523,28 @@ class SourceTransport:
                     until = parsedate_to_datetime(retry).timestamp()
                 except (ValueError, TypeError, OverflowError):
                     until = time.time() + 900
+            until = max(until, time.time() + 1)
             _pause(cooldown, until, blocks, via)
-            raise SourcePaused("来源限流，已记录冷却时间；已有图片保留")
+            raise SourcePaused("来源限流，已记录冷却时间；已有图片保留",
+                               reason="rate_limited", status=429, request_sent=True, cooldown_until=until)
         blocked_pause = SOURCES.get(source or "", {}).get("blocked_pause")
         if response.status == 403 and blocked_pause:
             blocks += 1
-            _pause(cooldown, time.time()
-                   + min(FIRST_BLOCKED_PAUSE * 2 ** (blocks - 1), blocked_pause), blocks, via)
+            until = time.time() + min(FIRST_BLOCKED_PAUSE * 2 ** (blocks - 1), blocked_pause)
+            _pause(cooldown, until, blocks, via)
+            from .sources.base import challenge_page
+            reason = "cloudflare_challenge" if (challenge_page(response.body) or any(
+                key.lower() == "cf-mitigated" and value.lower() == "challenge"
+                for key, value in response.headers.items())) else "http_forbidden"
             if SOURCES[source].get("cookie"):
                 raise SourcePaused("来源拒绝访问，暂停向它请求一段时间；"
-                                   "请在采集设置里更新它的 Cookie；已有图片保留")
-            raise SourcePaused("来源拒绝访问，暂停向它请求一段时间；已有图片保留")
+                                   "请在采集设置里更新它的 Cookie；已有图片保留",
+                                   reason=reason, status=403, request_sent=True, cooldown_until=until)
+            raise SourcePaused("来源拒绝访问，暂停向它请求一段时间；已有图片保留",
+                               reason=reason, status=403, request_sent=True, cooldown_until=until)
         if blocks and response.status < 400:
             # 这一趟通了，封已经解除：清掉记录，下次撞上从最短的一档重新起算。
             cooldown.unlink(missing_ok=True)
-        return response
-
     def hold(self, source: str, action: str) -> None:
         """契约报的冷却细档（`SourceFailure.cooldown_action`）写回这个来源的冷却记录。
 
