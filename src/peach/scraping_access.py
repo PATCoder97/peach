@@ -508,6 +508,12 @@ class SourceTransport:
                 cooldown.unlink(missing_ok=True)
                 response, via, blocks = verified, VIA_BROWSER, 0
         self.bytes += len(response.body)
+        self._apply_response_cooldown(response, source, cooldown=cooldown, blocks=blocks, via=via)
+        return response
+
+    def _apply_response_cooldown(self, response, source: str | None, *, cooldown: Path,
+                                 blocks: int, via: str) -> None:
+        """按本次响应写入冷却或清除旧记录，拒绝访问时保留状态与原因。"""
         if response.status == 429:
             retry = response.headers.get("retry-after", "")
             try:
@@ -539,8 +545,6 @@ class SourceTransport:
         if blocks and response.status < 400:
             # 这一趟通了，封已经解除：清掉记录，下次撞上从最短的一档重新起算。
             cooldown.unlink(missing_ok=True)
-        return response
-
     def hold(self, source: str, action: str) -> None:
         """契约报的冷却细档（`SourceFailure.cooldown_action`）写回这个来源的冷却记录。
 

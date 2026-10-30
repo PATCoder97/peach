@@ -23,9 +23,12 @@ describe('来源链接与凭据布局', () => {
           } }));
         });
         try {
-          const card = opened.page.getByRole('region', { name: 'FC2PPV-DB', exact: true });
+          const card = opened.page.getByRole('form', { name: 'FC2PPV-DB', exact: true });
           const agent = card.getByRole('textbox', { name: locale === 'vi'
             ? 'User-Agent của trình duyệt lấy Cookie' : 'User-Agent of the browser used to obtain the Cookie', exact: true });
+          await agent.waitFor({ timeout: 15_000 }).catch(async error => {
+            throw new Error(`${error.message}\n${await opened.page.locator('#main').ariaSnapshot()}`);
+          });
           await agent.fill('Browser-Fixture/1.0');
           await card.getByRole('button', { name: locale === 'vi' ? 'Kiểm tra kết nối' : 'Check connection', exact: true }).click();
           await card.getByText(locale === 'vi' ? /Nguồn vừa trả HTTP 403/ : /The source returned HTTP 403 on this attempt/).waitFor();
