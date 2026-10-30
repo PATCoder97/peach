@@ -463,10 +463,10 @@ class ScrapingAccessTests(unittest.TestCase):
                 "GET", "https://fc2cmadb.com/articles/4030617").headers["cookie"])
 
     def test_the_cloudflare_sources_carry_the_pasted_cookie_under_the_shared_browser_user_agent(self):
-        """`cf_clearance` 绑着解题那台浏览器的 UA：整站 UA 与用户的 Chrome 一致，Cookie 由用户贴，卡上不另收 UA。"""
+        """未配置来源 User-Agent 时使用默认值，Cookie 由用户提供。"""
         from peach.user_agent import USER_AGENT
         shown = save(self.root, "fc2ppvdb", {"cookie": "cf_clearance=abc"})
-        self.assertEqual(set(shown), {"source", "label", "login", "accepts_cookie", "network", "cookie_saved", "browser", "cooldown_until"})
+        self.assertEqual(set(shown), {"source", "label", "login", "accepts_cookie", "network", "cookie_saved", "browser", "cooldown_until", "user_agent"})
         self.assertTrue(shown["cookie_saved"])
         self.assertFalse(shown["browser"], "没有浏览器的机器上这张卡照旧收 Cookie")
         for name in ("fc2ppvdb", "javten"):
