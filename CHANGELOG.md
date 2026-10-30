@@ -21,6 +21,14 @@ Removed / Fixed / Security。
 
 ## [未发布]
 
+## [0.53.3] - 2026-10-31
+
+### 修复
+
+- **采集**：连接检查区分本次 HTTP 403、Cloudflare 验证、HTTP 429 与尚未发送请求的冷却状态，保留状态码和可重试时间；代理连接失败与超时分别提示。
+- **配置**：Cookie 来源可单独填写取 Cookie 的浏览器 User-Agent，Docker 的 HTTP 请求使用该值。保存 Cookie 或更改 User-Agent 后清除该来源冷却，已有 Cookie 与连接配置保留。
+- **界面**：来源连接检查的错误、状态与提示跟随所选语言，支持越南语和英语；检查后同步显示最新冷却时间。
+
 ## [0.53.2] - 2026-10-30
 
 ### 修复
@@ -829,7 +837,8 @@ Removed / Fixed / Security。
 - **桌面**：独立包使用 UTF-8 启动日志。
 - **配置**：首次设置后的跳转目标取新鲜读到的 mDNS 名。
 
-[未发布]: https://github.com/PATCoder97/peach/compare/v0.53.2...HEAD
+[未发布]: https://github.com/PATCoder97/peach/compare/v0.53.3...HEAD
+[0.53.3]: https://github.com/PATCoder97/peach/compare/v0.53.2...v0.53.3
 [0.53.2]: https://github.com/PATCoder97/peach/compare/v0.53.1...v0.53.2
 [0.53.1]: https://github.com/PATCoder97/peach/compare/v0.53.0...v0.53.1
 [0.53.0]: https://github.com/PATCoder97/peach/compare/v0.52.0...v0.53.0
