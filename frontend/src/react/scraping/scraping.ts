@@ -4,7 +4,7 @@
  * 来源配置、封面任务、amane 桥和自定义来源各自缓存；后台任务按自己的节律读取状态，
  * 不重取正在编辑的来源配置。 */
 import { apiGet } from '../../api';
-import { translate } from '../../i18n';
+import { getLocale, translate } from '../../i18n';
 import { translateSystem } from '../../i18n/system';
 import { queryClient } from '../query';
 import { CUSTOM_SOURCES_KEY, fetchCustomSources } from './custom-source-data';
@@ -110,10 +110,11 @@ export async function prefetchScraping(signal: AbortSignal): Promise<void> {
  *
  * 结果里的 `label` 是这一跳查的是什么；只有一跳时它就是来源页面本身，句子里不必再说一遍。 */
 export function checkText(check: Check, sourceLabel: string): string {
+  const chinese = getLocale() === 'zh-CN';
   return `${sourceLabel}${check.label === '来源页面' ? '' : translate(' 高清图片')}`
-    + `：${translate(check.ok ? '可连接' : '不能连接')}`
+    + `${chinese ? '：' : ': '}${translate(check.ok ? '可连接' : '不能连接')}`
     + (check.status ? ` · HTTP ${check.status}` : '')
     + (check.width ? ` · ${check.width} × ${check.height}` : '')
     + (check.elapsed_s !== undefined ? ` · ${check.elapsed_s.toFixed(2)} ${translate('秒')}` : '')
-    + (check.message ? `。${translateSystem(check.message)}` : '');
+    + (check.message ? `${chinese ? '。' : '. '}${translateSystem(check.message)}` : '');
 }

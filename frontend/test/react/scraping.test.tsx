@@ -194,9 +194,11 @@ it('连接检查显示 HTTP 状态与译文，冷却时间采用本次回执', a
   expect(host.textContent).toContain('冷却中');
   await act(async () => setLocale('vi'));
   expect(host.textContent).toContain('Nguồn vừa trả HTTP 403');
+  expect(host.textContent).toContain('JavBus: Không kết nối được · HTTP 403. Nguồn vừa trả HTTP 403');
   expect(host.textContent).not.toContain(message);
   await act(async () => setLocale('en'));
   expect(host.textContent).toContain('The source returned HTTP 403 on this attempt');
+  expect(host.textContent).toContain('JavBus: Unreachable · HTTP 403. The source returned HTTP 403');
   expect(host.textContent).not.toContain(message);
 });
 
