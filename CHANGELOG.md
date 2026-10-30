@@ -21,6 +21,18 @@ Removed / Fixed / Security。
 
 ## [未发布]
 
+## [0.53.2] - 2026-10-30
+
+### 修复
+
+- **配置**：存储分类与图例、清理确认、CloudDrive 帮助、代理选项、索引器摘要和任务状态跟随界面语言；切换语言保留未保存输入，校验提示与控件的可访问名称同步更新。
+- **配置**：更新准备中缺少进度说明时仍可显示页面。
+- **界面**：源码文案编辑在维护锁释放后报告服务重载结果。
+
+### 安全
+
+- **更新**：主应用与 amane 桥采用 Pydantic 2.14.2 和 pydantic-core 2.50.2，包含字段别名、额外字段与递归校验的安全修复；同步更新已复核的前端和传递依赖。
+
 ## [0.53.1] - 2026-10-29
 
 ### 修复
@@ -816,7 +828,8 @@ Removed / Fixed / Security。
 - **桌面**：独立包使用 UTF-8 启动日志。
 - **配置**：首次设置后的跳转目标取新鲜读到的 mDNS 名。
 
-[未发布]: https://github.com/PATCoder97/peach/compare/v0.53.1...HEAD
+[未发布]: https://github.com/PATCoder97/peach/compare/v0.53.2...HEAD
+[0.53.2]: https://github.com/PATCoder97/peach/compare/v0.53.1...v0.53.2
 [0.53.1]: https://github.com/PATCoder97/peach/compare/v0.53.0...v0.53.1
 [0.53.0]: https://github.com/PATCoder97/peach/compare/v0.52.0...v0.53.0
 [0.52.0]: https://github.com/PATCoder97/peach/compare/v0.51.1...v0.52.0
