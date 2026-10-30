@@ -87,6 +87,9 @@ describe('库外 JAV 作品详情', () => {
         `选项面板 ${panelBox?.width}px，触发框 ${goalBox?.width}px`);
       await panel.getByRole('option', { name: '高清', exact: true }).click();
       await panel.waitFor({ state: 'detached' });
+      // 菜单卸载后下一帧才归还焦点；Escape 从内层弹窗发出。
+      await page.waitForFunction(() => Boolean(document.activeElement?.closest('[data-modal-motion]')),
+        null, { timeout: 5_000 });
       await page.keyboard.press('Escape');
       await page.locator('[data-modal-surface]').waitFor({ state: 'detached' });
       assert.equal(await page.locator('#stage[open]').count(), 1, 'Escape 只关掉里层弹层');
