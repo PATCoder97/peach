@@ -160,6 +160,8 @@ describe('Video.js 10 播放链', () => {
           await controls.waitFor({ state: 'visible' });
         }
         await controls.getByRole('button', { name: 'Tạm dừng', exact: true }).click();
+        // 原生 paused 值先改变；播放按钮确认 pause 事件已同步到控件，再开始下一次触屏操作。
+        await controls.getByRole('button', { name: 'Phát', exact: true }).waitFor({ state: 'visible' });
         assert.equal(await video.evaluate((node: HTMLVideoElement) => node.paused), true);
         if (viewport.mobile) {
           const back = await controls.locator('[data-player-skip="-30"]').boundingBox();
