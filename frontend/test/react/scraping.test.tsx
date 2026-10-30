@@ -9,6 +9,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { queryClient } from '../../src/react/query';
 import { linkHost, networkOptions, ScrapingPage } from '../../src/react/scraping/scraping-page';
 import { prefetchScraping } from '../../src/react/scraping/scraping';
+import { setLocale } from '../../src/i18n';
 import type { AmaneBridge, Check, CoverJob, Source } from '../../src/react/scraping/scraping';
 
 import {
@@ -16,7 +17,7 @@ import {
 } from './render';
 
 // 客户端是模块级的单例（所有 React 根共用一个），用例之间不清就互相喂数据。
-afterEach(() => queryClient.clear());
+afterEach(() => { queryClient.clear(); setLocale('zh-CN') });
 
 /* Query 派发更新用的是它自己抓住的那个真 `setTimeout(0)`，假时钟推不动它：推完时钟
    断言到的还是上一帧的 DOM。用例里改成当场派发。 */
@@ -146,7 +147,7 @@ it('保存后清空秘密输入，列表就地换成服务端回的那一条，�
     path: '/api/scraping/settings',
     method: 'POST',
     body: {
-      source: 'javbus', network: 'peach', cookie: 'session=fixture', cookies_text: '', revoke: false,
+      source: 'javbus', network: 'peach', cookie: 'session=fixture', cookies_text: '', revoke: false, user_agent: '',
     },
   });
   expect(password(host)?.value, '保存回来之后页面上不再留着刚交上去的那一份').toBe('');
@@ -155,6 +156,48 @@ it('保存后清空秘密输入，列表就地换成服务端回的那一条，�
   expect(toast).toHaveBeenCalledWith('来源设置已保存');
   expect(calls.filter((call) => call.path === '/api/scraping' && call.method === 'GET'),
     '保存换的是列表里的一条，不为它把整页重取一遍').toHaveLength(1);
+});
+
+it('Cookie 与来源 User-Agent 一起保存，切换语言保留输入', async () => {
+  const { calls, host } = await open({
+    ...quiet({ source: 'fc2ppvdb', label: 'FC2PPV-DB' }),
+    'POST /api/scraping/settings': () => ({ body: { saved: source({
+      source: 'fc2ppvdb', label: 'FC2PPV-DB', cookie_saved: true, user_agent: 'Browser-Fixture/1',
+    }) } }),
+  });
+  const agent = host.querySelector<HTMLInputElement>('input:not([type=password])[autocomplete=off]');
+  await type(agent, 'Browser-Fixture/1');
+  await type(password(host), 'cf_clearance=fixture');
+  await act(async () => setLocale('vi'));
+  expect(host.textContent).toContain('User-Agent của trình duyệt lấy Cookie');
+  expect(agent?.value).toBe('Browser-Fixture/1');
+  expect(password(host)?.value).toBe('cf_clearance=fixture');
+  await submit(section(host, 'FC2PPV-DB'));
+  await settle();
+  expect(calls.at(-1)?.body).toMatchObject({ user_agent: 'Browser-Fixture/1', cookie: 'cf_clearance=fixture' });
+  expect(password(host)?.value).toBe('');
+  expect(agent?.value).toBe('Browser-Fixture/1');
+});
+
+it('连接检查显示 HTTP 状态与译文，冷却时间采用本次回执', async () => {
+  const message = '来源本次返回 HTTP 403，已暂停请求。Cookie 已保存不代表站方接受；请核对 Cookie、User-Agent 与浏览器的网络出口。';
+  const { host } = await open({
+    ...quiet(),
+    'POST /api/scraping/check': () => ({ body: {
+      results: [{ label: '来源页面', ok: false, status: 403, reason: 'http_forbidden', request_sent: true, message }],
+      source: source({ cooldown_until: Date.now() / 1000 + 900 }),
+    } }),
+  });
+  await click(buttonNamed('检查连接', host));
+  await settle();
+  expect(host.textContent).toContain('HTTP 403');
+  expect(host.textContent).toContain('冷却中');
+  await act(async () => setLocale('vi'));
+  expect(host.textContent).toContain('Nguồn vừa trả HTTP 403');
+  expect(host.textContent).not.toContain(message);
+  await act(async () => setLocale('en'));
+  expect(host.textContent).toContain('The source returned HTTP 403 on this attempt');
+  expect(host.textContent).not.toContain(message);
 });
 
 it('撤销走同一条写入，回执说的是撤销', async () => {
@@ -199,7 +242,7 @@ it('连接结果按来源名称与这一跳查的是什么说成一句话', asyn
   expect(host.querySelector('[role=status] [data-connection-tone="success"]')?.textContent).toBe('可访问');
   expect(host.querySelector('[role=status]')?.textContent).toContain('JavBus：可连接 · 800 × 538');
   expect(host.querySelector('[role=alert] [data-connection-tone="error"]')?.textContent).toBe('连接失败');
-  expect(host.querySelector('[role=alert]')?.textContent).toContain('JavBus 高清图片：不能连接。需要登录');
+  expect(host.querySelector('[role=alert]')?.textContent).toContain('JavBus 高清图片：不能连接 · HTTP 403。需要登录');
 });
 
 it('Cookie 二选一：切过去的那一种才交，另一种连输入都不留', async () => {

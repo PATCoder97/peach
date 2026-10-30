@@ -315,9 +315,9 @@ JavBus 对 FC2 都给不出东西，javdb 收了一部分但配额紧）。所�
 
 ### FC2PPV-DB 与 JAVten 的 Cloudflare 验证
 
-这两站都在 Cloudflare 的 JS 验证后面。httpx 与模拟 Chrome 指纹的 curl_cffi 直连都回 403、标题
-`Just a moment...`（`sources.base.challenge_page`）。只有浏览器过完验证发下的 `cf_clearance` 能进，而它绑着
-解题那台浏览器的 User-Agent 与出口 IP，且只活 30 分钟。
+这两站都在 Cloudflare 的 JS 验证后面。项目取证时，httpx 与模拟 Chrome 指纹的 curl_cffi 直连都回
+403、标题 `Just a moment...`（`sources.base.challenge_page`）。浏览器验证后的 `cf_clearance` 受访问者、
+设备与会话约束；只复制 Cookie 不保证 HTTP 客户端能访问，有效期由站方配置决定。
 
 所以这两站的页由本机浏览器打开（`peach.browser_transport`，ADR-0065）：
 
@@ -335,10 +335,27 @@ JavBus 对 FC2 都给不出东西，javdb 收了一部分但配额紧）。所�
 - 冷却记录带 `via`：直连 403 攒下的冷却在切到浏览器时作废，反之亦然，规则见 ADR-0065 第二条。
 - FC2PPV-DB 第一次进站落年龄确认页（`/age-verify`），传输按 `SOURCES` 里的 `browser_gate` 替人点那颗按钮。
 - 浏览器 10 分钟不用就自己退出。
-- 这台机器没有 Chrome／Edge（`find_browser`）时走 HTTP：整站 UA（`peach.user_agent.USER_AGENT`）要与用户的
-  Chrome 一致，「来源和凭证」里贴 Cookie，连接方式选与那台浏览器同一个出口。403 同样冷却，保存新 Cookie
-  清冷却。JAVten 搜索一跳的 Location 是 `http://`，HTTP 层把同主机的明文跳转升回 https 再带 Cookie；浏览器
-  路径里由浏览器自己跟跳。
+- 这台机器没有可驱动的 Chrome／Edge（`find_browser`）时走 HTTPS 的 HTTP 客户端；Docker 默认镜像不带浏览器，
+  Linux 没有显示会话时也走这条路。浏览器装在另一容器不等于 Peach 能直接驱动它。
+- HTTP 路径使用「来源和凭证」里该站保存的 Cookie 和 User-Agent；User-Agent 留空时用
+  `peach.user_agent.USER_AGENT`，浏览器路径仍由浏览器管理身份。保存 Cookie、更改 User-Agent 或连接方式会清除
+  该来源的冷却。JAVten 搜索一跳的 Location 是 `http://`，HTTP 层把同主机的明文跳转升回 https 再带 Cookie。
+
+Docker 中配置 Cookie：
+
+1. 用能正常打开该站的浏览器完成 Cloudflare 验证与年龄确认，再打开作品页。
+2. 打开开发者工具的 Network，刷新页面，选中该站成功的页面请求。在 Request Headers 中复制 `Cookie`
+   的完整值与 `User-Agent`；Cookie 不带字段名，不使用 Response Headers 里的 `Set-Cookie`。
+3. 在「来源和凭证」的对应站点粘贴 Cookie，并填「取 Cookie 的浏览器 User-Agent」；也可导入 Netscape `.txt`
+   Cookie 文件。User-Agent 是每站配置，不改变其他站点；Cookie 与代理凭据不回显。
+4. 选择与浏览器相同的网络出口，保存后检查连接。同一局域网或同一 VPN 名称不保证公网出口相同，IPv6、
+   分流和代理都可能改变路径。独立浏览器容器可用于人工验证与取 Cookie，但不会自动把会话交给 Peach。
+5. 检查成功只说明该次页面可读取，不保证登录有效或后续请求持续放行。仍被拒绝时保留实际结果，不连续重试，
+   也不把 Cookie 失效或 IP 封禁当成已经证实的原因。
+
+连接检查保留状态码、`request_sent` 与 `cooldown_until`；页面显示最新冷却时间和按所选语言翻译的错误。
+`http_forbidden` 是本次 HTTP 403，`cloudflare_challenge` 是本次识别到验证页，`rate_limited` 是本次 HTTP 429；
+这些结果与 `cooldown`（本次未发请求）分开。诊断只存来源、原因、状态码与时间，不保存 Cookie、响应正文或私有地址。
 
 ### minnano-av 的间歇拦截
 

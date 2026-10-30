@@ -1,5 +1,7 @@
 /** 凭据需求与取得方法的系统说明。 */
 export const credentialMessages: Readonly<Record<string, readonly [string, string]>> = {
+  '取 Cookie 的浏览器 User-Agent': ['User-Agent of the browser used to obtain the Cookie', 'User-Agent của trình duyệt lấy Cookie'],
+  '从成功请求的 Request Headers 复制 User-Agent，与 Cookie 一起保存；留空使用 Peach 默认值。Docker 与取 Cookie 的浏览器应使用同一网络出口，但 Cloudflare 仍可能拒绝 HTTP 客户端。': ['Copy User-Agent from the successful request’s Request Headers and save it with the Cookie. Leave blank to use Peach’s default. Docker and the browser should use the same outbound connection, but Cloudflare may still reject the HTTP client.', 'Sao chép User-Agent từ Request Headers của yêu cầu thành công rồi lưu cùng Cookie; để trống để dùng mặc định của Peach. Docker và trình duyệt lấy Cookie nên dùng chung đường ra Internet, nhưng Cloudflare vẫn có thể từ chối HTTP client.'],
   '可配置凭据': ['Configurable credentials', 'Thông tin xác thực có thể cấu hình'],
   '不需要凭据': ['No credentials required', 'Không cần thông tin xác thực'],
   '暂不支持': ['Not supported yet', 'Chưa hỗ trợ'],

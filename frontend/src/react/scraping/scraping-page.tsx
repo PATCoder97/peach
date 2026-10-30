@@ -70,6 +70,7 @@ function SourceCard({ source, toast }: { source: Source } & ScrapingProps) {
   const uiText = useUiTranslation();
   const [network, setNetwork] = useState(source.network);
   const [cookie, setCookie] = useState('');
+  const [userAgent, setUserAgent] = useState(source.user_agent ?? '');
   const [cookieText, setCookieText] = useState('');
   const [method, setMethod] = useState<string>(COOKIE_METHODS[0][0]);
   const [fileName, setFileName] = useState('');
@@ -89,6 +90,7 @@ function SourceCard({ source, toast }: { source: Source } & ScrapingProps) {
   const save = useMutation({
     mutationFn: (revoke: boolean) => apiSend<{ saved: Source }>(SCRAPING_SETTINGS_URL, {
       source: source.source, network, cookie, cookies_text: cookieText, revoke,
+      ...(source.accepts_cookie ? { user_agent: userAgent } : {}),
     }),
     onSuccess: (result, revoke) => {
       // 服务端回的就是这一条的新样子，换进列表即可，不为一次保存把整页重取一遍。
@@ -102,7 +104,15 @@ function SourceCard({ source, toast }: { source: Source } & ScrapingProps) {
     },
   });
   const check = useMutation({
-    mutationFn: () => apiSend<{ results: Check[] }>(SCRAPING_CHECK_URL, { source: source.source }),
+    mutationFn: () => apiSend<{ results: Check[]; source?: Source }>(SCRAPING_CHECK_URL, { source: source.source }),
+    onSuccess: (result) => {
+      const checkedSource = result.source;
+      if (!checkedSource) return;
+      queryClient.setQueryData<ScrapingData>(SCRAPING_KEY, (current) => current && {
+        ...current,
+        sources: current.sources.map((row) => row.source === source.source ? checkedSource : row),
+      });
+    },
   });
   // 一张卡上三个动作互斥：它们改的是同一份凭据，谁先落地都会让另一次的结果说不清楚。
   const busy = save.isPending || check.isPending;
@@ -213,6 +223,9 @@ function SourceCard({ source, toast }: { source: Source } & ScrapingProps) {
                 <input ref={file} type="file" accept=".txt" tabIndex={-1} aria-hidden
                   className="hidden" onChange={(event) => { void pickFile(event) }} />
               </div>}
+          <Input label={uiText("取 Cookie 的浏览器 User-Agent")} autoComplete="off"
+            value={userAgent} onChange={setUserAgent} />
+          <Help>{uiText("从成功请求的 Request Headers 复制 User-Agent，与 Cookie 一起保存；留空使用 Peach 默认值。Docker 与取 Cookie 的浏览器应使用同一网络出口，但 Cloudflare 仍可能拒绝 HTTP 客户端。")}</Help>
         </> : null}
         {problem ? <ErrorText>{problem}</ErrorText> : null}
         {results.map((result) => (

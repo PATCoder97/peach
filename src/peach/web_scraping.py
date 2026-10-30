@@ -2,6 +2,7 @@
 import io
 import hashlib
 import json
+import logging
 import time
 import httpx
 
@@ -13,6 +14,7 @@ from .scraping_access import SOURCES, SourcePaused, SourceTransport, describe, s
 #: 连不上 DMM 图片主机时给的那句去处：2026-09 实测中国移动宽带直连大多在握手后被断开，
 #: 电信、联通直连正常，所以不是站点挂了，换条线路就好。
 MOBILE_BROADBAND_HINT = "中国移动宽带直连 DMM 图片主机常在握手后被断开，请把 DMM / FANZA 的连接方式设成 Peach 代理。"
+LOGGER = logging.getLogger(__name__)
 
 
 def _kept_cover_size(target, incoming, incoming_size, installed, previous):
@@ -161,7 +163,19 @@ def w_scraping_settings(contract, body):
 def _connection_failure(exc, label):
     """来源连接异常对应可操作的诊断说明。"""
     if isinstance(exc, SourcePaused):
-        detail, message = "cooldown", "来源正在冷却，请稍后重试。"
+        messages = {
+            "cooldown": "来源仍在冷却，本次未发送请求。请等待冷却结束，或保存新的 Cookie、User-Agent 或连接方式后再检查。",
+            "http_forbidden": "来源本次返回 HTTP 403，已暂停请求。Cookie 已保存不代表站方接受；请核对 Cookie、User-Agent 与浏览器的网络出口。",
+            "cloudflare_challenge": "来源本次返回 Cloudflare 验证页，已暂停请求。请在浏览器完成验证，并核对 Cookie、User-Agent 与网络出口；HTTP 客户端仍可能被拒绝。",
+            "rate_limited": "来源本次返回 HTTP 429，已按限流要求暂停请求。请等待冷却结束，不要连续检查。",
+            "challenge_unsolved": "本机浏览器的人机验证未在限时内通过，已暂停请求。请在弹出的浏览器中完成验证后重试。",
+            "budget_exhausted": "本趟采集已达到上限，本次未发送请求；重新发起任务可继续采集。",
+        }
+        detail = exc.reason if exc.reason in messages else "cooldown"
+        return {"ok": False, "kind": "auth" if detail in {"http_forbidden", "cloudflare_challenge"} else "unavailable",
+                "reason": detail, "message": messages[detail], "error_type": type(exc).__name__,
+                "status": exc.status, "request_sent": exc.request_sent,
+                "cooldown_until": exc.cooldown_until}
     elif isinstance(exc, httpx.ProxyError):
         detail, message = "proxy", "代理连接失败，请检查 Peach 代理。"
     elif isinstance(exc, httpx.TimeoutException):
@@ -215,13 +229,15 @@ def w_scraping_check(contract, body):
                 reason = auth_wall_reason(
                     status_code=response.status, body=response.body,
                     final_url=response.url if response.url and response.url != url else "")
-                result.update(status=response.status, bytes=len(response.body),
+                result.update(status=response.status, bytes=len(response.body), request_sent=True,
                               ok=response.status in {200, 206} and not reason,
                               kind="ok" if response.status in {200, 206} and not reason
                               else "auth" if reason else "unavailable")
                 from .browser_transport import CHALLENGE_MARKS
                 challenge = any(mark.lower() in response.body.decode("utf-8", errors="replace").lower()
                                 for mark in CHALLENGE_MARKS)
+                challenge = challenge or any(key.lower() == "cf-mitigated" and value.lower() == "challenge"
+                                             for key, value in response.headers.items())
                 detail = ("cloudflare_challenge" if challenge else "auth_required" if reason
                           else "ok" if result["ok"] else "rate_limited" if response.status == 429
                           else "server_error" if response.status >= 500
@@ -242,10 +258,14 @@ def w_scraping_check(contract, body):
             result.update(checked_at=time.time(), elapsed_s=round(time.monotonic() - started, 2))
             if label == "来源页面":
                 record_source_check(contract.follow_secrets_root, source, "connection", result)
+                LOGGER.info("Source connection check source=%s reason=%s status=%s request_sent=%s cooldown_until=%s",
+                            source, result["reason"], result.get("status"), result.get("request_sent"),
+                            result.get("cooldown_until"))
             results.append(result)
     finally:
         transport.close()
-    return {"ok": True, "results": results, "session_verified": False}
+    return {"ok": True, "results": results, "session_verified": False,
+            "source": describe(contract.follow_secrets_root, source)}
 
 
 def q_scraping_amane_bridge(contract, args):
