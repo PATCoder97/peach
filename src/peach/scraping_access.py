@@ -106,7 +106,7 @@ FIRST_BLOCKED_PAUSE = 900
 class SourcePaused(RuntimeError):
     """来源停止请求的原因与脱敏诊断，区分已有冷却和本次响应。"""
 
-    def __init__(self, message: str, *, reason: str = "cooldown", status: int | None = None,
+    def __init__(self, message: str = "", *, reason: str = "cooldown", status: int | None = None,
                  request_sent: bool = False, cooldown_until: float | None = None):
         super().__init__(message)
         self.reason = reason
