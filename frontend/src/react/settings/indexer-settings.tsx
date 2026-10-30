@@ -37,8 +37,8 @@ function hostOf(url: string): string {
 
 function IndexerSummary({ row, index }: { row: Indexer; index: number }) {
   const uiText = useUiTranslation();
-  const facts = [row.url ? hostOf(row.url) : '未填地址', row.enabled ? '已启用' : '已停用',
-    row.api_key_set && !row.clear_api_key ? '已保存 API key' : row.api_key ? 'API key 待保存' : '没有 API key'];
+  const facts = [row.url ? hostOf(row.url) : uiText('未填地址'), uiText(row.enabled ? '已启用' : '已停用'),
+    uiText(row.api_key_set && !row.clear_api_key ? '已保存 API key' : row.api_key ? 'API key 待保存' : '没有 API key')];
   return <span className="flex min-w-0 items-baseline gap-3">
     <span className="shrink-0 text-text-primary">{row.name || uiText("索引器 {value0}", { value0: String(index + 1) })}</span>
     <span className="truncate text-body-2-regular text-text-secondary">{facts.join(' · ')}</span>

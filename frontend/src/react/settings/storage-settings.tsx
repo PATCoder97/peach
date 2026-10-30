@@ -12,6 +12,7 @@ import { useSystemTranslation } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { confirmModal } from '@peach/legacy/ui';
 import { fmtSize } from '@peach/legacy/core';
+import { formatDateTime } from '../../i18n/format';
 
 import { Button } from '@/components/base/buttons/button';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
@@ -36,12 +37,6 @@ const RESULT_MS = 24 * 3600 * 1000;
 const targetReason = (cause: unknown) =>
   (cause instanceof ApiError && (cause.body as { errors?: { target?: string } } | null)?.errors?.target)
   || errorMessage(cause);
-
-function diskLine(storage: StorageState) {
-  if (storage.free_bytes === null || storage.total_bytes === null) return '未取得';
-  const line = `${fmtSize(storage.free_bytes)} 可用，共 ${fmtSize(storage.total_bytes)}`;
-  return storage.system_drive ? `${line}（系统盘）` : line;
-}
 
 const cleanable = (category: StorageCategory) => category.cleanable && category.reclaimable > 0;
 
@@ -72,9 +67,10 @@ function CategoryRow(
 ) {
   const uiText = useUiTranslation();
   const able = cleanable(category);
+  const note = uiText(category.note);
   const reason = category.cleanable
-    ? category.reclaimable > 0 ? `清理后${category.note}` : '没有可以清理的文件'
-    : `不能清理：${category.note}`;
+    ? category.reclaimable > 0 ? uiText('清理后{note}', { note }) : uiText('没有可以清理的文件')
+    : uiText('不能清理：{note}', { note });
   return (
     <div data-category={category.key}
       className="flex min-h-13 w-full items-start gap-3 border-b border-separator-border py-2.5 pr-3 last:border-b-0">
@@ -83,9 +79,9 @@ function CategoryRow(
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <p className="flex items-center gap-2 text-body-regular text-text-primary">
           <i aria-hidden className={`size-2.5 shrink-0 rounded-xs ${CATEGORY_SWATCH[category.key] || REST_SWATCH}`} />
-          {category.label}
+          {uiText(category.label)}
         </p>
-        <p className="text-body-2-regular text-text-secondary">{category.description}</p>
+        <p className="text-body-2-regular text-text-secondary">{uiText(category.description)}</p>
         <p className="text-caption-1-regular text-text-tertiary">{reason}</p>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
@@ -137,10 +133,10 @@ export function StorageSettings({ initial, receipt }: { initial: StorageState; r
     if (!targets.length) return;
     const total = targets.reduce((sum, category) => sum + category.reclaimable, 0);
     void confirmModal({
-      title,
-      body: `将删除 ${fmtSize(total)}：${targets.map((category) =>
-        `${category.label} ${fmtSize(category.reclaimable)}（清理后${category.note}）`).join('；')}。`,
-      confirmLabel: `清理 ${fmtSize(total)}`,
+      title: uiText(title),
+      body: uiText('将删除 {size}：{categories}。', { size: fmtSize(total), categories: targets.map(category =>
+        uiText('{label} {size}（清理后{note}）', { label: uiText(category.label), size: fmtSize(category.reclaimable), note: uiText(category.note) })).join('; ') }),
+      confirmLabel: uiText('清理 {size}', { size: fmtSize(total) }),
       danger: targets.some((category) => category.key === 'backups'),
       onConfirm: async () => setStorage(await apiSend<StorageState>(`${STORAGE_URL}/clean`,
         { categories: targets.map((category) => category.key) })),
@@ -169,11 +165,14 @@ export function StorageSettings({ initial, receipt }: { initial: StorageState; r
   const recent = last && (last.state === 'error' || (last.notes?.length ?? 0) > 0
     || Date.now() - last.finished_at * 1000 < RESULT_MS);
   const cleaningLabel = usage?.categories.find((category) => category.key === storage.job.category)?.label;
-  const status = accepted
-    || (storage.job.state === 'cleaning' ? `正在清理${cleaningLabel || ''}…`
-      : storage.job.state === 'measuring' ? '正在统计占用空间…'
-        : chosen.length ? `已选 ${chosen.length} 类，可释放 ${fmtSize(chosen.reduce((sum, item) => sum + item.reclaimable, 0))}`
-          : usage ? `统计于 ${new Date(usage.measured_at * 1000).toLocaleString()}` : '');
+  const status = accepted ? systemText(accepted)
+    : storage.job.state === 'cleaning' ? uiText('正在清理{category}…', { category: uiText(cleaningLabel || '') })
+      : storage.job.state === 'measuring' ? uiText('正在统计占用空间…')
+        : chosen.length ? uiText('已选 {count} 类，可释放 {size}', { count: chosen.length, size: fmtSize(chosen.reduce((sum, item) => sum + item.reclaimable, 0)) })
+          : usage ? uiText('统计于 {time}', { time: formatDateTime(usage.measured_at * 1000, { dateStyle: 'short', timeStyle: 'medium' }) }) : '';
+  const disk = storage.free_bytes === null || storage.total_bytes === null ? uiText('未取得')
+    : uiText(storage.system_drive ? '{free} 可用，共 {total}（系统盘）' : '{free} 可用，共 {total}',
+      { free: fmtSize(storage.free_bytes), total: fmtSize(storage.total_bytes) });
   const locked = running || Boolean(accepted);
   const toggle = (key: string) => (next: boolean) => setPicked((current) => {
     const copy = new Set(current);
@@ -186,7 +185,7 @@ export function StorageSettings({ initial, receipt }: { initial: StorageState; r
         <Fact term={uiText("数据目录")}>
           <PathLine path={storage.data_root} className="text-body-regular text-text-primary" onRevealed={receipt} />
         </Fact>
-        <Fact term={uiText("所在磁盘")}>{systemText(diskLine(storage))}</Fact>
+        <Fact term={uiText("所在磁盘")}>{disk}</Fact>
       </FactList>
       <Stack divided>
         {storage.job.state === 'measuring' ? <Measuring job={storage.job} /> : null}
@@ -208,7 +207,7 @@ export function StorageSettings({ initial, receipt }: { initial: StorageState; r
           ? <ol className="flex list-decimal flex-col gap-2 pl-5 text-body-2-regular text-text-secondary" aria-label={uiText("在宿主机上迁移")}>
               {storage.relocation.steps.map((step) => (
                 <li key={step.command}>
-                  {step.text}
+                  {systemText(step.text)}
                   <code className="mt-1 block rounded-md bg-background-tertiary-default px-2 py-1 text-caption-1-regular break-all text-text-primary">
                     {step.command}
                   </code>
@@ -220,7 +219,7 @@ export function StorageSettings({ initial, receipt }: { initial: StorageState; r
         {action.error ? <ErrorText>{action.error}</ErrorText> : null}
         {recent && last ? (last.state === 'error'
           ? <ErrorText>{last.message}</ErrorText>
-          : <Help>{[last.message, ...(last.notes ?? [])].join('；')}</Help>) : null}
+          : <Help>{[last.message, ...(last.notes ?? [])].map(message => systemText(message)).join('; ')}</Help>) : null}
       </Stack>
       <Footer status={status ? <p role={accepted ? 'status' : undefined}>{status}</p> : null}>
         {usage ? <>

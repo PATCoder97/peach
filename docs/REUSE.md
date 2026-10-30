@@ -46,6 +46,8 @@ YuNet 与 SFace 沿用既有模型哈希校验，Python 读取模型字节后交
 
 依赖清单复用 Dependabot 的独立 PR 差集，版本与完整依赖图由当前清单和锁文件确定。相邻修改保留主线消费者并重算锁；npm vendor 与前端包使用项目入口重建，许可证和来源记录随资源分发。接管器分别识别应用与 amane 桥的清单，并以实际接管提交确认完成；普通 PR 引用不构成采用。
 
+设置语言版本的依赖批次同步更新主应用与桥的 Pydantic 安全补丁，Motion 与 Lucide 继续复用既有前端和 vendor 构建入口。升级依据与 amane 固定版本的保留范围见[上游复核](reference-snapshots/upstream-review.md#设置语言版本的依赖复核)。
+
 | 来源 PR | 固定来源提交 |
 | --- | --- |
 | [#129](https://github.com/peach-mitao/peach/pull/129) | `f8899d626f8ef2b4f3c959eb7668ea3c25c56a16` |

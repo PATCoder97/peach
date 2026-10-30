@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "16aad0a6-7851-4bb3-89c9-a7b3b31e4ea9", e._sentryDebugIdIdentifier = "sentry-dbid-16aad0a6-7851-4bb3-89c9-a7b3b31e4ea9");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "f70966c5-4fdc-454a-a098-a9ad649fa61a", e._sentryDebugIdIdentifier = "sentry-dbid-f70966c5-4fdc-454a-a098-a9ad649fa61a");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -10215,6 +10215,50 @@ var D = /* @__PURE__ */ o(((e) => {
 	下载完整预览: ["Download full preview", "Tải bản xem trước đầy đủ"],
 	"我已查看上传预览，同意上传馆藏与口味明细": ["I have reviewed the preview and agree to upload library and preference details", "Tôi đã xem bản xem trước và đồng ý tải lên chi tiết thư viện và sở thích"]
 }, de = {
+	"{free} 可用，共 {total}": ["{free} available of {total}", "Khả dụng {free}, tổng {total}"],
+	"查出数据卷的名字（以 _peach-data 结尾）": ["Find the data volume name (ending in _peach-data)", "Tìm tên volume dữ liệu (kết thúc bằng _peach-data)"],
+	"在 compose.yaml 所在目录停止 Peach": ["Stop Peach from the directory containing compose.yaml", "Dừng Peach trong thư mục chứa compose.yaml"],
+	"把数据卷复制到新文件夹；新文件夹要让 UID 1000 可写": ["Copy the data volume to a new folder and allow UID 1000 to write to it", "Sao chép volume dữ liệu sang thư mục mới và cho phép UID 1000 ghi vào thư mục đó"],
+	"把 compose.yaml 里的 peach-data:/data 改成 <新文件夹>:/data，再启动；确认一切正常前不要删除旧数据卷": ["Replace peach-data:/data in compose.yaml with <new-folder>:/data, then start Peach. Keep the old volume until everything is verified.", "Thay peach-data:/data trong compose.yaml bằng <thu-muc-moi>:/data rồi khởi động Peach. Giữ volume cũ cho đến khi xác nhận mọi thứ hoạt động bình thường."],
+	数据库: ["Database", "Cơ sở dữ liệu"],
+	"影片、人物、标签与观看记录": ["Titles, people, tags and viewing history", "Tác phẩm, nhân vật, thẻ và lịch sử xem"],
+	数据库备份: ["Database backups", "Bản sao lưu cơ sở dữ liệu"],
+	"升级、迁移与整理前自动留下的数据库副本": ["Database copies saved automatically before upgrades, migrations and organization", "Bản sao cơ sở dữ liệu được tự động lưu trước khi nâng cấp, di chuyển và sắp xếp"],
+	"每处保留最近一份，更早的无法再恢复": ["The latest copy in each location is kept; older copies cannot be restored", "Giữ bản gần nhất ở mỗi vị trí; không thể khôi phục các bản cũ hơn"],
+	播放缓存: ["Playback cache", "Bộ nhớ đệm phát video"],
+	浏览器不能直接播放的影片转码后的副本: ["Transcoded copies of videos that the browser cannot play directly", "Bản chuyển mã của video mà trình duyệt không phát trực tiếp được"],
+	再次播放时重新转码: ["Videos will be transcoded again on the next playback", "Video sẽ được chuyển mã lại khi phát lần sau"],
+	"封面与头像的小尺寸副本，列表和网格里显示的就是它": ["Small copies of covers and portraits used in lists and grids", "Bản thu nhỏ của ảnh bìa và ảnh đại diện dùng trong danh sách và lưới"],
+	浏览时从本机已有的封面重新缩小: ["Thumbnails will be recreated from locally stored covers when browsing", "Tạo lại ảnh thu nhỏ từ ảnh bìa có trên máy khi duyệt"],
+	"从视频抽帧生成的九宫格、海报与进度条预览": ["Contact sheets, posters and timeline previews sampled from videos", "Ảnh chín khung, áp phích và bản xem trước thanh tiến trình được trích từ video"],
+	封面与网络资料: ["Covers and online metadata", "Ảnh bìa và thông tin trực tuyến"],
+	"从资料站下载的封面、头像、厂牌标志与网页缓存": ["Covers, portraits, studio logos and cached pages downloaded from metadata sources", "Ảnh bìa, ảnh đại diện, logo hãng và trang web lưu đệm được tải từ nguồn thông tin"],
+	导入资料: ["Imported metadata", "Thông tin đã nhập"],
+	从其他软件导入的资料与原始记录: ["Metadata and original records imported from other software", "Thông tin và bản ghi gốc được nhập từ phần mềm khác"],
+	任务与复核记录: ["Task and review records", "Bản ghi tác vụ và rà soát"],
+	"断点续跑、自动修复回执、待复核清单与归档": ["Resume checkpoints, automatic repair receipts, review lists and archives", "Điểm tiếp tục, biên nhận sửa tự động, danh sách cần rà soát và bản lưu trữ"],
+	媒体工具: ["Media tools", "Công cụ media"],
+	"FFmpeg、人脸识别等播放、抽帧与识别用到的程序": ["Programs used for playback, frame extraction and recognition, including FFmpeg and face recognition", "Các chương trình dùng để phát, trích khung hình và nhận diện, gồm FFmpeg và nhận diện khuôn mặt"],
+	登录状态: ["Sign-in sessions", "Phiên đăng nhập"],
+	访问令牌与资料站登录用的浏览器资料: ["Access tokens and browser profiles used to sign in to metadata sources", "Token truy cập và hồ sơ trình duyệt dùng để đăng nhập nguồn thông tin"],
+	日志: ["Logs", "Nhật ký"],
+	运行日志与崩溃记录: ["Runtime logs and crash reports", "Nhật ký hoạt động và báo cáo sự cố"],
+	"只清理已归档的日志与崩溃记录，正在写入的保留": ["Only archived logs and crash reports are removed; active files are kept", "Chỉ xóa nhật ký và báo cáo sự cố đã lưu trữ; giữ các tệp đang được ghi"],
+	数据目录里不属于以上各类的文件: ["Files in the data directory that do not belong to the categories above", "Tệp trong thư mục dữ liệu không thuộc các loại ở trên"],
+	"已入库 {count} 个文件": ["Imported {count} files", "Đã nhập {count} tệp"],
+	"，{count} 个入库失败": [", {count} imports failed", ", {count} tệp nhập thất bại"],
+	"，队列里还有 {count} 条": [", {count} still queued", ", còn {count} mục trong hàng đợi"],
+	"清理后{note}": ["After cleanup: {note}", "Sau khi dọn dẹp: {note}"],
+	"不能清理：{note}": ["Cannot clean up: {note}", "Không thể dọn dẹp: {note}"],
+	"将删除 {size}：{categories}。": ["Delete {size}: {categories}.", "Sẽ xóa {size}: {categories}."],
+	"{label} {size}（清理后{note}）": ["{label} {size} (after cleanup: {note})", "{label} {size} (sau khi dọn dẹp: {note})"],
+	"清理 {size}": ["Clean up {size}", "Dọn dẹp {size}"],
+	"正在清理{category}…": ["Cleaning up {category}…", "Đang dọn dẹp {category}…"],
+	"已选 {count} 类，可释放 {size}": ["{count} categories selected; {size} can be freed", "Đã chọn {count} loại, có thể giải phóng {size}"],
+	"统计于 {time}": ["Measured at {time}", "Thống kê lúc {time}"],
+	"已连续失败 {count} 次": ["Failed {count} times in a row", "Đã thất bại {count} lần liên tiếp"],
+	"下一轮 {time}": ["Next run: {time}", "Lượt tiếp theo: {time}"],
+	"没有重试：{reason}": ["Retry did not start: {reason}", "Chưa thử lại: {reason}"],
 	显示全部列: ["Show all columns", "Hiện tất cả cột"],
 	恢复默认显示: ["Restore default visibility", "Khôi phục hiển thị mặc định"],
 	预览上传内容: ["Preview upload", "Xem trước nội dung tải lên"],
@@ -27696,4 +27740,4 @@ ay && oy && (0, M.createRoot)(ay).render(/* @__PURE__ */ (0, B.jsx)(ny, { childr
 	data: { ...ay.dataset }
 }) }));
 
-//# debugId=16aad0a6-7851-4bb3-89c9-a7b3b31e4ea9
+//# debugId=f70966c5-4fdc-454a-a098-a9ad649fa61a

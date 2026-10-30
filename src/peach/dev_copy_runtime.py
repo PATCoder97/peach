@@ -173,11 +173,12 @@ def poll(tray, root: Path) -> None:
             readiness = tray._readiness()
             if readiness.problem:
                 raise ValueError(readiness.message)
-            _write(root, {**job, 'state': 'ready', 'message': '服务已重载，正在刷新…'})
+            result = {**job, 'state': 'ready', 'message': '服务已重载，正在刷新…'}
         except Exception as exc:
-            _write(root, {**job, 'state': 'error', 'message': str(exc)})
+            result = {**job, 'state': 'error', 'message': str(exc)}
         finally:
             tray._action_lock.release()
+        _write(root, result)
     try:
         threading.Thread(target=reload_services, daemon=True, name='PeachCopyReload').start()
     except RuntimeError as exc:
