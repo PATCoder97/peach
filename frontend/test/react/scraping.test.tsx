@@ -189,8 +189,10 @@ it('连接检查显示 HTTP 状态与译文，冷却时间采用本次回执', a
     } }),
   });
   await click(buttonNamed('检查连接', host));
-  await settle();
-  expect(host.textContent).toContain('HTTP 403');
+  await vi.waitFor(async () => {
+    await settle();
+    expect(host.textContent).toContain('HTTP 403');
+  });
   expect(host.textContent).toContain('冷却中');
   await act(async () => setLocale('vi'));
   expect(host.textContent).toContain('Nguồn vừa trả HTTP 403');
