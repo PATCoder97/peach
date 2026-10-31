@@ -116,7 +116,7 @@ CREATE TABLE label_maker(
   label_id INTEGER PRIMARY KEY,maker_id INTEGER,source TEXT,
   confidence REAL DEFAULT 1.0,checked_at TEXT);
 CREATE TABLE performer_profile(entity_id INTEGER PRIMARY KEY,source TEXT,
-  raw_json TEXT DEFAULT '{}',tags_json TEXT DEFAULT '[]',source_url TEXT DEFAULT '');
+  raw_json TEXT DEFAULT '{}',tags_json TEXT DEFAULT '[]',romaji TEXT,source_url TEXT DEFAULT '');
 CREATE TABLE watch_queue(profile_id TEXT,asset_id INTEGER,added_at TEXT,source TEXT,
   PRIMARY KEY(profile_id,asset_id));
 CREATE TABLE playlist(
@@ -2284,7 +2284,7 @@ class FastApiContractTests(unittest.IsolatedAsyncioTestCase):
             connection.execute(
                 "INSERT INTO entity_alias VALUES(901,'</script><script>演示','alias','test',1)")
         projection = (await self.client.get('/api/entity/shapes')).json()
-        self.assertTrue(projection['ok'])
+        self.assertTrue(projection.get('ok'), projection)
         self.assertEqual(projection['name_variants'], [])
         self.assertEqual(projection['name_glyphs']['寧'], '宁')
         self.assertEqual(projection['name_glyphs']['鈴'], '铃')
