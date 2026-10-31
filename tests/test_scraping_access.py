@@ -359,7 +359,7 @@ class ScrapingAccessTests(unittest.TestCase):
         既不知道那个数归谁管，也不知道自己还要不要动手。一趟任务的用量见
         `library_processing.MAX_SOURCE_*`。
         """
-        from peach.scraping_access import SourcePaused
+        from peach.scraping_access import SourceBudgetExhausted
         request = HttpRequest("GET", "https://javdb.com/search?q=ABW-358", {})
         budgets = [
             SourceTransport(self.root, max_requests=1),
@@ -370,8 +370,10 @@ class ScrapingAccessTests(unittest.TestCase):
         budgets[1].deadline = time.monotonic() - 1
         budgets[2].bytes = 1
         for transport in budgets:
-            with self.assertRaises(SourcePaused) as spent:
+            with self.assertRaises(SourceBudgetExhausted) as spent:
                 transport(request, 1, 100)
+            self.assertEqual(spent.exception.reason, "budget_exhausted")
+            self.assertFalse(spent.exception.request_sent)
             self.assertIn("本趟", str(spent.exception))
             self.assertIn("再跑一次接着采", str(spent.exception))
             self.assertNotIn("预算", str(spent.exception))

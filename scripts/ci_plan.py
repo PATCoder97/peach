@@ -12,6 +12,7 @@ if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     __package__ = "scripts"
 ROOT = Path(__file__).resolve().parents[1]
+AUTO_SHARD_FILES = 150
 
 
 def browser_matrix(root: Path = ROOT, count: int = 6) -> dict:
@@ -94,13 +95,14 @@ def desktop_systems(paths: list[str]) -> list[str]:
     return sorted(systems)
 
 
-def python_matrix(systems: list[str], *, wide: bool, runtime_tools: bool) -> dict:
+def python_matrix(systems: list[str], *, wide: bool, runtime_tools: bool, selected_count: int = 0) -> dict:
     """全量按平台分片，定向域在一台 runner 内运行。"""
     rows = []
     for system in systems:
         scope = "full" if wide else "auto"
         # 独立 runner 承担分片，避免共享文件、端口和全量证据锁。
-        shards = (4 if system == "windows-latest" else 2) if scope == "full" else 1
+        split = wide or (system == "windows-latest" and selected_count >= AUTO_SHARD_FILES)
+        shards = (4 if system == "windows-latest" else 2) if split else 1
         for index in range(shards):
             rows.append({"os": system, "python": "3.14", "scope": scope,
                          "runtime_tools": runtime_tools,
@@ -112,10 +114,11 @@ def plan(event: str, paths: list[str], contents: dict | None = None, *, target: 
     from . import test_runner as runner
     scopes, _ = runner.scopes_for_changes(paths, contents=contents)
     wide = event == "workflow_dispatch" or "full" in scopes
+    selected_count = len({path for scope in scopes for path in runner.selected_files(scope)}) if not wide else 0
     effective = runtime_paths(paths, contents)
     systems = (["macos-latest", "windows-latest"] if event == "workflow_dispatch"
                else desktop_systems(effective)) if target == "desktop" else ["ubuntu-latest"]
-    matrix = python_matrix(systems, wide=wide, runtime_tools=wide or scopes != ("checks",))
+    matrix = python_matrix(systems, wide=wide, runtime_tools=wide or scopes != ("checks",), selected_count=selected_count)
     wheels = [{"os": system, "python": "3.14"} for system in systems]
     shared = wide
     browser = shared or any(browser_input(path) for path in effective)

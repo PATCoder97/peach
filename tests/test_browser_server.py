@@ -17,7 +17,7 @@ class BrowserPasswordTests(unittest.TestCase):
     def test_password_is_read_from_a_file_without_changing_it(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder).resolve() / 'password'
-            path.write_text('sample42\r\n', encoding='ascii')
+            path.write_bytes(b'sample42\r\n')
             with patch.dict(os.environ, {'PEACH_VNC_PASSWORD_FILE': str(path)}):
                 self.assertEqual(browser_server.password_file(), path)
             self.assertEqual(path.read_bytes(), b'sample42\r\n')

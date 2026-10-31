@@ -51,27 +51,20 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
-      - name: Dùng lại công cụ media từ mã nguồn cố định và gói mã nguồn tương ứng
-        id: media-cache
-        uses: actions/cache@v6.1.0
-        with:
-          key: windows-media-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/build_ffmpeg_windows.sh', 'scripts/dav1d-mingw64.ini', 'scripts/build_untrunc_windows.sh', 'scripts/fetch_ffmpeg_sources.py', 'scripts/fetch_untrunc_sources.py', 'scripts/ffmpeg-sources.json', 'scripts/untrunc-sources.json') }}
-          path: |
-            build/ffmpeg-windows/ffmpeg
-            build/ffmpeg-windows/ffmpeg-corresponding-source.zip
-            build/untrunc-windows/untrunc
-            build/untrunc-windows/untrunc-corresponding-source.zip
       - name: Cài đặt công cụ biên dịch chéo
-        if: steps.media-cache.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential gcc-mingw-w64-x86-64-posix g++-mingw-w64-x86-64-posix mingw-w64-x86-64-dev nasm pkg-config python3 clang meson ninja-build cmake ca-certificates curl xz-utils
-      - name: Xây dựng công cụ media theo phiên bản cố định
-        if: steps.media-cache.outputs.cache-hit != 'true'
-        run: bash scripts/build_ffmpeg_windows.sh build/ffmpeg-windows
-      - name: Xây dựng công cụ sửa chỉ mục theo phiên bản cố định
-        if: steps.media-cache.outputs.cache-hit != 'true'
-        run: bash scripts/build_untrunc_windows.sh build/untrunc-windows
+      - name: Kiểm tra định danh bản dựng media
+        id: media-identity
+        run: echo "key=$(python3 scripts/media_build_cache.py windows --github-key)" >> "$GITHUB_OUTPUT"
+      - name: Dùng lại công cụ media và gói mã nguồn đã xác minh
+        uses: actions/cache@v6.1.0
+        with:
+          key: ${{ steps.media-identity.outputs.key }}
+          path: build/media-cache/windows-x86_64
+      - name: Kiểm tra hoặc xây dựng công cụ media và gói mã nguồn
+        run: python3 scripts/media_build_cache.py windows
       - uses: actions/upload-artifact@v7
         with:
           name: ffmpeg-windows
@@ -191,7 +184,17 @@ jobs:
     needs: windows
     runs-on: windows-latest
     timeout-minutes: 25
+    # 验收脚本核对随包 amane 运行时要读发行锁与桥脚本；与 scripts/ci_windows.ps1 一样，验收宿主
+    # 从同一检出加载辅助模块，被测应用启动时清除 PYTHONPATH。
+    env:
+      PYTHONPATH: ${{ github.workspace }}\source\scripts
     steps:
+      - uses: actions/checkout@v7
+        with:
+          path: source
+          sparse-checkout: |
+            scripts
+            tools/amane-bridge
       - uses: actions/download-artifact@v8
         with:
           name: desktop-candidate
@@ -269,7 +272,8 @@ jobs:
           - arch: x86_64
             runner: macos-15-intel
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 30
+    # 媒体工具缓存未命中时要在 runner 上从源码编译 FFmpeg 与 untrunc，首轮冷编译耗时长。
+    timeout-minutes: 180
     env:
       MACOSX_DEPLOYMENT_TARGET: '11.0'
       ARCHFLAGS: '-arch ${{ matrix.arch }}'
@@ -292,6 +296,24 @@ jobs:
           uv sync --locked --all-extras --python python
           uv pip check --python .venv/bin/python
           npm ci --prefix frontend
+      - name: Cài đặt công cụ biên dịch media theo phiên bản cố định
+        run: |
+          .venv/bin/python scripts/setup_macos_media_tools.py --root build/macos-media-toolchain
+          echo "$PWD/build/macos-media-toolchain/env/bin" >> "$GITHUB_PATH"
+      - name: Kiểm tra định danh bản dựng media
+        id: media-identity
+        run: echo "key=$(.venv/bin/python scripts/media_build_cache.py macos --arch '${{ matrix.arch }}' --github-key)" >> "$GITHUB_OUTPUT"
+      - name: Dùng lại công cụ media macOS và gói mã nguồn đã xác minh
+        uses: actions/cache@v6.1.0
+        with:
+          key: ${{ steps.media-identity.outputs.key }}
+          path: build/media-cache/macos-${{ matrix.arch }}
+      - name: Chuẩn bị công cụ media và cloudflared
+        run: |
+          for tool in ffmpeg untrunc; do
+            .venv/bin/python scripts/media_build_cache.py macos --tool "$tool" --arch '${{ matrix.arch }}'
+          done
+          .venv/bin/python scripts/fetch_cloudflared_macos.py --arch '${{ matrix.arch }}' --destination "build/media-macos/${{ matrix.arch }}/cloudflared"
       - name: Xây dựng ứng dụng độc lập và ảnh cài đặt kéo thả
         run: .venv/bin/python scripts/build_macos_standalone.py --target-arch '${{ matrix.arch }}' --destination release
       - name: Tải lên source map trình duyệt của bản dựng macOS
@@ -329,7 +351,17 @@ jobs:
             runner: macos-15-intel
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
+    # 与 Windows 仅下载验收相同：核对随包 amane 运行时要读发行锁与桥脚本，验收宿主从同一检出
+    # 加载辅助模块，被测应用启动时清除 PYTHONPATH。
+    env:
+      PYTHONPATH: ${{ github.workspace }}/source/scripts
     steps:
+      - uses: actions/checkout@v7
+        with:
+          path: source
+          sparse-checkout: |
+            scripts
+            tools/amane-bridge
       - uses: actions/download-artifact@v8
         with:
           name: macos-candidate-${{ matrix.arch }}
@@ -350,7 +382,7 @@ jobs:
           test "$(readlink "$mount/Applications")" = /Applications
           test -s "$mount/Peach.app/Contents/Resources/LICENSE"
           codesign --verify --deep --strict "$mount/Peach.app"
-          lipo -verify_arch '${{ matrix.arch }}' "$mount/Peach.app/Contents/MacOS/Peach"
+          lipo "$mount/Peach.app/Contents/MacOS/Peach" -verify_arch '${{ matrix.arch }}'
           python scripts/smoke_macos.py "$mount/Peach.app"
 
   release:

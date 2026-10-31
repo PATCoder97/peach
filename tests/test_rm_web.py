@@ -147,6 +147,8 @@ class WebDataTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.db_path = str(fresh_ledger(self.tmp.name))
+        # 口味看板会列出本机浏览器；测试不读这台机器的真实浏览历史，也不受它的大小影响。
+        self.enterContext(mock.patch("peach.taste_history.discover_history_sources", return_value=[]))
         declared = mock.patch.object(web_batch, "LOCATION_ROOT_DECLARATIONS", {
             "local": (str(Path(self.tmp.name).resolve()),),
             "115": (str(Path(self.tmp.name).resolve()),),
@@ -3904,6 +3906,47 @@ class TopsRotationTests(unittest.TestCase):
 
     def names(self, **kwargs):
         return [row["k"] for row in rm_web.q_tops(self.contract, 8, **kwargs)["performers"]]
+
+    def test_tops_bound_asset_predicate_work_with_inaccurate_statistics(self):
+        roots = dict(avatar_root=Path(self.tmp.name) / 'avatars', logo_root=Path(self.tmp.name) / 'logos')
+        with closing(sqlite3.connect(self.db_path)) as connection, connection:
+            connection.execute("UPDATE asset SET code=CASE WHEN id%3=0 THEN 'FC2-'||(1000000+id) END,"
+                               'play_count=CASE WHEN id%5=0 THEN 1 ELSE 0 END')
+            connection.execute('ANALYZE')
+            asset_count = connection.execute('SELECT count(*) FROM asset').fetchone()[0]
+        options = ({}, {'jav': True}, {'state': 'played'}, {'jav': True, 'state': 'played'})
+        expected = [rm_web.q_tops(rm_web.WebContract(Path(self.db_path), **roots), 8, seed='111', **scope)
+                    for scope in options]
+        with closing(sqlite3.connect(self.db_path)) as connection, connection:
+            if connection.execute("SELECT 1 FROM sqlite_master WHERE name='sqlite_stat4'").fetchone():
+                connection.execute('DELETE FROM sqlite_stat4')
+            connection.executemany('UPDATE sqlite_stat1 SET stat=? WHERE idx=?', [
+                ('2957 1439', 'idx_asset_location'),
+                ('2957 1439 1', 'sqlite_autoindex_asset_1'),
+                ('0 0', 'idx_asset_region'), ('0 0 0', 'idx_asset_disposal_id'),
+                ('2957 1', 'idx_asset_name'), ('2957 1', 'idx_asset_size'),
+                ('2957 1439 1439', 'idx_asset_hash'),
+                ('12861 131 131', 'idx_asset_entity_entity_role'),
+                ('12861 10 1 1 1', 'sqlite_autoindex_asset_entity_1'),
+                ('1847 360 1', 'sqlite_autoindex_entity_1'),
+            ])
+        for scope, wanted in zip(options, expected):
+            with self.subTest(**scope):
+                calls = 0
+
+                def counted_extra(name, path, **kwargs):
+                    nonlocal calls
+                    calls += 1
+                    return catalog_rules.is_local_extra(name, path, **kwargs)
+
+                # 新契约使用冷缓存和新连接，确保执行的是修改统计后的查询。
+                contract = rm_web.WebContract(Path(self.db_path), **roots)
+                with mock.patch('peach.repository.is_local_extra', counted_extra):
+                    actual = rm_web.q_tops(contract, 8, seed='111', **scope)
+                self.assertTrue(wanted['performers'])
+                self.assertGreater(calls, 0)
+                self.assertLess(calls, asset_count * 4, f'asset predicate calls: {calls}')
+                self.assertEqual(actual, wanted)
 
     def test_without_a_seed_it_stays_the_strict_top_list(self):
         self.assertEqual(self.names(), self.names())
