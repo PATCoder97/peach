@@ -21,6 +21,12 @@ Removed / Fixed / Security。
 
 ## [未发布]
 
+## [0.55.1] - 2026-10-31
+
+### 修复
+
+- **采集**：通过多个来源补全缺失的元数据字段，并保留各来源的失败诊断。
+
 ## [0.55.0] - 2026-10-31
 
 ### 新增
@@ -871,7 +877,8 @@ Removed / Fixed / Security。
 - **桌面**：独立包使用 UTF-8 启动日志。
 - **配置**：首次设置后的跳转目标取新鲜读到的 mDNS 名。
 
-[未发布]: https://github.com/PATCoder97/peach/compare/v0.55.0...HEAD
+[未发布]: https://github.com/PATCoder97/peach/compare/v0.55.1...HEAD
+[0.55.1]: https://github.com/PATCoder97/peach/compare/v0.55.0...v0.55.1
 [0.55.0]: https://github.com/PATCoder97/peach/compare/v0.54.0...v0.55.0
 [0.54.0]: https://github.com/PATCoder97/peach/compare/v0.53.3...v0.54.0
 [0.53.3]: https://github.com/PATCoder97/peach/compare/v0.53.2...v0.53.3
