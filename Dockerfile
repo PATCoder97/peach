@@ -15,15 +15,15 @@ COPY tools/amane-bridge ./tools/amane-bridge
 COPY scripts/write_reporting_config.py ./scripts/
 COPY scripts/build_amane_runtime.py scripts/amane_bridge.spec ./scripts/
 # vision 带上 OpenCV：镜像里随附的人脸模型要靠它才能检出与比对。
-RUN uv sync --locked --no-dev --no-editable --extra vision
-RUN .venv/bin/python -X utf8 scripts/build_amane_runtime.py --kind python \
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked uv sync --locked --no-dev --no-editable --extra vision
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked .venv/bin/python -X utf8 scripts/build_amane_runtime.py --kind python \
     --destination /app/amane-runtime --work /app/build/amane-runtime
 # 公开 DSN 写进 wheel 的资源目录；发行流水线传 PEACH_REQUIRE_REPORTING=1，缺失时构建失败。
 ARG PEACH_SENTRY_DSN="" PEACH_LIBRARY_SENTRY_DSN="" PEACH_REQUIRE_REPORTING=""
 RUN target="$(.venv/bin/python -c 'import pathlib, peach; print(pathlib.Path(peach.__file__).parent / "_resources" / "sentry.json")')" \
     && .venv/bin/python scripts/write_reporting_config.py --output "$target" ${PEACH_REQUIRE_REPORTING:+--require}
 
-FROM python:3.15.1-slim-trixie
+FROM python:3.15.1-slim-trixie AS runtime-base
 LABEL org.opencontainers.image.title="Peach" \
       org.opencontainers.image.source="https://github.com/peach-mitao/peach" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later"
@@ -45,10 +45,6 @@ ADD --chmod=a+rX --checksum=sha256:c83b8120c50ccbd4c4f96edf53141bdd566ebb8f8e922
 ADD --chmod=a+rX --checksum=sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 \
     https://raw.githubusercontent.com/opencv/opencv_zoo/48b10fa505aeb51fbd127fc60a5c660040e823b7/models/face_recognition_sface/LICENSE \
     /app/tools/face-models/LICENSE-sface.txt
-COPY --from=build /app/.venv /app/.venv
-COPY --from=build /app/amane-runtime /app/amane-runtime
-COPY --from=build /app/tools/amane-bridge /app/tools/amane-bridge
-RUN /app/amane-runtime/.venv/bin/python -X utf8 /app/tools/amane-bridge/bridge.py --self-check
 ENV PATH="/app/.venv/bin:$PATH" PEACH_DATA_ROOT=/data PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=utf-8 PYTHONUTF8=1 PEACH_FACE_MODELS=/app/tools/face-models PEACH_DISTRIBUTION=docker \
     PEACH_AMANE_RUNTIME=/app/amane-runtime
@@ -59,3 +55,32 @@ VOLUME ["/data"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8900/healthz?ready=1', timeout=3).read()"]
 ENTRYPOINT ["python", "-m", "peach.server"]
+
+# 浏览器依赖独立于应用代码，更新应用不重复安装 Chromium。
+FROM runtime-base AS browser-base
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium=156.0.8078.73-1~deb13u1 chromium-sandbox=156.0.8078.73-1~deb13u1 \
+    xvfb=2:21.1.16-1.3+deb13u4 openbox=3.6.1-12+b2 x11vnc=0.9.17-1 \
+    novnc=1:1.6.0-2 websockify=0.12.0+dfsg1-4+b1 fonts-noto-cjk=1:20240730+repack1-1 \
+    && rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
+USER peach
+
+FROM runtime-base AS runtime
+COPY --from=build /app/.venv /app/.venv
+COPY --from=build /app/amane-runtime /app/amane-runtime
+COPY --from=build /app/tools/amane-bridge /app/tools/amane-bridge
+RUN /app/amane-runtime/.venv/bin/python -X utf8 /app/tools/amane-bridge/bridge.py --self-check
+
+# 复制已经核验的应用与桥，显示与调试端口留在容器内。
+FROM browser-base AS browser
+COPY --from=runtime /app /app
+ENV DISPLAY=:99 PEACH_BROWSER=/usr/bin/chromium PEACH_BROWSER_CONTAINER=1 \
+    PEACH_VNC_PASSWORD_FILE=/run/secrets/peach_vnc_password
+USER peach
+EXPOSE 6080
+ENTRYPOINT ["python", "-m", "peach.browser_server"]
+
+# 不指定 target 的构建仍生成无桌面镜像。
+FROM runtime AS default

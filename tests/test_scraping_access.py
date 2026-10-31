@@ -457,6 +457,26 @@ class ScrapingAccessTests(unittest.TestCase):
             self.assertIn("age=verified", client.build_request("GET", "https://www.javbus.com/MIDE-594").headers["cookie"])
             self.assertNotIn("cookie", client.build_request("GET", "https://pics.dmm.co.jp/x").headers)
 
+    def test_browser_image_reports_unavailable_browser_without_sending_http(self):
+        transport = SourceTransport(self.root)
+        self.addCleanup(transport.close)
+        with patch.dict('os.environ', {'PEACH_BROWSER_CONTAINER': '1'}), \
+                patch.object(transport, '_browser_for', return_value=None), \
+                patch('peach.scraping_access.client_for') as client:
+            with self.assertRaisesRegex(httpx.TransportError, 'Chromium'):
+                transport(HttpRequest('GET', 'https://fc2ppv-db.com/', {}), 1, 100)
+        client.assert_not_called()
+        self.assertEqual(transport.requests, 0)
+
+    def test_browser_image_describes_its_novnc_location_for_browser_sources(self):
+        with patch.dict('os.environ', {'PEACH_BROWSER_CONTAINER': '1'}), \
+                patch('peach.scraping_access.browser_transport.find_browser', return_value='/usr/bin/chromium'):
+            self.assertTrue(describe(self.root, 'fc2ppvdb')['browser_in_container'])
+            self.assertFalse(describe(self.root, 'dmm')['browser_in_container'])
+        with patch.dict('os.environ', {'PEACH_BROWSER_CONTAINER': ''}), \
+                patch('peach.scraping_access.browser_transport.find_browser', return_value='/usr/bin/chromium'):
+            self.assertFalse(describe(self.root, 'fc2ppvdb')['browser_in_container'])
+
     def test_the_fc2_mirror_carries_the_pasted_cookie_too(self):
         """女優那一栏在浏览器里只对登录用户显示，采集按登录用户看到的那一页取。"""
         save(self.root, "fc2cmadb", {"cookie": "peach_session=abc"})
@@ -476,7 +496,7 @@ class ScrapingAccessTests(unittest.TestCase):
         """未配置来源 User-Agent 时使用默认值，Cookie 由用户提供。"""
         from peach.user_agent import USER_AGENT
         shown = save(self.root, "fc2ppvdb", {"cookie": "cf_clearance=abc"})
-        self.assertEqual(set(shown), {"source", "label", "login", "accepts_cookie", "network", "cookie_saved", "browser", "cooldown_until", "user_agent"})
+        self.assertEqual(set(shown), {"source", "label", "login", "accepts_cookie", "network", "cookie_saved", "browser", "browser_in_container", "cooldown_until", "user_agent"})
         self.assertTrue(shown["cookie_saved"])
         self.assertFalse(shown["browser"], "没有浏览器的机器上这张卡照旧收 Cookie")
         for name in ("fc2ppvdb", "javten"):

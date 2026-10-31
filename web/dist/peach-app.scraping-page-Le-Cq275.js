@@ -1,7 +1,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "d0c7e310-5cd6-4714-b4cb-f7beb718cdb6", e._sentryDebugIdIdentifier = "sentry-dbid-d0c7e310-5cd6-4714-b4cb-f7beb718cdb6");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "155ba0b1-7ed1-4310-9fe5-80d71674a27f", e._sentryDebugIdIdentifier = "sentry-dbid-155ba0b1-7ed1-4310-9fe5-80d71674a27f");
 	} catch {}
 })();
 import { $fe21c36db05242bb$export$d7b12c4107be0d61 as e, AMANE_BRIDGE_CHECK_URL as t, AMANE_BRIDGE_KEY as n, AMANE_BRIDGE_REBUILD_URL as r, Button as i, COVER_JOB_KEY as a, CUSTOM_SOURCES_KEY as o, CUSTOM_SOURCES_URL as s, Checkbox as c, Disclosure as l, ErrorText as u, ExternalLink as d, Fact as f, FactList as p, FieldLabel as m, Footer as h, Help as g, Input as _, LinkButton as v, LoadingDots as y, Note as b, Rows as x, SCRAPING_CHECK_URL as ee, SCRAPING_COVER_URL as S, SCRAPING_KEY as C, SCRAPING_SETTINGS_URL as te, SEGMENT as ne, SEGMENTED_TRACK as re, Section as w, SegmentedRadioGroup as ie, Select$1 as ae, SelectField as T, SelectItem as oe, SettingsRow as se, Stack as E, StatusLabel as D, __toESM as ce, apiSend as O, busyProps as k, checkText as le, confirmModal as A, errorMessage as j, esc as M, fetchAmaneBridge as N, fetchCoverJob as P, fetchCustomSources as F, fetchSources as I, formatDateTime as ue, i2 as de, queryClient as L, require_jsx_runtime as R, require_react as z, spinnerHtml as B, useAction as V, useBackgroundJob as H, useMutation as U, useQuery as W, useTranslation as G } from "./peach-app.js";
@@ -359,7 +359,7 @@ function be({ source: t, toast: n }) {
 					}) : null,
 					t.browser ? /* @__PURE__ */ (0, X.jsx)("p", {
 						className: "text-body-2-regular text-text-secondary",
-						children: r("人机验证由本机浏览器自动完成；需要点击时窗口会弹出。这台机器上不需要 Cookie。")
+						children: r(t.browser_in_container ? "人机验证由容器内的浏览器完成；需要点击时请打开 noVNC 桌面，无需复制 Cookie。" : "人机验证由本机浏览器自动完成；需要点击时窗口会弹出。这台机器上不需要 Cookie。")
 					}) : null,
 					t.accepts_cookie && !t.browser ? /* @__PURE__ */ (0, X.jsxs)(X.Fragment, { children: [
 						/* @__PURE__ */ (0, X.jsxs)("div", {
@@ -635,4 +635,4 @@ function Ce({ toast: e }) {
 }
 export { Ce as ScrapingPage, _e as linkHost, $ as networkOptions };
 
-//# debugId=d0c7e310-5cd6-4714-b4cb-f7beb718cdb6
+//# debugId=155ba0b1-7ed1-4310-9fe5-80d71674a27f

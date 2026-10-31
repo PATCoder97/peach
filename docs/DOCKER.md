@@ -182,9 +182,63 @@ docker compose cp peach:/tmp/peach-support.zip ./peach-support.zip
 
 ## 更新与范围
 
+### 带浏览器的镜像
+
+需要在 FC2PPV-DB、JAVten 等来源完成浏览器验证时，使用 `X.Y.Z-browser` 标签。该变体自带 Chromium
+和 noVNC，无需安装或连接另一容器的 Chrome；普通 `X.Y.Z` 镜像保持无桌面。
+
+在仓库之外创建独立密码文件，只写一行八位 ASCII 字母、数字或符号，不含空格。文件须允许 UID 1000
+读取，不提交到 Git。入口要求正好八位，避免传统 VNC 认证静默截断密码。
+在 Compose 同目录的 `.env` 中设置：
+
+```dotenv
+PEACH_IMAGE_REPOSITORY=longmeidao/peach
+PEACH_VERSION=<版本号>
+PEACH_BIND=192.0.2.10
+PEACH_VNC_PASSWORD_PATH=/absolute/private/path/peach_vnc_password
+PEACH_VNC_PORT=8901
+```
+
+启动命令：
+
+```sh
+docker compose -f compose.yaml -f compose.browser.yaml up -d
+```
+
+应用继续使用原端口。打开 `http://<宿主机私有地址>:8901/vnc.html`，连接并输入 noVNC 密码。
+需要人工验证时，浏览器窗口显示在这个桌面中；通常自动验证完成，不必每页手动操作。
+noVNC 页面资源无需登录，查看与控制桌面需要密码。HTTP 限受信任私有网络，远程访问使用 VPN 或 TLS。
+
+CasaOS 已有自定义 Compose 时，保留原数据与媒体挂载，将 `image` 改为自己仓库的
+`<版本号>-browser`，合入以下字段；`network_mode: bridge` 可以保留：
+
+```yaml
+services:
+  peach:
+    image: <镜像仓库>/peach:<版本号>-browser
+    shm_size: 512m
+    environment:
+      PEACH_VNC_PASSWORD_FILE: /run/secrets/peach_vnc_password
+    ports:
+      - "8900:8900"
+      - "<宿主机私有地址>:8901:6080"
+    volumes:
+      - /absolute/private/path/peach_vnc_password:/run/secrets/peach_vnc_password:ro
+```
+
+片段只描述需要合入的字段；保留已有 `/data` 和媒体卷、时区、重启策略与停止宽限时间。
+不发布 VNC 的 5900 或 Chrome 调试端口。缺密码、显示服务或 Chromium 启动失败时，容器报告原因并退出。
+来源代理地址带用户名或密码时，现有 Chromium 启动方式不接受该地址；浏览器变体会报告连接未取得，
+不静默改用 HTTP 客户端。来源连接方式仍按采集设置选择，浏览器变体不替用户切换网络出口。
+
+profile 默认位于 `/data/secrets/browser/`，随数据目录保存。重启可复用仍有效的会话，但站点可以使其失效。
+切换到浏览器时，旧 HTTP 路径写入的来源冷却按 ADR-0065 自动失效，无需清空数据或重置其他来源。
+本地 Chromium/noVNC 冒烟不证明目标站点放行；遇到 Cloudflare 拒绝时保持暂停，不轮换出口连续重试。
+
 更新镜像并重建容器时保留 `/data`。数据库有待执行迁移时，先备份并按 [运行与配置](OPERATIONS.md) 的迁移流程处理；Docker 启动入口不会自动迁移已有数据库。健康检查使用 `/healthz?ready=1`。
 
-Linux 容器不读取用户电脑上的浏览历史，也不包含交互式浏览器；需要本机浏览器完成验证的来源在此环境不可用。CloudDrive2 的真实账号登录、网盘流量与 NAS 实机挂载需在目标机器验证。
+普通 Linux 镜像不读取用户电脑上的浏览历史，也不包含交互式浏览器；需要本机浏览器验证时使用浏览器变体。
+CloudDrive2 的真实账号登录、网盘流量与 NAS 实机挂载需在目标机器验证。
 
 ## 镜像发布
 

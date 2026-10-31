@@ -59,6 +59,8 @@
 | Docker / NAS | [部署说明](docs/DOCKER.md) |
 | 源码运行 | [安装步骤](docs/OPERATIONS.md#从源码运行windowsmacos)，需要 Git、uv 和 Python 3.14+ |
 
+需要浏览器验证的来源可使用 `X.Y.Z-browser` 镜像，内含 Chromium 和密码保护的 noVNC 桌面，见[浏览器镜像配置](docs/DOCKER.md#带浏览器的镜像)。
+
 安装后选择媒体目录，扫描后即可浏览与播放。桌面测试包未签名，macOS 尚未完成公证；详见 [Windows](docs/TESTING_DESKTOP.md) 与 [macOS](docs/OPERATIONS.md#macos-独立测试包) 说明。
 
 ## 文档

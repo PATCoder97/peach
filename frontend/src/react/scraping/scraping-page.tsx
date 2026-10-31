@@ -193,7 +193,9 @@ function SourceCard({ source, toast }: { source: Source } & ScrapingProps) {
           : null}
         {/* 由本机浏览器过验证的来源不收 Cookie：浏览器自己带着会话。留着「撤销 Cookie」让人清掉旧的。 */}
         {source.browser
-          ? <p className="text-body-2-regular text-text-secondary">{uiText("人机验证由本机浏览器自动完成；需要点击时窗口会弹出。这台机器上不需要 Cookie。")}</p>
+          ? <p className="text-body-2-regular text-text-secondary">{uiText(source.browser_in_container
+              ? "人机验证由容器内的浏览器完成；需要点击时请打开 noVNC 桌面，无需复制 Cookie。"
+              : "人机验证由本机浏览器自动完成；需要点击时窗口会弹出。这台机器上不需要 Cookie。")}</p>
           : null}
         {source.accepts_cookie && !source.browser ? <>
           <div className="flex flex-col gap-2"><span className="self-start"><StatusLabel tone={source.cookie_saved ? 'success' : 'neutral'}>{source.cookie_saved ? uiText("Cookie 已保存") : uiText("Cookie 未配置")}</StatusLabel></span>

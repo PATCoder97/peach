@@ -14,8 +14,8 @@
     "@phosphor-icons/core": "2.1.1",
     "@videojs/cdn": "10.2.0",
     "healthicons": "3.0.0",
-    "lucide-static": "1.64.0",
+    "lucide-static": "1.65.0",
     "remixicon": "4.9.1",
-    "swiper": "14.3.0"
+    "swiper": "14.4.0"
   }
 }

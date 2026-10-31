@@ -3,9 +3,15 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 import subprocess
+import sys
 import time
 import uuid
+
+if not __package__:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    __package__ = 'scripts'
 
 
 def docker(*arguments: str, check: bool = True) -> str:
@@ -101,13 +107,18 @@ def amane_checks(name: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("image")
+    parser.add_argument('--browser', action='store_true')
     args = parser.parse_args()
     name = "peach-smoke-" + uuid.uuid4().hex[:12]
     volume = name + "-data"
     try:
         docker("volume", "create", volume)
-        docker("run", "-d", "--name", name, "--network", "none",
-               "--mount", f"type=volume,source={volume},target=/data", args.image)
+        if args.browser:
+            from . import smoke_docker_browser
+            smoke_docker_browser.create(name, volume, args.image)
+        else:
+            docker("run", "-d", "--name", name, "--network", "none",
+                   "--mount", f"type=volume,source={volume},target=/data", args.image)
         ready(name)
         assert docker("exec", name, "id", "-u") == "1000"
         assert json.loads(request(name, "/api/items")) is not None
@@ -139,6 +150,8 @@ def main() -> None:
         assert media == {"status": 206, "size": 64}, media
         transcode_checks(name)
         amane_checks(name)
+        if args.browser:
+            smoke_docker_browser.check(name, 'seed')
         config_path = "/data/config.toml"
         original = docker("exec", name, "cat", config_path)
         docker("exec", name, "python", "-c",
@@ -155,9 +168,16 @@ def main() -> None:
         docker("restart", "--time", "75", name)
         ready(name)
         assert docker("exec", name, "cat", config_path) == original
+        if args.browser:
+            smoke_docker_browser.check(name, 'check')
+            smoke_docker_browser.component_failure(name)
+            docker('start', name)
+            ready(name)
+        extra = (["chromium", "novnc-password", "browser-profile", "http-cooldown-switch",
+                  "missing-vnc-password", "desktop-failure", "desktop-recovery"] if args.browser else [])
         print(json.dumps({"image": args.image, "checks": ["non-root", "ready", "auth", "configuration",
                                                          "scan", "range", "vaapi-stack", "transcode-fallback",
-                                                         "amane-prerequisites", "reload", "restart", "persistence"]}))
+                                                         "amane-prerequisites", "reload", "restart", "persistence", *extra]}))
     finally:
         docker("rm", "--force", name, check=False)
         docker("volume", "rm", volume, check=False)

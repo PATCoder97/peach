@@ -337,6 +337,8 @@ JavBus 对 FC2 都给不出东西，javdb 收了一部分但配额紧）。所�
 - 浏览器 10 分钟不用就自己退出。
 - 这台机器没有可驱动的 Chrome／Edge（`find_browser`）时走 HTTPS 的 HTTP 客户端；Docker 默认镜像不带浏览器，
   Linux 没有显示会话时也走这条路。浏览器装在另一容器不等于 Peach 能直接驱动它。
+- Docker 的 `X.Y.Z-browser` 变体自带 Chromium 与虚拟显示，人工验证通过 noVNC 完成，配置见
+  [Docker 部署](DOCKER.md#带浏览器的镜像)。profile 随 `/data` 保存，HTTP 旧冷却切换规则保持一致。
 - HTTP 路径使用「来源和凭证」里该站保存的 Cookie 和 User-Agent；User-Agent 留空时用
   `peach.user_agent.USER_AGENT`，浏览器路径仍由浏览器管理身份。保存 Cookie、更改 User-Agent 或连接方式会清除
   该来源的冷却。JAVten 搜索一跳的 Location 是 `http://`，HTTP 层把同主机的明文跳转升回 https 再带 Cookie。

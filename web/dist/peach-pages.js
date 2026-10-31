@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "ba672e99-2f28-4298-9837-a20af0a377c5", e._sentryDebugIdIdentifier = "sentry-dbid-ba672e99-2f28-4298-9837-a20af0a377c5");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "400dce26-343f-414f-99f6-74b64040527f", e._sentryDebugIdIdentifier = "sentry-dbid-400dce26-343f-414f-99f6-74b64040527f");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -11991,6 +11991,7 @@ var D = /* @__PURE__ */ o(((e) => {
 	同步这些影片: ["Sync these videos", "Đồng bộ các video này"],
 	补全资料: ["Complete metadata", "Bổ sung thông tin"]
 }, ve = {
+	"人机验证由容器内的浏览器完成；需要点击时请打开 noVNC 桌面，无需复制 Cookie。": ["Verification runs in the container’s browser. Open the noVNC desktop when a click is needed; there is no need to copy Cookies.", "Trình duyệt trong container xử lý xác minh; khi cần bấm, hãy mở màn hình noVNC. Không cần sao chép Cookie."],
 	"取 Cookie 的浏览器 User-Agent": ["User-Agent of the browser used to obtain the Cookie", "User-Agent của trình duyệt lấy Cookie"],
 	"从成功请求的 Request Headers 复制 User-Agent，与 Cookie 一起保存；留空使用 Peach 默认值。Docker 与取 Cookie 的浏览器应使用同一网络出口，但 Cloudflare 仍可能拒绝 HTTP 客户端。": ["Copy User-Agent from the successful request’s Request Headers and save it with the Cookie. Leave blank to use Peach’s default. Docker and the browser should use the same outbound connection, but Cloudflare may still reject the HTTP client.", "Sao chép User-Agent từ Request Headers của yêu cầu thành công rồi lưu cùng Cookie; để trống để dùng mặc định của Peach. Docker và trình duyệt lấy Cookie nên dùng chung đường ra Internet, nhưng Cloudflare vẫn có thể từ chối HTTP client."],
 	可配置凭据: ["Configurable credentials", "Thông tin xác thực có thể cấu hình"],
@@ -27759,4 +27760,4 @@ ay && oy && (0, M.createRoot)(ay).render(/* @__PURE__ */ (0, B.jsx)(ny, { childr
 	data: { ...ay.dataset }
 }) }));
 
-//# debugId=ba672e99-2f28-4298-9837-a20af0a377c5
+//# debugId=400dce26-343f-414f-99f6-74b64040527f
