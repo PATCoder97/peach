@@ -25,7 +25,7 @@ export async function stubServer(page: Page): Promise<Server> {
     settings: {
       sidebarOrder: [...ORDER], metadataRefreshDays: 30, followInitialDays: 30, postSetupTutorialDone: true,
       organizeTemplates: {}, feedHideGroupCompilations: true, feedHideSoloCompilations: false, feedHideExcerpts: true,
-      searchHistoryLimit: 10,
+      searchHistoryLimit: 10, performerNameLanguage: 'zh-CN',
     },
     schedule: {
       available: true, enabled: true, interval_minutes: 180, running: false, last_error: null,

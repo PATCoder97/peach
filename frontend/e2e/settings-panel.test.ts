@@ -1,6 +1,7 @@
 /* 设置面板（`settings-panel` 岛，ADR-0031）：开合与焦点、每一类设置改完立刻生效并落到该去的地方。
  * 写接口的桩在 `settings-fixture.ts`；面板的版式与像素由 `design-settings.test.ts` 量，这里只写行为。 */
 import assert from 'node:assert/strict';
+import { mkdirSync } from 'node:fs';
 import { after, before, describe, it } from 'node:test';
 
 import type { Browser, BrowserContext, Page } from 'playwright-core';
@@ -48,6 +49,46 @@ describe('设置面板', () => {
   let browser: Browser;
   before(async () => { browser = await launch() });
   after(async () => { await browser?.close() });
+
+  for (const viewport of [DESKTOP, MOBILE]) {
+    it(`${viewport.name}：英越界面保存拉丁姓名写法并在刷新后保留`, { timeout: 60_000 }, async () => {
+      const locale = viewport.mobile ? 'vi' : 'en';
+      const label = locale === 'vi' ? 'Tên Latin (Anh/Việt)' : 'Latin (English/Vietnamese)';
+      const opened = await visit(browser, '/', viewport, async page => {
+        await page.addInitScript(locale => localStorage.setItem('peach.locale.v1', locale), locale);
+      });
+      const { page } = opened;
+      const server = await stubServer(page);
+      const showNames = async () => {
+        await page.locator('#settingsBtn').evaluate((button: HTMLElement) => button.click());
+        await page.locator(`${PANEL}:not([hidden])`).waitFor();
+        await page.locator(PANEL).getByRole('tab').nth(2).click();
+        await page.locator('#performerNameLanguageSetting [data-select-trigger]').waitFor();
+      };
+      try {
+        await page.reload({ waitUntil: 'load' });
+        await showNames();
+        await pick(page, '#performerNameLanguageSetting', 'latin');
+        assert.deepEqual(await posted(page, server, '/api/settings', 'performerNameLanguage'),
+          { performerNameLanguage: 'latin' });
+        await page.waitForFunction(() => JSON.parse(localStorage.getItem('peach.settings.v1') || '{}').performerNameLanguage === 'latin');
+        await page.reload({ waitUntil: 'load' });
+        await showNames();
+        assert.equal(await page.locator('#performerNameLanguageSetting [data-select-label]').textContent(), label);
+        assert.deepEqual((await layout(page)).offenders, []);
+        if (viewport.mobile) {
+          const row = page.locator('[data-setting-row]:has(#performerNameLanguageSetting)');
+          const caption = await row.locator(':scope > span').boundingBox();
+          const field = await page.locator('#performerNameLanguageSetting').boundingBox();
+          assert.ok(caption && field && field.y >= caption.y + caption.height - 1,
+            '窄屏名称选择放在完整宽度的说明之后');
+        }
+        mkdirSync('../build/agent-verification/latin-names', { recursive: true });
+        await page.screenshot({ path: `../build/agent-verification/latin-names/${viewport.name}-${locale}.png` });
+        assert.deepEqual(opened.problems, []);
+      } finally { await opened.close() }
+    });
+  }
 
   it('持久标注开关不自动加载工具，明确开启仅在当前页面有效', { timeout: 60_000 }, async () => {
     let loads = 0;
