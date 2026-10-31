@@ -2386,7 +2386,7 @@ class LibraryNfoTests(unittest.TestCase):
                              'fc2ppvdb': Mock(return_value=[SimpleNamespace(payload=lambda: {
                                  'actresses': [{'japanese_name': '梨奈'}], 'release_date': '2023-02-19'})])}
                 sources = {name: Mock(return_value=SimpleNamespace(records=query)) for name, query in documents.items()}
-                remote = _RemoteSession(config, lambda: provider, _MissCache(self.root / 'misses.json'),
+                remote = _RemoteSession(config, lambda provider=provider: provider, _MissCache(self.root / 'misses.json'),
                                         retrying=True, routes={'fc2': tuple(documents)})
                 issue = Mock()
                 with patch.dict(SITE_SOURCES, sources):
@@ -2474,7 +2474,8 @@ class LibraryNfoTests(unittest.TestCase):
                 query.side_effect = None
                 query.return_value = [('1pondo' if method == 'one_pondo' else
                                        'mgstage' if code.startswith('300') else 'makers', document)]
-                remote = _RemoteSession(config, lambda: provider, _MissCache(self.root / 'misses.json'), retrying=True)
+                remote = _RemoteSession(config, lambda provider=provider: provider,
+                                        _MissCache(self.root / 'misses.json'), retrying=True)
                 issue = Mock()
                 entries = remote._metadata({'id': 1, 'studio': studio}, code,
                                            ['title', 'studio', 'performers', 'release_date'], update=Mock(), issue=issue)
