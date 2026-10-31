@@ -208,7 +208,7 @@ def q_settings(contract: SettingsContract, _args=None) -> dict:
         "codePatterns": _stored_code_patterns(payload),
         **_feed_switches(payload),
         "searchHistoryLimit": normalise_search_history_limit(payload.get("searchHistoryLimit")),
-        "performerNameLanguage": "ja" if payload.get("performerNameLanguage") == "ja" else "zh-CN",
+        "performerNameLanguage": payload.get("performerNameLanguage") if payload.get("performerNameLanguage") in ("zh-CN", "ja", "latin") else "zh-CN",
     }
 
 
@@ -229,8 +229,8 @@ def w_settings(contract: SettingsContract, body) -> dict:
     merged = _stored(contract)
     if "performerNameLanguage" in body:
         language = body["performerNameLanguage"]
-        if language not in ("zh-CN", "ja"):
-            raise ValueError("performerNameLanguage 只收 zh-CN 或 ja")
+        if language not in ("zh-CN", "ja", "latin"):
+            raise ValueError("performerNameLanguage 只收 zh-CN、ja 或 latin")
         merged["performerNameLanguage"] = language
     if "sidebarOrder" in body:
         merged["sidebarOrder"] = normalise_sidebar_order(body["sidebarOrder"])

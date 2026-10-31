@@ -1,5 +1,8 @@
 /** 带名称和计数的控件提示。占位值由调用点原样传入。 */
 export const controlMessages: Readonly<Record<string, readonly [string, string]>> = {
+  '拉丁字母（英语／越南语）': ['Latin (English/Vietnamese)', 'Tên Latin (Anh/Việt)'],
+  '暂无已核对的拉丁写法，保留当前名称': ['No verified Latin spelling is available; keeping the current name', 'Chưa có cách viết Latin được xác minh; giữ tên hiện tại'],
+  'performerNameLanguage 只收 zh-CN、ja 或 latin': ['Name display accepts only zh-CN, ja or latin', 'Cách hiển thị tên chỉ nhận zh-CN, ja hoặc latin'],
   '暂无已核对的日文原文，保留当前名称': ['No verified Japanese spelling is available; keeping the current name', 'Chưa có cách viết tiếng Nhật được xác minh; giữ tên hiện tại'],
   '暂无已核对的中文写法，保留当前名称': ['No verified Chinese spelling is available; keeping the current name', 'Chưa có cách viết tiếng Trung được xác minh; giữ tên hiện tại'],
   "女优名称": ["Performer names", "Tên diễn viên"],

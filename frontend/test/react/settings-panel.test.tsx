@@ -191,7 +191,7 @@ describe('设置面板与壳的接缝', () => {
     }
   });
 
-  it.each([true, false])('名称偏好等待数据库回执，保存成功=%s 时才更新全局显示', async (success) => {
+  it.each([['ja', true], ['ja', false], ['latin', true], ['latin', false]] as const)('名称偏好 %s 等待数据库回执，保存成功=%s 时才更新全局显示', async (language, success) => {
     const answer = pending<{ ok: boolean; status: number; json(): Promise<unknown> }>();
     const writes: unknown[] = [];
     vi.stubGlobal('fetch', vi.fn(async (_url, init) => {
@@ -205,7 +205,7 @@ describe('设置面板与壳的接缝', () => {
     current.host.failure = failure;
     current.host.syncRemote = (saved) => {
       const language = saved.performerNameLanguage;
-      if (language === 'zh-CN' || language === 'ja') {
+      if (language === 'zh-CN' || language === 'ja' || language === 'latin') {
         current.value.performerNameLanguage = language;
         names.setNameLanguage(language);
       }
@@ -213,16 +213,16 @@ describe('设置面板与壳的接缝', () => {
     const panel = await open(current, 'JAV 与新作');
     const field = panel.querySelector<HTMLElement & { value: string }>('#performerNameLanguageSetting > div')!;
     expect(field.value).toBe('zh-CN');
-    await act(async () => { field.value = 'ja'; field.dispatchEvent(new Event('change', { bubbles: true })) });
-    expect(writes).toEqual([{ performerNameLanguage: 'ja' }]);
+    await act(async () => { field.value = language; field.dispatchEvent(new Event('change', { bubbles: true })) });
+    expect(writes).toEqual([{ performerNameLanguage: language }]);
     expect(names.nameLanguage()).toBe('zh-CN');
     expect(current.value.performerNameLanguage).toBe('zh-CN');
     await answer.release({ ok: success, status: success ? 200 : 500,
-      json: async () => success ? { performerNameLanguage: 'ja' } : { error: '保存失败' } });
+      json: async () => success ? { performerNameLanguage: language } : { error: '保存失败' } });
     await settle();
-    expect(names.nameLanguage()).toBe(success ? 'ja' : 'zh-CN');
-    expect(current.value.performerNameLanguage).toBe(success ? 'ja' : 'zh-CN');
-    expect(field.value).toBe(success ? 'ja' : 'zh-CN');
+    expect(names.nameLanguage()).toBe(success ? language : 'zh-CN');
+    expect(current.value.performerNameLanguage).toBe(success ? language : 'zh-CN');
+    expect(field.value).toBe(success ? language : 'zh-CN');
     expect(failure).toHaveBeenCalledTimes(success ? 0 : 1);
   });
   it('五个分区按使用场景组织，Peach 配置入口遵守设备权限', async () => {

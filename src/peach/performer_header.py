@@ -99,13 +99,14 @@ def site_tags(raw: list, decisions: dict[str, str | None] | None = None) -> list
 
 
 def page_names(row: dict | None) -> dict:
-    """资料页上的名字：{name, reading, aliases}；`aliases` 一个写法一项，带着渠道注记。"""
+    """资料页上的名字：{name, reading, romaji, aliases}；`aliases` 一个写法一项，带着渠道注记。"""
     if not row:
-        return {"name": "", "reading": "", "aliases": []}
+        return {"name": "", "reading": "", "romaji": "", "aliases": []}
     raw = row.get("raw") or {}
     cells = raw.get("別名") or []
     return {"name": str(raw.get("名前") or ""),
             "reading": re.sub(r"\s+", "", str(row.get("kana") or "")),
+            "romaji": str(row.get("romaji") or ""),
             "aliases": [entry for cell in cells for entry in name_entries(str(cell))]}
 
 

@@ -1,4 +1,4 @@
-"""当前所选艺名的中日显示写法；只读投影，不更改规范名或作品署名。"""
+"""当前所选艺名的中日与拉丁显示写法；只读投影，不更改规范名或作品署名。"""
 from __future__ import annotations
 
 import json
@@ -14,6 +14,7 @@ from .sources.seesaa import split_names
 
 _KANA = re.compile(r"[\u3040-\u30ff]")
 _LATIN = re.compile(r"[A-Za-z]")
+_ROMAJI = re.compile(r"[A-Za-z][A-Za-z0-9 .’'_-]*")
 _BRACKET = re.compile(r"[()（）【】\[\]]")
 _SENTENCE = re.compile(r"中に.+ながらも|を実現して|を我慢でき|現在は|正式女優名")
 # 已核对的同一艺名译写。仅当资料原文含对应日文写法时使用，
@@ -30,21 +31,38 @@ def _key(name: str) -> str:
     return normalize_entity_name(fold_glyphs(name))
 
 
+def _latin_writing(canonical: str, page: dict) -> str | None:
+    """仅采用与当前艺名明确对应且唯一的来源罗马字，不推导读音或替换历史艺名。"""
+    if _ROMAJI.fullmatch(canonical):
+        return canonical
+    current = _stage_key(canonical, page)
+    rows = [{"name": page["name"], "romaji": page.get("romaji", "")}, *page["aliases"]]
+    found = {}
+    for row in rows:
+        if _stage_key(row["name"], page) != current:
+            continue
+        value = re.sub(r"\s+", " ", str(row.get("romaji") or "")).strip()
+        if _ROMAJI.fullmatch(value):
+            found.setdefault(value.casefold(), value)
+    return next(iter(found.values())) if len(found) == 1 else None
+
+
 def writing(canonical: str, page: dict, source_url: str) -> dict:
     """只对当前统称找写法；资料页主名与统称不对应时不采用主名。"""
     original = list(dict.fromkeys(
         name for name in [page["name"], *(entry["name"] for entry in page["aliases"])] if name))
     key = _key(canonical)
+    latin = _latin_writing(canonical, page)
     for zh, ja in _REVIEWED_WRITINGS:
         if key in {_key(zh), _key(ja)} and ja in original:
-            return {"zh_cn": zh, "ja": ja, "source": source_url, "basis": "reviewed-writing"}
+            return {"zh_cn": zh, "ja": ja, "latin": latin, "source": source_url, "basis": "reviewed-writing"}
     matches = [name for name in original if _key(name) == key]
     # 多个原文写法折为相同字形时，只有主名确定属于当前艺名才选主名。
     ja = page["name"] if page["name"] in matches else matches[0] if len(matches) == 1 else None
     zh = simplify_kanji(canonical) if not _KANA.search(canonical) else None
     if _LATIN.search(canonical):
-        return {"zh_cn": canonical, "ja": canonical, "basis": "original-spelling"}
-    return {"zh_cn": zh, "ja": ja, "source": source_url, "basis": "source-glyphs"}
+        return {"zh_cn": canonical, "ja": canonical, "latin": latin, "basis": "original-spelling"}
+    return {"zh_cn": zh, "ja": ja, "latin": latin, "source": source_url, "basis": "source-glyphs"}
 
 
 def _stage_key(name: str, page: dict) -> str:
@@ -138,7 +156,7 @@ def display(connection, entity_id: int, canonical: str, aliases: list[dict], gro
     stages = _registered_stages(canonical, aliases, page, source_url)
     current_key = _stage_key(canonical, page)
     choices, groups = {}, {}
-    for language, field in (("zh-CN", "zh_cn"), ("ja", "ja")):
+    for language, field in (("zh-CN", "zh_cn"), ("ja", "ja"), ("latin", "latin")):
         choices[language] = [{"value": canonical if key == current_key else
                              row[field] if row[field] in row["registered"] else row["value"],
                               "label": row[field] or canonical}
@@ -155,14 +173,14 @@ def variants(connection) -> list[dict]:
         "SELECT id,kind,canonical_name FROM entity WHERE kind IN ('performer','creator')"))
     categories = entity_classification.summaries(connection, [row["id"] for row in people])
     profiles = {row["entity_id"]: dict(row) for row in connection.execute(
-        "SELECT entity_id,raw_json,source_url FROM performer_profile")}
+        "SELECT entity_id,raw_json,romaji,source_url FROM performer_profile")}
     result = []
     for person in people:
         if "japanese_av" not in categories[person["id"]]["identity_categories"]:
             continue
         profile = profiles.get(person["id"], {})
         raw = json.loads(profile.get("raw_json") or "{}")
-        names = writing(person["canonical_name"], page_names({"raw": raw}), profile.get("source_url", ""))
+        names = writing(person["canonical_name"], page_names({"raw": raw, "romaji": profile.get("romaji")}), profile.get("source_url", ""))
         result.append({"id": person["id"], "kind": person["kind"],
                        "canonical_name": person["canonical_name"], **names})
     return result

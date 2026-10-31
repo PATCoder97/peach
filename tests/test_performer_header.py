@@ -113,6 +113,35 @@ class Case(unittest.TestCase):
 
 
 class HeaderTests(Case):
+    def test_latin_projection_uses_the_current_stage_name_and_keeps_ledger_readonly(self):
+        entity_id = self.entity('篠田ゆう', ('篠崎ゆう子', 'user:alias'))
+        self.land(entity_id, SHINODA)
+        with self.connection:
+            self.connection.execute('INSERT INTO entity_external_ref(entity_id,provider,external_kind,external_id) '
+                                    "VALUES(?,'javdb','performer','sample-latin')", (entity_id,))
+        before = list(self.connection.iterdump())
+        aliases = [{'alias': '篠崎ゆう子', 'source': 'user:alias'}]
+        current = performer_name_display.display(self.connection, entity_id, '篠田ゆう', aliases, None)
+        former = performer_name_display.display(self.connection, entity_id, '篠崎ゆう子', aliases, None)
+        self.assertEqual(current['current']['latin'], 'Shinoda Yu')
+        self.assertEqual(former['current']['latin'], 'Shinozaki Yuuko')
+        self.assertEqual(current['choices']['latin'][0], {'value': '篠田ゆう', 'label': 'Shinoda Yu'})
+        self.connection.row_factory = sqlite3.Row
+        variants = performer_name_display.variants(self.connection)
+        self.assertEqual(variants[0]['latin'], 'Shinoda Yu')
+        self.assertEqual(before, list(self.connection.iterdump()))
+
+    def test_latin_projection_keeps_missing_and_conflicting_writings_unresolved(self):
+        page = {'name': '楓カレン', 'romaji': 'Kaede Karen', 'aliases': [
+            {'name': '田中レモン', 'romaji': 'Tanaka Remon'}]}
+        writing = performer_name_display.writing
+        self.assertEqual(writing('枫花恋', page, 'source')['latin'], 'Kaede Karen')
+        self.assertEqual(writing('田中柠檬', page, 'source')['latin'], 'Tanaka Remon')
+        self.assertIsNone(writing('別の名', page, 'source')['latin'])
+        page['aliases'].append({'name': '楓カレン', 'romaji': 'Karen Kaede'})
+        self.assertIsNone(writing('枫花恋', page, 'source')['latin'])
+        self.assertEqual(writing('Alice', page, 'source')['latin'], 'Alice')
+
     def test_chinese_display_keeps_original_stage_names_and_only_changes_confirmed_glyphs(self):
         for original, chinese in [('宮澤寧音', '宫泽宁音'), ('山田鈴奈', '山田铃奈'),
                                   ('本郷愛', '本乡爱'), ('天使萌', '天使萌'),

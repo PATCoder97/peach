@@ -118,6 +118,8 @@ class SettingsRoundTripTests(unittest.TestCase):
         w_settings(self.contract, {'sidebarOrder': order, 'performerNameLanguage': 'ja'})
         other_device = WebContract(self.db.resolve())
         self.assertEqual(q_settings(other_device)['performerNameLanguage'], 'ja')
+        w_settings(other_device, {'performerNameLanguage': 'latin'})
+        self.assertEqual(q_settings(self.contract)['performerNameLanguage'], 'latin')
         w_settings(other_device, {'performerNameLanguage': 'zh-CN'})
         self.assertEqual(q_settings(self.contract)['performerNameLanguage'], 'zh-CN')
         self.assertEqual(self._stored_json(), {'sidebarOrder': order, 'performerNameLanguage': 'zh-CN'})

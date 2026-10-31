@@ -23,7 +23,7 @@ export interface PanelSettings {
   defaultSortDirection: string;
   groupCollapse: boolean;
   javImage: string;
-  performerNameLanguage: 'zh-CN' | 'ja';
+  performerNameLanguage: 'zh-CN' | 'ja' | 'latin';
   feedAutoScroll: boolean;
   feedLimit: number;
   feedHideGroupCompilations: boolean;

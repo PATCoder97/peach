@@ -5,12 +5,25 @@ import {
 } from '../src/core/entity-names';
 
 const writing: NameWriting = {
-  id: 1, kind: 'performer', canonical_name: '枫花恋', zh_cn: '枫花恋', ja: '楓カレン',
+  id: 1, kind: 'performer', canonical_name: '枫花恋', zh_cn: '枫花恋', ja: '楓カレン', latin: 'Kaede Karen',
 };
 
 beforeEach(() => { registerNameWritings([]); setNameLanguage('zh-CN') });
 
 describe('实体名称的只读显示投影', () => {
+  it('拉丁写法用于英越界面，缺失时保留当前艺名与原始身份', () => {
+    const original = { ...writing };
+    registerNameWritings([original]);
+    setNameLanguage('latin');
+    expect(entityDisplayName('performer', '枫花恋', 1)).toBe('Kaede Karen');
+    expect(entityDisplayName('performer', 'Kaede Karen', 1)).toBe('Kaede Karen');
+    expect(entityDisplayName('performer', '田中レモン', 1)).toBe('田中レモン');
+    expect(original).toEqual(writing);
+    registerNameWriting({ ...writing, latin: null });
+    expect(entityDisplayName('performer', '枫花恋', 1)).toBe('枫花恋');
+    expect(nameFallback('performer', '枫花恋', 1)).toBe('暂无已核对的拉丁写法，保留当前名称');
+  });
+
   it('同一艺名的已核对日文署名可显示中文，不把历史艺名换为现名', () => {
     registerNameWritings([writing]);
     expect(entityDisplayName('performer', '楓カレン', 1)).toBe('枫花恋');

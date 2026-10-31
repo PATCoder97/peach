@@ -86,8 +86,8 @@ export interface EntityHeroData {
   aliases?: string[];
   display_aliases?: string[];
   name_display?: {
-    choices: Record<'zh-CN' | 'ja', { value: string; label: string }[]>;
-    groups: Record<'zh-CN' | 'ja', HeroNameGroups>;
+    choices: Partial<Record<'zh-CN' | 'ja' | 'latin', { value: string; label: string }[]>>;
+    groups: Partial<Record<'zh-CN' | 'ja' | 'latin', HeroNameGroups>>;
   };
   user_aliases?: string[];
   asset_count: number;
@@ -165,8 +165,8 @@ export const entityFeedTip = (on: boolean) => on
   : '订阅新作';
 
 /** 当前语言的可选艺名，统称只保留一项；值仍指向已登记的名称。 */
-export function nameChoices(entity: EntityHeroData, language: 'zh-CN' | 'ja' = 'zh-CN'): { value: string; label: string }[] {
-  if (entity.name_display) return entity.name_display.choices[language];
+export function nameChoices(entity: EntityHeroData, language: 'zh-CN' | 'ja' | 'latin' = 'zh-CN'): { value: string; label: string }[] {
+  if (entity.name_display?.choices[language]) return entity.name_display.choices[language]!;
   return [entity.canonical_name, ...(entity.aliases || [])]
     .filter((option, index, all) => option && all.indexOf(option) === index)
     .map(value => ({ value, label: value }));

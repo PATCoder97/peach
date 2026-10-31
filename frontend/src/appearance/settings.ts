@@ -37,7 +37,7 @@ export interface AppSettings {
   javLayout: string;
   homeLayout: string;
   javImage: string;
-  performerNameLanguage: 'zh-CN' | 'ja';
+  performerNameLanguage: 'zh-CN' | 'ja' | 'latin';
   followLayout: string;
   peopleLayout: string;
   photoSize: string;
@@ -108,7 +108,7 @@ export function normalizeAppSettings(raw: unknown): { settings: AppSettings; mig
   settings.feedLimit = boundedPreference(+(settings.feedLimit as number), 1, 100, 12);
   Object.assign(settings, normalizeJavPreferences(settings));
   settings.theme = allowedSetting(settings.theme, THEME_CHOICES, 'system');
-  settings.performerNameLanguage = allowedSetting(settings.performerNameLanguage, ['zh-CN', 'ja'], 'zh-CN');
+  settings.performerNameLanguage = allowedSetting(settings.performerNameLanguage, ['zh-CN', 'ja', 'latin'], 'zh-CN');
   settings.homeGlow = normalizeHomeGlow(settings.homeGlow);
   settings.accent = normalizeAccent(settings.accent);
   settings.sidebarOrder = normalizeSidebarOrder(settings.sidebarOrder);
@@ -156,7 +156,7 @@ export function applySyncedSettings(
 ): void {
   const settings = target.value;
   const language = remote?.performerNameLanguage;
-  if ((language === 'zh-CN' || language === 'ja') && language !== settings.performerNameLanguage) {
+  if ((language === 'zh-CN' || language === 'ja' || language === 'latin') && language !== settings.performerNameLanguage) {
     settings.performerNameLanguage = language;
     target.save();
     changed('performerNameLanguage');
