@@ -1518,6 +1518,52 @@ class LibraryNfoTests(unittest.TestCase):
                 self.assertEqual([source for source, _ in found], sources)
                 self.assertFalse([url for url in asked if 'fc2cmadb.com' not in url], '官方页与 JavArchive 都不再问')
 
+    def test_cached_archive_does_not_stop_before_cast_sources(self):
+        from peach.library_processing import LibraryMetadataProvider
+        from peach.sources import SITE_SOURCES
+        asked = []
+        document = {'id': 'FC2-PPV-3232110', 'actresses': [{'japanese_name': '梨奈'}],
+                    'release_date': '2023-02-19'}
+
+        def records(name):
+            def query(*args, **kwargs):
+                asked.append(name)
+                if name != 'fc2ppvdb':
+                    raise NotFound('没有这个商品')
+                return [SimpleNamespace(payload=lambda: document)]
+            return Mock(return_value=SimpleNamespace(records=query))
+
+        provider = LibraryMetadataProvider.__new__(LibraryMetadataProvider)
+        provider.transport = Mock()
+        with patch.dict(SITE_SOURCES, {name: records(name) for name in library_processing.metadata_routes.FC2_STAGE}):
+            found = provider.fc2('FC2-PPV-3232110', required=('performers', 'release_date'),
+                                 known=[{'title': '原题', 'maker': '卖家'}])
+        self.assertEqual(asked, ['fc2', 'fc2cmadb', 'fc2ppvdb'])
+        self.assertEqual(found, [('fc2ppvdb', document)])
+
+    def test_fc2_continues_for_missing_release_date_after_cast(self):
+        from peach.library_processing import LibraryMetadataProvider
+        from peach.sources import SITE_SOURCES
+        asked = []
+        documents = {
+            'fc2cmadb': {'title': '原题', 'actresses': [{'japanese_name': '梨奈'}]},
+            'fc2ppvdb': {'release_date': '2023-02-19'},
+        }
+
+        def records(name):
+            def query(*args, **kwargs):
+                asked.append(name)
+                return [SimpleNamespace(payload=lambda: documents[name])]
+            return Mock(return_value=SimpleNamespace(records=query))
+
+        provider = LibraryMetadataProvider.__new__(LibraryMetadataProvider)
+        provider.transport = Mock()
+        with patch.dict(SITE_SOURCES, {name: records(name) for name in documents}):
+            found = provider.fc2('FC2-PPV-3232110', route=tuple(documents),
+                                 required=('performers', 'release_date'))
+        self.assertEqual(asked, list(documents))
+        self.assertEqual([name for name, _ in found], list(documents))
+
     def test_the_cover_step_asks_the_rest_of_the_chain_for_more_image_sources(self):
         """答上的那一档给的地址下不下得来图，这一层判不出来，所以图源要凑齐再挑。"""
         asked = []
@@ -2275,6 +2321,182 @@ class LibraryNfoTests(unittest.TestCase):
                 for row in read_rows(self.root / 'generated/library-metadata-field-candidates.csv')}
         self.assertEqual([(entry['source'], entry['display_value']) for entry in rows['performers']],
                          [('fc2cmadb', '梨奈')])
+
+    def test_cached_archive_cast_is_collected_by_real_provider_and_saved_for_review(self):
+        from peach.library_processing import LibraryMetadataProvider
+        from peach.sources import SITE_SOURCES
+        media = self.root / 'media'
+        media.mkdir()
+        video = media / 'FC2-PPV-3232110.mp4'
+        video.write_bytes(b'video')
+        db = fresh_ledger(self.root)
+        config = PeachConfig(self.root, self.root / 'config.toml', present=True,
+                             locations={'local': ('R:/Films',)}, mounts={'local': (str(media),)})
+        with closing(sqlite3.connect(db)) as connection, connection:
+            connection.execute('INSERT INTO asset(id,location,path,name,medium,code,catalog_title,studio) '
+                               'VALUES(1,?,?,?,?,?,?,?)',
+                               ('local', 'R:/Films/' + video.name, video.name, 'video', 'FC2-PPV-3232110', '手工标题', '手工厂牌'))
+        directory = config.directory('sources') / 'library-metadata'
+        directory.mkdir(parents=True)
+        archive = directory / 'FC2-PPV-3232110-javarchive.json'
+        archive.write_text(json.dumps({'title': '来源标题', 'maker': '来源厂牌'}), encoding='utf-8')
+        artifact_rules.remember(archive, str(upgrade_rules.PROVIDER_EVIDENCE))
+        document = {'id': 'FC2-PPV-3232110', 'title': '来源标题', 'maker': '来源厂牌',
+                    'actresses': [{'japanese_name': '梨奈'}, {'japanese_name': '真夏'}],
+                    'release_date': '2023-02-19', 'source_url': 'https://fc2ppv-db.com/ja/videos/3232110'}
+        provider = LibraryMetadataProvider.__new__(LibraryMetadataProvider)
+        provider.transport = Mock()
+        provider.cover = Mock(return_value=False)
+        provider.community = Mock(side_effect=NotFound('没有'))
+        sources = {name: Mock(return_value=SimpleNamespace(records=Mock(side_effect=NotFound('没有'))))
+                   for name in library_processing.metadata_routes.FC2_STAGE}
+        sources['fc2ppvdb'].return_value.records.side_effect = None
+        sources['fc2ppvdb'].return_value.records.return_value = [SimpleNamespace(payload=lambda: document)]
+        with patch.dict(SITE_SOURCES, sources), patch('peach.settings_file.active', return_value=config):
+            result = process_library(config, db, self.root / 'generated', self.root / 'covers',
+                                     stage='metadata', asset_ids=[1], provider_factory=lambda: provider)
+        self.assertEqual(result['issue_count'], 0, result.get('issue_preview'))
+        sources['fc2ppvdb'].return_value.records.assert_called_once()
+        provider.community.assert_not_called()
+        self.assertEqual(json.loads((directory / 'FC2-PPV-3232110-fc2ppvdb.json').read_text()), document)
+        rows = {row['field']: json.loads(row['candidates_json'])
+                for row in read_rows(self.root / 'generated/library-metadata-field-candidates.csv')}
+        self.assertEqual(rows['performers'][0]['source'], 'fc2ppvdb')
+        self.assertEqual([person['name'] for person in rows['performers'][0]['value']], ['梨奈', '真夏'])
+        from peach.metadata_auto_apply import auto_apply_metadata
+        auto_apply_metadata(LedgerDatabase(db), self.root / 'generated', asset_ids=[1])
+        with closing(sqlite3.connect(db)) as connection:
+            self.assertEqual(connection.execute('SELECT catalog_title,studio FROM asset WHERE id=1').fetchone(),
+                             ('手工标题', '手工厂牌'))
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM asset_entity WHERE role='performer'").fetchone()[0], 2)
+
+    def test_fc2_partial_failures_are_reported_without_discarding_later_evidence(self):
+        from peach.library_processing import LibraryMetadataProvider, _RemoteSession, _MissCache
+        from peach.sources import SITE_SOURCES, SourceFailure, FailureReason
+        from peach.jav_cover_fetch import Unavailable
+        from peach.scraping_access import SourcePaused
+        for failure in (Unavailable('HTTP 503'), SourcePaused('正在冷却'),
+                        SourceFailure(FailureReason.CLOUDFLARE_CHALLENGE, 'Cloudflare 验证', status_code=403),
+                        library_processing.DeadlineExceeded('预算用尽')):
+            with self.subTest(failure=type(failure).__name__):
+                config = PeachConfig(self.root, self.root / 'config.toml', present=True)
+                provider = LibraryMetadataProvider.__new__(LibraryMetadataProvider)
+                provider.transport = Mock()
+                documents = {'fc2': Mock(side_effect=failure),
+                             'fc2ppvdb': Mock(return_value=[SimpleNamespace(payload=lambda: {
+                                 'actresses': [{'japanese_name': '梨奈'}], 'release_date': '2023-02-19'})])}
+                sources = {name: Mock(return_value=SimpleNamespace(records=query)) for name, query in documents.items()}
+                remote = _RemoteSession(config, lambda: provider, _MissCache(self.root / 'misses.json'),
+                                        retrying=True, routes={'fc2': tuple(documents)})
+                issue = Mock()
+                with patch.dict(SITE_SOURCES, sources):
+                    entries = remote._metadata({'id': 1}, 'FC2-PPV-3232110', ['performers', 'release_date'],
+                                               update=Mock(), issue=issue)
+                issue.assert_called_once()
+                self.assertFalse(remote.misses.fresh('fc2', 'FC2-PPV-3232110'))
+                failures = issue.call_args.kwargs.get('diagnostics', {}).get('failures', [])
+                if isinstance(failure, library_processing.DeadlineExceeded):
+                    self.assertEqual(entries, [])
+                    documents['fc2ppvdb'].assert_not_called()
+                else:
+                    self.assertEqual([name for name, *_ in entries], ['fc2ppvdb'])
+                    self.assertFalse(issue.call_args.kwargs['paused'])
+                    self.assertEqual(failures[0]['source'], 'fc2')
+                    self.assertEqual(failures[0]['reason'], getattr(failure, 'reason', ''))
+
+    def test_community_route_changes_reuse_individual_answers_and_failures(self):
+        from peach.library_processing import LibraryMetadataProvider
+        provider = LibraryMetadataProvider.__new__(LibraryMetadataProvider)
+        provider.site = Mock(side_effect=lambda source, code, **kwargs: {'title': source})
+        provider.community('DASS-468', route=('avbase', 'javbus'))
+        found = provider.community('DASS-468', route=('javbus', 'javdb'))
+        self.assertEqual([call.args[0] for call in provider.site.call_args_list], ['avbase', 'javbus', 'javdb'])
+        self.assertEqual([name for name, _ in found], ['javbus', 'javdb'])
+
+    def test_community_partial_results_keep_failures_and_per_site_misses(self):
+        from peach.library_processing import LibraryMetadataProvider, _RemoteSession, _MissCache
+        from peach.jav_cover_fetch import Unavailable
+        config = PeachConfig(self.root, self.root / 'config.toml', present=True)
+        provider = LibraryMetadataProvider.__new__(LibraryMetadataProvider)
+        provider.site = Mock(side_effect=[NotFound('没有这个番号'), Unavailable('HTTP 503'),
+                                          {'actresses': [{'japanese_name': '梨奈'}]}])
+        remote = _RemoteSession(config, lambda: provider, _MissCache(self.root / 'misses.json'),
+                                retrying=False, routes={'censored': ('avbase', 'javbus', 'javdb')})
+        issue = Mock()
+        entries = remote._metadata({'id': 1}, 'DASS-468', ['performers'], update=Mock(), issue=issue)
+        self.assertEqual([name for name, *_ in entries], ['javdb'])
+        self.assertTrue(remote.misses.fresh('avbase', 'DASS-468'))
+        self.assertFalse(remote.misses.fresh('javbus', 'DASS-468'))
+        self.assertEqual(issue.call_args.kwargs['diagnostics']['failures'][0]['source'], 'javbus')
+        provider.community('DASS-468', route=('javbus', 'javdb'))
+        self.assertEqual(provider.site.call_count, 3)
+
+    def test_cached_bridge_member_leaves_other_members_eligible(self):
+        from peach.library_processing import _RemoteSession, _MissCache
+        config = PeachConfig(self.root, self.root / 'config.toml', present=True)
+        provider = stub_provider()
+        provider.amane.side_effect = None
+        provider.amane.return_value = [('mgstage', {'actresses': [{'japanese_name': '梨奈'}]})]
+        remote = _RemoteSession(config, lambda: provider, _MissCache(self.root / 'misses.json'),
+                                retrying=False, routes={'censored': ('makers', 'mgstage', 'javdb')})
+        remote._evidence('makers', 'DASS-468', {'title': '原题'})
+        entries = remote._metadata({'id': 1}, 'DASS-468', ['performers'], update=Mock(), issue=Mock())
+        self.assertEqual(provider.amane.call_args.kwargs['route'], ('mgstage',))
+        self.assertEqual([name for name, *_ in entries], ['makers', 'mgstage'])
+
+    def test_answered_sources_and_fresh_misses_leave_only_eligible_fc2_sources(self):
+        from peach.library_processing import LibraryMetadataProvider, _RemoteSession, _MissCache
+        from peach.sources import SITE_SOURCES
+        config = PeachConfig(self.root, self.root / 'config.toml', present=True)
+        provider = LibraryMetadataProvider.__new__(LibraryMetadataProvider)
+        provider.transport = Mock()
+        misses = _MissCache(self.root / 'misses.json')
+        misses.record('fc2', 'FC2-PPV-3232110')
+        remote = _RemoteSession(config, lambda: provider, misses, retrying=False)
+        document = {'actresses': [{'japanese_name': '梨奈'}], 'release_date': '2023-02-19'}
+        source = Mock(return_value=SimpleNamespace(records=Mock(return_value=[SimpleNamespace(payload=lambda: document)])))
+        with patch.dict(SITE_SOURCES, {'fc2ppvdb': source}):
+            entries = remote._metadata({'id': 1}, 'FC2-PPV-3232110', ['performers', 'release_date'],
+                                       answered=('fc2cmadb', 'javarchive'), update=Mock(), issue=Mock())
+        source.return_value.records.assert_called_once()
+        self.assertEqual([name for name, *_ in entries], ['fc2ppvdb'])
+
+    def test_content_routes_stop_after_complete_metadata_without_unrelated_sources(self):
+        from peach.library_processing import _RemoteSession, _MissCache
+        document = {'title': '原题', 'maker': '厂牌', 'release_date': '2023-02-19',
+                    'actresses': [{'japanese_name': '梨奈'}]}
+        for code, studio, method in (('DASS-468', '', 'amane'), ('300MIUM-123', '', 'amane'),
+                                     ('112312_478', '一本道', 'one_pondo')):
+            with self.subTest(code=code):
+                config = PeachConfig(self.root, self.root / 'config.toml', present=True)
+                provider = stub_provider()
+                query = getattr(provider, method)
+                query.side_effect = None
+                query.return_value = [('1pondo' if method == 'one_pondo' else
+                                       'mgstage' if code.startswith('300') else 'makers', document)]
+                remote = _RemoteSession(config, lambda: provider, _MissCache(self.root / 'misses.json'), retrying=True)
+                issue = Mock()
+                entries = remote._metadata({'id': 1, 'studio': studio}, code,
+                                           ['title', 'studio', 'performers', 'release_date'], update=Mock(), issue=issue)
+                self.assertTrue(entries)
+                query.assert_called_once()
+                provider.query.assert_not_called()
+                provider.community.assert_not_called()
+                provider.fc2.assert_not_called()
+                issue.assert_not_called()
+
+    def test_cached_community_member_does_not_suppress_uncached_members(self):
+        from peach.library_processing import _RemoteSession, _MissCache
+        config = PeachConfig(self.root, self.root / 'config.toml', present=True)
+        provider = stub_provider()
+        provider.community.side_effect = None
+        provider.community.return_value = [('javbus', {'actresses': [{'japanese_name': '梨奈'}]})]
+        remote = _RemoteSession(config, lambda: provider, _MissCache(self.root / 'misses.json'),
+                                retrying=False, routes={'censored': ('avbase', 'javbus', 'javdb')})
+        remote._evidence('avbase', 'DASS-468', {'title': '原题'})
+        entries = remote._metadata({'id': 1}, 'DASS-468', ['performers'], update=Mock(), issue=Mock())
+        self.assertEqual(provider.community.call_args.kwargs['route'], ('javbus', 'javdb'))
+        self.assertEqual([name for name, *_ in entries], ['avbase', 'javbus'])
 
     @windows_ledger_roots
     def test_a_pending_candidate_skips_only_the_source_that_gave_it(self):

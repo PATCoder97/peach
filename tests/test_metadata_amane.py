@@ -835,6 +835,20 @@ class ProviderStageTests(unittest.TestCase):
         self.assertTrue(source_checks(self.secrets, "fc2club")["metadata"]["ok"])
         self.assertEqual(source_checks(self.secrets, "avsox")["metadata"]["reason"], "not_found")
 
+    def test_partial_bridge_results_report_typed_misses_and_failures(self):
+        from peach.library_processing import is_missing, source_paused
+        provider = self.provider(report(fc2club=FOUND,
+            avsox={'status': 'not_found', 'reason': 'not_found'},
+            airav={'status': 'failed', 'reason': 'cloudflare_challenge', 'http_status': 403}))
+        failed = Mock()
+        found = provider.amane('FC2-PPV-1234567', route=('fc2club', 'avsox', 'airav'), failed=failed)
+        self.assertEqual([site for site, _ in found], ['fc2club'])
+        errors = {call.args[0]: call.args[1] for call in failed.call_args_list}
+        self.assertTrue(is_missing(errors['avsox']))
+        self.assertFalse(is_missing(errors['airav']))
+        self.assertTrue(source_paused(errors['airav']))
+        self.assertTrue(paused_until(self.secrets, 'airav'))
+
     def test_all_misses_are_not_found_and_errors_are_unavailable_with_the_reason(self):
         provider = self.provider(report(fc2club={"status": "not_found", "reason": "not_found"},
                                         avsox={"status": "not_found", "reason": "not_found"}))
