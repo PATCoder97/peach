@@ -1,5 +1,13 @@
 /** 带名称和计数的控件提示。占位值由调用点原样传入。 */
 export const controlMessages: Readonly<Record<string, readonly [string, string]>> = {
+  '暂无已核对的日文原文，保留当前名称': ['No verified Japanese spelling is available; keeping the current name', 'Chưa có cách viết tiếng Nhật được xác minh; giữ tên hiện tại'],
+  '暂无已核对的中文写法，保留当前名称': ['No verified Chinese spelling is available; keeping the current name', 'Chưa có cách viết tiếng Trung được xác minh; giữ tên hiện tại'],
+  "女优名称": ["Performer names", "Tên diễn viên"],
+  "日文原文": ["Original Japanese", "Tiếng Nhật gốc"],
+  "名称与别名只显示所选语言的写法；缺少对应时保留当前名称。偏好保存在数据库，其他设备读取同一份设置。": ["Names and aliases use the selected writing when available; otherwise the current name is kept. This preference is saved in the database and shared across devices.", "Tên và tên khác dùng cách viết đã chọn nếu có; nếu không sẽ giữ tên hiện tại. Tùy chọn được lưu trong cơ sở dữ liệu và dùng chung giữa các thiết bị."],
+  "已保存名称显示偏好": ["Name display preference saved", "Đã lưu tùy chọn hiển thị tên"],
+  "保存名称显示偏好": ["Save name display preference", "Lưu tùy chọn hiển thị tên"],
+  "未取得数据库中的名称偏好，请重新打开设置。": ["Could not load the name preference from the database. Reopen Settings.", "Chưa tải được tùy chọn tên từ cơ sở dữ liệu. Hãy mở lại Cài đặt."],
   '正在保存评分': ['Saving rating', 'Đang lưu đánh giá'],
   ' · 计费': [' · Metered', ' · Tính phí'],
   '{value0}技术详情': ['Technical details for {value0}', 'Chi tiết kỹ thuật của {value0}'],

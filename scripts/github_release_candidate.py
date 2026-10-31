@@ -53,9 +53,10 @@ def select(repo: str, sha: str) -> dict:
     matching = [row for row in runs if row["head_sha"] == sha and row["head_branch"] == "master" and row["event"] == "workflow_dispatch"]
     if not matching:
         raise ValueError("未取得同一提交的主线发布演练")
-    run = max(matching, key=lambda row: (row["id"], row.get("run_attempt", 1)))
-    if run["status"] != "completed" or run["conclusion"] != "success":
+    succeeded = [row for row in matching if row["status"] == "completed" and row["conclusion"] == "success"]
+    if not succeeded:
         raise ValueError("主线发布演练尚未成功")
+    run = max(succeeded, key=lambda row: (row["id"], row.get("run_attempt", 1)))
     jobs = api(repo, f"actions/runs/{run['id']}/jobs?per_page=100")["jobs"]
     passed = {row["name"] for row in jobs if row["conclusion"] == "success"}
     if not REQUIRED_JOBS <= passed:
