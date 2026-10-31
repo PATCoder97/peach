@@ -249,7 +249,9 @@ def describe_failure(error):
 def _source_failure_details(error, code, action, *, source=None):
     """采集问题保留脱敏异常链和阶段，页面摘要不暴露内部错误正文。"""
     from .error_reporting import exception_facts, scrub
-    return scrub({'stage': action, 'code': code, 'source': source, **exception_facts(error)})
+    return scrub({'stage': action, 'code': code, 'source': source,
+                  'kind': getattr(error, 'kind', ''), 'reason': getattr(error, 'reason', ''),
+                  'status_code': getattr(error, 'status_code', 0), **exception_facts(error)})
 #: 来源说「没有」不是待办：馆藏里本来就有大量独立资源和创作者作品，任何目录站都收不到
 #: 它们。逐条记在日志里备查，界面只按这两类各报一个数（`state['notes']`），不进问题清单。
 MISS_MESSAGES = {'querying_metadata': '外部来源没有这部片的资料，7 天内不再问',
@@ -355,7 +357,7 @@ class LibraryMetadataProvider:
         if SOURCES.get(source, {}).get('browser') and spent > BROWSER_REQUEST_TIMEOUT:
             self.excused += spent - BROWSER_REQUEST_TIMEOUT
 
-    def amane(self, code, *, deadline=None, route=()):
+    def amane(self, code, *, deadline=None, route=(), failed=lambda source, error: None):
         """经 amane 桥问 `route` 里那几站，一次子进程并发问完，返回 `[(来源, 资料)]`。
 
         桥与映射在 `metadata_amane`（ADR-0043）。正在冷却的站不带进子进程；桥报的限流与
@@ -370,17 +372,19 @@ class LibraryMetadataProvider:
         if key not in cache:
             sites = [site for site in route if site in metadata_amane.SITES]
             open_sites = [site for site in sites if not paused_until(self.secrets_root, site)]
+            for site in set(sites) - set(open_sites):
+                failed(site, SourcePaused('来源正在冷却，请稍后重试'))
             if not sites:
                 cache[key] = NotFound('这个番号的链上没有经 amane 桥问的站')
             elif not open_sites:
                 cache[key] = SourcePaused('来源正在冷却，请稍后重试；已有图片保留')
             else:
-                cache[key] = self._amane_query(code, open_sites, deadline)
+                cache[key] = self._amane_query(code, open_sites, deadline, failed=failed)
         if isinstance(cache[key], Exception):
             raise _again(cache[key])
         return cache[key]
 
-    def _amane_query(self, code, sites, deadline):
+    def _amane_query(self, code, sites, deadline, *, failed=lambda source, error: None):
         """起一次桥子进程并把报告翻成这一档的结果或异常（异常作为返回值，由调用方缓存后再抛）。"""
         from . import metadata_amane, peach_proxy
         from .config import TOOLS_DIR
@@ -434,6 +438,8 @@ class LibraryMetadataProvider:
             })
         problems, held = [], 0
         for site, error in failures.items():
+            failed(site, SourceFailure(metadata_amane.contract_reason(error.detail, error.status_code),
+                                       str(error), status_code=error.status_code, detail=error.detail))
             action = metadata_amane.cooldown_action(error)
             if action:
                 pause_source(self.secrets_root, site, refused=action == 'blocked')
@@ -449,7 +455,8 @@ class LibraryMetadataProvider:
             return SourcePaused('；'.join(problems))
         return Unavailable('；'.join(problems))
 
-    def community(self, code, *, deadline=None, route=None, known=(), absent=(), received=lambda found: None):
+    def community(self, code, *, deadline=None, route=None, known=(), absent=(), received=lambda found: None,
+                  failed=lambda source, error: None):
         """官方渠道落空时问综合索引那一档，返回 `[(来源, 资料)]`。
 
         问哪几家按 `community_catalog.community_sources_for`，它转手问
@@ -464,31 +471,41 @@ class LibraryMetadataProvider:
         """
         from .community_catalog import community_sources_for
         have = dict(known)
-        cache = self.__dict__.setdefault('_community', {})
-        if code not in cache:
-            asked = [source for source in community_sources_for(code, route=route)
-                     if source not in have and source not in absent]
-            cache[code] = self._ask_community(code, asked, deadline, received)
-        if isinstance(cache[code], Exception):
+        asked = [source for source in community_sources_for(code, route=route)
+                 if source not in have and source not in absent]
+        found = self._ask_community(code, asked, deadline, received, failed=failed)
+        if isinstance(found, Exception):
             if have:
                 return list(have.items())
-            raise _again(cache[code])
-        return [*have.items(), *((source, payload) for source, payload in cache[code] if source not in have)]
+            raise _again(found)
+        return [*have.items(), *((source, payload) for source, payload in found if source not in have)]
 
-    def _ask_community(self, code, sources, deadline, received):
+    def _ask_community(self, code, sources, deadline, received, *, failed=lambda source, error: None):
         """逐家问 `sources`，交出答上的 `[(来源, 资料)]`，或一个待缓存再抛的异常（见 `community`）。"""
         from .jav_cover_fetch import Unavailable
         from .scraping_access import SourcePaused
         found, problems, said_no, held = [], [], [], 0
+        cache = self.__dict__.setdefault('_community_sites', {})
         for source in sources:
             try:
-                payload = self.site(source, code, deadline=deadline)
-            except DeadlineExceeded:
+                key = (source, code)
+                if key not in cache:
+                    try:
+                        cache[key] = self.site(source, code, deadline=deadline)
+                    except Exception as error:
+                        _raise_task_failure(error)
+                        cache[key] = error
+                if isinstance(cache[key], Exception):
+                    raise _again(cache[key])
+                payload = cache[key]
+            except DeadlineExceeded as error:
+                failed(source, error)
                 if found:
                     return found
                 raise
             except Exception as error:
                 _raise_task_failure(error)
+                failed(source, error)
                 if is_missing(error):
                     said_no.append(source)
                     continue
@@ -502,7 +519,8 @@ class LibraryMetadataProvider:
             return found or _said_no('社区来源都没有这个番号', said_no)
         return (SourcePaused if held == len(problems) else Unavailable)('；'.join(problems))
 
-    def fc2(self, code, *, deadline=None, route=None, covers=False, required=(), known=(), received=lambda found: None):
+    def fc2(self, code, *, deadline=None, route=None, covers=False, required=(), known=(), received=lambda found: None,
+            failed=lambda source, error: None):
         """FC2 自己那一页，下架了就依次问几个存档站；返回沿路答上的每一档 `[(来源, 资料)]`。
 
         五站各是契约下的一站（`sources/fc2.py`、`sources/fc2cmadb.py`、`sources/fc2ppvdb.py`、
@@ -517,9 +535,8 @@ class LibraryMetadataProvider:
         在 fc2cmadb 是 404，JavArchive 上有）；它的每一条转存各交一份（`records()`）。几处都
         没有才按 `NotFound` 交出去，记进「没有」的记忆，一周内不再问。
 
-        资料那一步答上就停，只有一处例外：这一行还缺演员（`required`）而答上的几档都没给，
-        就接着问有女优栏的那几站（`metadata_routes.FC2_CAST_SITES`）。发行方商品页没有演员栏，
-        镜像站与 FC2PPV-DB 那一栏是这条链上对得上人的地方；JAVten 与 JavArchive 不给演员，照旧不问。
+        资料那一步按 `required` 补齐必填字段才停；只缺演员时跳过没有女优栏的站，继续问
+        `metadata_routes.FC2_CAST_SITES`。缓存可以来自链尾，跳过某一站不能结束整条链。
         `known` 是缓存里已经答过的几档快照，算作答上，但不再交出去；有它在时这一档问不出东西就交空列表，
         不报「没有」。
 
@@ -543,9 +560,14 @@ class LibraryMetadataProvider:
             if (route is not None and name not in route) or name in state['asked']:
                 continue
             answered = [*known, *(payload for _, payload in state['found'])]
-            if answered and not covers and not (name in metadata_routes.FC2_CAST_SITES
-                                                and _lacks_performers(required, answered)):
-                break
+            if answered and not covers:
+                provided = {field for payload in answered
+                            for field, value in extract_peach_fields(payload).items() if value}
+                if metadata_routes.settles(required, provided):
+                    break
+                remaining = set(required) - provided
+                if remaining == {'performers'} and name not in metadata_routes.FC2_CAST_SITES:
+                    continue
             state['asked'].add(name)
             started = time.monotonic()
             additions = []
@@ -554,13 +576,15 @@ class LibraryMetadataProvider:
                 additions = [(name, record.payload())
                              for record in SITE_SOURCES[name]().records(code, session=session)]
                 state['found'] += additions
-            except DeadlineExceeded:
+            except DeadlineExceeded as error:
+                failed(name, error)
                 # 前面已经答上时预算用尽只是「没再往下问」，不是这个番号没取到。
                 if not state['found']:
                     raise
                 break
             except Exception as error:  # noqa: BLE001 - 原因由调用方汇总成一句话
                 _raise_task_failure(error)
+                failed(name, error)
                 if not is_missing(error):
                     state['problems'].append(error)
             finally:
@@ -1239,12 +1263,6 @@ def _sources_for(code, *evidence, route_overrides=None):
     return metadata_routes.stages_for_code(code, *evidence, overrides=route_overrides)
 
 
-def _lacks_performers(required, payloads):
-    """这一行要演员，而手上这几份快照一个人也没给。"""
-    return 'performers' in required and not any(
-        extract_peach_fields(payload).get('performers') for payload in payloads)
-
-
 def _given_fields(entries):
     """这些证据条目一共给出了哪几个非空 Peach 字段。链上何时停手按它判。"""
     return {field for _, payload, _ in entries
@@ -1621,7 +1639,8 @@ class _RemoteSession:
         chain = metadata_routes.route_for_code(code, *evidence, overrides=self._routes)
         return (*chain, *(source_key(entry) for entry in self._custom_sources(code, *evidence)))
 
-    def _ask(self, source, code, members, cached, *, required, deadline, evidence, received=lambda found: None):
+    def _ask(self, source, code, members, cached, *, required, deadline, evidence, received=lambda found: None,
+             failed=lambda source, error: None):
         """问链上的一档：按档名分派到 provider 对应的入口，返回这一档答上的 `[(来源, 资料)]`。
 
         `members` 是这一档里这一行还该问的站（`_askable`），`cached` 是这一档缓存里已有的快照：
@@ -1633,20 +1652,23 @@ class _RemoteSession:
             return [(source, query(config, code, deadline=deadline,
                                    secrets_root=self._config.directory('secrets')).payload())] if config else []
         provider = self.provider()
+        cached_names = {name for name, _, _ in cached}
         if source in ('r18dev', 'dmm'):
             return [(source, provider.query(code, source, deadline=deadline))]
         if source == 'fc2':
-            answered = {name for name, _, _ in cached}
             return provider.fc2(code, deadline=deadline, required=required,
-                                route=tuple(name for name in members if name not in answered),
-                                known=[payload for _, payload, _ in cached], received=received)
+                                route=tuple(name for name in members if name not in cached_names),
+                                known=[payload for _, payload, _ in cached], received=received, failed=failed)
         if source == '1pondo':
             return provider.one_pondo(code, deadline=deadline)
         if source in ('amane', 'amane_official'):
-            return provider.amane(code, deadline=deadline, route=members)
+            return provider.amane(code, deadline=deadline,
+                                  route=tuple(name for name in members if name not in cached_names),
+                                  failed=failed)
         route = metadata_routes.community_route(code, *evidence, overrides=self._routes)
         return provider.community(code, deadline=deadline,
-                                  route=tuple(name for name in route if name in members), received=received)
+                                  route=tuple(name for name in route if name in members
+                                              and name not in cached_names), received=received, failed=failed)
 
     def _metadata(self, row, code, missing, *, update, issue, answered=(), received=lambda entries: None):
         """按内容类型的来源链逐档问，必填标量字段够了就不问下一档。
@@ -1680,6 +1702,18 @@ class _RemoteSession:
         results = _MetadataResults(self, code, received)
         problems, held, entries = [], [], results.entries
         failures = []
+
+        def failed(name, error):
+            if is_missing(error):
+                self._record_miss(name, code)
+                return
+            detail = _source_failure_details(error, code, action, source=name)
+            if detail in failures:
+                return
+            failures.append(detail)
+            problems.append(f'{SOURCE_LABELS.get(name, name)}：{describe_failure(error)}')
+            held.append(source_paused(error))
+
         attempted = set(answered)
         stages = metadata_routes.stages_for_chain(chain)
         for source, then in zip(stages, (*stages[1:], '')):
@@ -1693,20 +1727,23 @@ class _RemoteSession:
                 if metadata_routes.settles(required, _given_fields(entries),
                                            wants_tags=wants_tags, then=then):
                     break
-                # FC2 那一档缓存里只有官方那页时，缺的演员还得去镜像站问（见 `fc2()`）。
-                if source != 'fc2':
+                # 合档缓存只回答自己的来源，未缓存的成员仍可补齐缺失字段。
+                if all(name in {entry[0] for entry in cached} for name in members):
                     continue
             try:
+                failures_before = len(failures)
                 # 浏览器来源等人点验证的那段不算进这部片的预算（`LibraryMetadataProvider.excused`）。
                 update(current_source={'key': source, 'label': PROVIDER_NAMES.get(source, source)})
                 found = self._ask(source, code, members, cached, required=required, evidence=evidence,
                                   deadline=_extended(deadline, _excused(self._provider) - mark),
-                                  received=results.save)
-            except DeadlineExceeded:
+                                  received=results.save, failed=failed)
+            except DeadlineExceeded as error:
                 self.reset()
+                failed(source, error)
                 if entries:
                     break
-                issue(row, '外部资料在预算时间内未取得，可稍后重试', action=action, retryable=True)
+                issue(row, '外部资料在预算时间内未取得，可稍后重试', action=action, retryable=True,
+                      diagnostics={'failures': failures})
                 return []
             except Exception as error:
                 _raise_task_failure(error)
@@ -1714,13 +1751,9 @@ class _RemoteSession:
                     for name in getattr(error, 'sites', None) or members:
                         self._record_miss(name, code)
                     continue
-                # 社区那一档的原因里已经写明是哪一家了（`community()` 逐家拼过），再套一层
-                # 就成了「社区来源：javdb：…」。单家来源的原因不带来源名，这里补上。
-                problems.append(describe_failure(error)
-                                if source in ('community', 'amane', 'amane_official')
-                                else f'{SOURCE_LABELS.get(source, source)}：{describe_failure(error)}')
-                failures.append(_source_failure_details(error, code, action, source=source))
-                held.append(source_paused(error))
+                # 合档已逐站报告的异常不再重复；无逐站回执时保留档级异常。
+                if len(failures) == failures_before:
+                    failed(source, error)
                 continue
             update(stage='保存待确认资料')
             results.save(found)
@@ -1730,15 +1763,16 @@ class _RemoteSession:
         tag_entries = self._preferred_tags(row, code, missing, chain, entries, attempted,
             update=update, issue=issue, deadline=_extended(deadline, _excused(self._provider) - mark))
         results.cached(tag_entries)
-        if entries:
+        if entries and not problems:
             return entries
         # 链上任何一档还在正常作答，这一行就是真没取到；全被限住时才算没轮到。
-        paused = bool(held) and all(held)
-        issue(row, ('外部资料本趟没轮到：' if paused else '外部资料未取得：') + '；'.join(problems)
+        paused = not entries and bool(held) and all(held)
+        prefix = '部分外部资料未取得：' if entries else '外部资料本趟没轮到：' if paused else '外部资料未取得：'
+        issue(row, prefix + '；'.join(problems)
               if problems else MISS_MESSAGES[action],
               action=action, retryable=True, paused=paused,
               **({'diagnostics': {'failures': failures}} if failures else {}))
-        return []
+        return entries
 
     def _preferred_tags(self, row, code, missing, chain, entries, answered, *, update, issue, deadline):
         """缺标签的有码作品补取 JavDB；已取证、路由排除或缺失记忆命中时直接返回。"""

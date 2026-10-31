@@ -73,10 +73,11 @@ describe('馆藏表格列宽与占位图', () => {
       const resizer = header.getByRole('slider');
       await resizer.focus();
       await resizer.press('Enter');
+      await header.locator('.react-aria-ColumnResizer[data-resizing]').waitFor();
       await resizer.press('ArrowRight');
       await resizer.press('ArrowRight');
-      await resizer.press('Tab');
       await page.waitForFunction(width => document.querySelector('[data-catalog-table] th[data-key="name"]')!.getBoundingClientRect().width > width, beforeKeyboard);
+      await resizer.press('Tab');
       const resizedWidth = (await header.boundingBox())!.width;
       await page.getByRole('button', { name: '显示列', exact: true }).click();
       const columnMenu = page.getByRole('dialog', { name: '表格显示列' });
