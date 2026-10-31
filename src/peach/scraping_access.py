@@ -331,6 +331,7 @@ def fix_to_browser(root: Path, source: str) -> None:
 def describe(root: Path, source: str) -> dict:
     values = values_for(root, source)
     until = paused_until(root, source)
+    browser = wants_browser(root, source) and browser_transport.find_browser() is not None
     return {"source": source, "label": SOURCES[source]["label"],
             "login": SOURCES[source]["login"], "accepts_cookie": bool(SOURCES[source].get("cookie")),
             "network": "direct" if values.get("network") == "direct" else "peach",
@@ -338,7 +339,8 @@ def describe(root: Path, source: str) -> dict:
             "user_agent": values.get("user_agent", ""),
             "cooldown_until": until or None,
             # 这台机器上这个来源是不是由本机浏览器过验证：该走浏览器（`wants_browser`）且找得到浏览器。
-            "browser": wants_browser(root, source) and browser_transport.find_browser() is not None}
+            "browser": browser,
+            "browser_in_container": browser and os.environ.get('PEACH_BROWSER_CONTAINER') == '1'}
 
 
 def source_checks(root: Path, source: str) -> dict:
@@ -607,6 +609,9 @@ class SourceTransport:
             browser = self._browser_for(source)
             if browser is not None:
                 return browser
+            if os.environ.get('PEACH_BROWSER_CONTAINER') == '1':
+                LOGGER.error('来源 %s 的 Chromium 未取得：检查浏览器和来源代理设置，浏览器不接受带凭据的代理地址', source)
+                raise httpx.TransportError('Chromium 未取得，请检查浏览器和来源代理设置')
         if source:
             client = client_for(self.root, source, session=bool(SOURCES[source].get("session")),
                                 follow_redirects=False)

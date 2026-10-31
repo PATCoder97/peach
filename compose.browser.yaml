@@ -1,0 +1,18 @@
+# 与 compose.yaml 一起使用：docker compose -f compose.yaml -f compose.browser.yaml up -d
+services:
+  peach:
+    image: ${PEACH_IMAGE_REPOSITORY:-longmeidao/peach}:${PEACH_VERSION:-edge}-browser
+    build:
+      context: .
+      target: browser
+    shm_size: 512m
+    environment:
+      PEACH_VNC_PASSWORD_FILE: /run/secrets/peach_vnc_password
+    ports:
+      - "${PEACH_BIND:-127.0.0.1}:${PEACH_VNC_PORT:-8901}:6080"
+    secrets:
+      - peach_vnc_password
+
+secrets:
+  peach_vnc_password:
+    file: ${PEACH_VNC_PASSWORD_PATH:-./secrets/peach_vnc_password}

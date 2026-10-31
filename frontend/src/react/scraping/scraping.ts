@@ -35,6 +35,7 @@ export interface Source {
   user_agent?: string;
   /** 这台机器上这个来源的请求由本机浏览器发、验证由它自己过（ADR-0065）；为真时不需要 Cookie。 */
   browser: boolean;
+  browser_in_container?: boolean;
   cooldown_until?: number | null;
 }
 

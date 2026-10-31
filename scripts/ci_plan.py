@@ -126,9 +126,9 @@ def plan(event: str, paths: list[str], contents: dict | None = None, *, target: 
                                        "scripts/vendor_web_dependencies.mjs"} for path in effective)
     wheel = shared or "packaging" in scopes or any(path.startswith(("src/", "migrations/", "web/", "resources/"))
                                                  for path in effective)
-    docker = shared or any(path in {"Dockerfile", ".dockerignore", "compose.yaml", "pyproject.toml", "uv.lock",
+    docker = shared or any(path in {"Dockerfile", ".dockerignore", "compose.yaml", "compose.browser.yaml", "pyproject.toml", "uv.lock",
                                    "setup.py", "MANIFEST.in", "README.md", "scripts/smoke_docker.py",
-                                   "scripts/write_reporting_config.py", "scripts/build_amane_runtime.py",
+                                   "scripts/write_reporting_config.py", "scripts/build_amane_runtime.py", "scripts/smoke_docker_browser.py",
                                    "scripts/amane_bridge.spec", ".github/workflows/docker.yml",
                                    ".github/workflows/test.yml"}
                            or path.startswith(("src/", "migrations/", "web/", "resources/", "tools/amane-bridge/"))

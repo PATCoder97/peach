@@ -343,7 +343,8 @@ class TestPlanningTests(unittest.TestCase):
         self.assertEqual(len(manual['matrix']['include']), 6)
 
     def test_docker_inputs_require_a_successful_container_smoke(self):
-        for path in ('Dockerfile', 'src/peach/server.py', 'tools/amane-bridge/uv.lock',
+        for path in ('Dockerfile', 'compose.browser.yaml', 'scripts/smoke_docker_browser.py',
+                     'src/peach/browser_server.py', 'src/peach/server.py', 'tools/amane-bridge/uv.lock',
                      'scripts/build_amane_runtime.py', '.github/workflows/docker.yml'):
             with self.subTest(path=path):
                 result = ci_plan.plan('pull_request', [path])

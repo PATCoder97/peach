@@ -223,6 +223,19 @@ class BrowserTransportTests(unittest.TestCase):
         with self.assertRaises(BrowserUnavailable):
             transport(HttpRequest("POST", "https://javten.com/", {}), 10, 4096)
 
+    def test_container_chromium_uses_the_container_isolation_boundary(self):
+        def handler(method, params):
+            if method == 'Runtime.evaluate':
+                value = document_reply('https://example.test/') if is_document(params) else state_reply('Fixture')
+                return {'result': {'value': value}}
+            return self.generic(method, params)
+
+        transport, _server = self.make(handler)
+        with patch.dict('os.environ', {'PEACH_BROWSER_CONTAINER': '1'}):
+            response = transport(HttpRequest('GET', 'https://example.test/', {}), 10, 4096)
+        self.assertEqual(response.status, 200)
+        self.assertIn('--no-sandbox', self.launches[0])
+
     def test_an_attended_window_opens_on_screen_keeps_its_profile_and_loads_everything(self):
         """给人登录用的窗口（ADR-0093）：开在屏幕内、Edge 也不用 InPrivate，图片与字体照常加载。"""
         server = FakeCdp(self.generic)

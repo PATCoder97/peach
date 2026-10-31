@@ -258,6 +258,9 @@ class _Browser:
                    "--no-first-run", "--no-default-browser-check", "--disable-background-networking", "--disable-sync",
                    f"--window-size={WINDOW_SIZE[0]},{WINDOW_SIZE[1]}",
                    f"--window-position={position[0]},{position[1]}", *self.flags]
+        if os.environ.get('PEACH_BROWSER_CONTAINER') == '1':
+            # Docker 默认限制用户命名空间；容器隔离承接 Chromium 的进程沙箱边界。
+            command.append('--no-sandbox')
         if "msedge" in Path(self.executable).name.lower() and not self.attended:
             # Edge 会拿 Windows 账号把新 profile 隐式登录并开同步；InPrivate 窗口不登录、不同步。
             # 代价是 Cookie 只活到进程退出，下次拉起再过一次验证（几秒）。

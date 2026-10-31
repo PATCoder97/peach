@@ -4,6 +4,21 @@
 
 ## amane 桥
 
+### Docker 浏览器版本的依赖复核
+
+2026-10-31 将主应用的 filelock 更新为 `4.2.5`、grpcio 更新为 `1.85.1`，桥锁的
+pydantic-ai-slim / pydantic-graph 更新为 `2.64.0`、genai-prices 为 `0.2.1`、openai 为 `3.42.0`、
+websockets 为 `17.4`。桥的应用边界仍限爬虫、模型和网络接口，不调用这些依赖的模型服务。
+前端 vendor 将 Lucide 更新为 `1.65.0`、Swiper 更新为 `14.4.0`，沿用来源清单与构建入口。
+
+重新取得 amane 稳定版 `v0.23.0` 的源码，与固定提交比较后，爬虫和网络层只涉及未被桥消费的
+ThePornDB，沿用下文的保留版本结论。Debian 浏览器直接包固定在 Dockerfile，包含 Chromium
+`156.0.8078.73-1~deb13u1`，构建使用对应安全仓库版本。
+
+两份 npm 审计没有 high 或 critical；frontend 的 Sentry 构建链仍报告四项 moderate，涉及 glob 与
+minimatch。注册表的 Sentry 插件稳定版仍为 `11.10.0`；审计建议的历史大版本回退不作为本批兼容升级。
+依赖检查和实际测试结果分别保留，不以版本清单代替容器与全量验收。
+
 ### 设置语言版本的依赖复核
 
 2026-10-30 复核 [Pydantic 2.14.2](https://github.com/pydantic/pydantic/releases/tag/v2.14.2) 的两项安全修复，主应用与桥锁同步采用该版本及 `pydantic-core 2.50.2`。JSON 字段别名、额外字段与递归校验的行为由正式全量覆盖。两份锁的 `opentelemetry-api` 更新到 `1.45.2`，桥锁的 `genai-prices` 更新到 `0.2.0`；桥仍只使用爬虫，不调用模型服务。

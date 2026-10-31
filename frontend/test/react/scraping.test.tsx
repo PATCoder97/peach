@@ -124,6 +124,15 @@ it('首屏用 prefetch 缓存画出来源与任务，挂载时不重复请求', 
   expect(host.querySelector<HTMLAnchorElement>('a[href="https://www.javbus.com/"]')?.target).toBe('_blank');
 });
 
+it('容器浏览器提示在 noVNC 验证，语言切换保留来源状态', async () => {
+  const { host } = await open(quiet({ source: 'fc2ppvdb', label: 'FC2PPV-DB', browser: true, browser_in_container: true }));
+  expect(section(host, 'FC2PPV-DB')?.textContent).toContain('noVNC 桌面');
+  expect(password(host)).toBeNull();
+  await act(async () => { setLocale('vi'); await settle() });
+  expect(host.textContent).toContain('hãy mở màn hình noVNC');
+  expect(password(host)).toBeNull();
+});
+
 it('走本机浏览器的来源只说明验证怎么过，不画 Cookie 输入', async () => {
   const { host } = await open(quiet({ source: 'fc2ppvdb', label: 'FC2PPV-DB', browser: true }));
   const card = section(host, 'FC2PPV-DB');
