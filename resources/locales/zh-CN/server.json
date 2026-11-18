@@ -259,6 +259,15 @@
         }
       }
     },
+    "v0-59-0": {
+      "headline": "越南文、资料编辑与浏览器 Docker",
+      "items": {
+        "vietnamese-interface": {"title": "英文与越南文", "body": "可在界面语言中选择英文或越南文，保留旧版浏览器已选的越南文。"},
+        "edit-details": {"title": "就地编辑影片资料", "body": "在详情页修改资料和更换封面，采集保留你改过的值。"},
+        "table-filters": {"title": "筛选并跨页选择", "body": "馆藏和复核表格支持列头搜索筛选，也可跨页选择匹配项目。"},
+        "docker-browser": {"title": "可选浏览器 Docker 镜像", "body": "browser 镜像保留 Chromium 与 noVNC，浏览器资料随数据卷保存，并使用当前应用。"}
+      }
+    },
     "v0-58-0": {
       "headline": "完整英文界面，NAS 更好装",
       "items": {

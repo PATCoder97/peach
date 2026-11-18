@@ -55,6 +55,15 @@ ICON_MEANINGS = {
 GENERIC_ICONS = frozenset({"sparkle"})
 
 NOTICES: dict[str, dict] = {
+    "0.59.0": {
+        "level": "notice",
+        "features": [
+            {"id": "vietnamese-interface", "refs": ["PATCoder97/peach#17"], "icon": "translate"},
+            {"id": "edit-details", "refs": ["peach-mitao/peach#187"], "icon": "library"},
+            {"id": "table-filters", "refs": ["peach-mitao/peach#744"], "icon": "select"},
+            {"id": "docker-browser", "refs": ["PATCoder97/peach#17"], "icon": "stack", "platforms": ["docker"]},
+        ],
+    },
     "0.58.0": {
         "level": "notice",
         "features": [

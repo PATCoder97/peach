@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "da7fa276-b87c-4464-a61a-4dd168a94268", e._sentryDebugIdIdentifier = "sentry-dbid-da7fa276-b87c-4464-a61a-4dd168a94268");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "fefc1a4d-84fc-4c85-9881-6ff195f913b6", e._sentryDebugIdIdentifier = "sentry-dbid-fefc1a4d-84fc-4c85-9881-6ff195f913b6");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -7552,6 +7552,27 @@ var He = "peach.settings.v1", Ue = {
 				"system-files": {
 					body: "NAS thumbnails and macOS ._ files no longer count as videos",
 					title: "Move out system extras"
+				}
+			}
+		},
+		"v0-59-0": {
+			headline: "Vietnamese, library editing and browser Docker",
+			items: {
+				"vietnamese-interface": {
+					title: "English and Vietnamese",
+					body: "Choose English or Vietnamese in Interface language. Your previous Vietnamese choice is preserved."
+				},
+				"edit-details": {
+					title: "Edit a video's details",
+					body: "Edit metadata and replace covers from the detail page; collection preserves your changes."
+				},
+				"table-filters": {
+					title: "Filter and select across pages",
+					body: "Search column filters and select matching items across pages in library and review tables."
+				},
+				"docker-browser": {
+					title: "Optional browser Docker image",
+					body: "The browser image keeps Chromium and noVNC alongside the current app, with its browser profile stored in the data volume."
 				}
 			}
 		},
@@ -15306,6 +15327,27 @@ var He = "peach.settings.v1", Ue = {
 				}
 			}
 		},
+		"v0-59-0": {
+			headline: "Tiếng Việt, chỉnh sửa thông tin và browser Docker",
+			items: {
+				"vietnamese-interface": {
+					title: "Tiếng Anh và tiếng Việt",
+					body: "Chọn tiếng Anh hoặc tiếng Việt trong phần Ngôn ngữ giao diện. Lựa chọn tiếng Việt trước đây được giữ lại."
+				},
+				"edit-details": {
+					title: "Sửa thông tin phim ngay tại trang chi tiết",
+					body: "Chỉnh sửa thông tin và thay ảnh bìa tại trang chi tiết; quá trình thu thập giữ nguyên các giá trị bạn đã sửa."
+				},
+				"table-filters": {
+					title: "Lọc và chọn qua nhiều trang",
+					body: "Tìm trong bộ lọc ở tiêu đề cột và chọn các mục khớp qua nhiều trang trong thư viện và bảng rà soát."
+				},
+				"docker-browser": {
+					title: "Ảnh Docker có trình duyệt tùy chọn",
+					body: "Biến thể browser giữ Chromium và noVNC cùng ứng dụng mới; hồ sơ trình duyệt được lưu trong volume dữ liệu."
+				}
+			}
+		},
 		"v0-58-0": {
 			headline: "Giao diện hoàn toàn bằng tiếng Anh, thiết lập NAS dễ dàng hơn",
 			items: {
@@ -22653,6 +22695,27 @@ var He = "peach.settings.v1", Ue = {
 				"system-files": {
 					body: "NAS 缩略图、macOS 的 ._ 文件不再算作视频",
 					title: "移出系统附属文件"
+				}
+			}
+		},
+		"v0-59-0": {
+			headline: "越南文、资料编辑与浏览器 Docker",
+			items: {
+				"vietnamese-interface": {
+					title: "英文与越南文",
+					body: "可在界面语言中选择英文或越南文，保留旧版浏览器已选的越南文。"
+				},
+				"edit-details": {
+					title: "就地编辑影片资料",
+					body: "在详情页修改资料和更换封面，采集保留你改过的值。"
+				},
+				"table-filters": {
+					title: "筛选并跨页选择",
+					body: "馆藏和复核表格支持列头搜索筛选，也可跨页选择匹配项目。"
+				},
+				"docker-browser": {
+					title: "可选浏览器 Docker 镜像",
+					body: "browser 镜像保留 Chromium 与 noVNC，浏览器资料随数据卷保存，并使用当前应用。"
 				}
 			}
 		},
@@ -47609,4 +47672,4 @@ Ht();
 var rx = document.getElementById("peach-page"), ix = rx ? nx[rx.dataset.page ?? ""] : void 0;
 rx && ix && (0, Zt.createRoot)(rx).render(/* @__PURE__ */ (0, V.jsx)(tx, { children: /* @__PURE__ */ (0, V.jsx)(ix, { data: { ...rx.dataset } }) }));
 
-//# debugId=da7fa276-b87c-4464-a61a-4dd168a94268
+//# debugId=fefc1a4d-84fc-4c85-9881-6ff195f913b6
