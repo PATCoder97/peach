@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 批量条（ADR-0031 第 11g 步）：目录、回收站、垃圾文件与关注页多选时底部那块浮条。
  *
  * 常驻组件 `batch-dock`（`router/managed-routes.tsx` 的常驻表）：路由树把它画进壳常驻在 `body` 末尾的
@@ -16,6 +15,7 @@ import { flushSync } from 'react-dom';
 
 import { SelectionDock } from '../components/selection-dock';
 import { batchActions, type BatchDockApi, type BatchDockHost, type BatchDockProps } from './batch-dock-api';
+import { t } from '../../i18n';
 import './batch-dock.css';
 
 let host: BatchDockHost | null = null;
@@ -49,7 +49,6 @@ export function BatchDockSurface() {
 }
 
 function BatchDock({ host: at, props: view }: { host: BatchDockHost; props: BatchDockProps }) {
-  const uiText = useUiTranslation();
   /* 浮条在不在由 `<body>` 上的 `data-batch-dock-open` 说给样式表（`batch-dock.css` 给网格与详情底部
    * 让位）。写成 `body:has(...)` 的话，播放墙平移、卡片插进页面时每批节点都让整棵 body 子树重算样式，
    * 实测一次 40–60ms。 */
@@ -58,7 +57,7 @@ function BatchDock({ host: at, props: view }: { host: BatchDockHost; props: Batc
   useLayoutEffect(() => () => { document.body.removeAttribute('data-batch-dock-open') }, []);
   return (
     <div className="peach-react" data-batch-scope="" data-context={view.context}>
-      <SelectionDock label={uiText("所选项目操作")} visible={view.count > 0} count={`已选 ${view.count.toLocaleString()} 项`}>
+      <SelectionDock label={t('manage:batchDock.label')} visible={view.count > 0} count={t('manage:batchDock.selected', { count: view.count })} actions={[]}>
         {batchActions(view.context, view.junkDismissed).map((action) => (
           <button key={`${action.group}:${action.operation}`} type="button" data-batch-group={action.group}
             data-batch-action={action.operation} data-danger={action.danger ? '' : undefined}

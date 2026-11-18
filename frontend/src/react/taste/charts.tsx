@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 口味页的三张图：口味维度的雷达与排行条、创作者线索的流向图。浏览活跃的两张热力图与
  * 统计页共用 `../charts/heat-card.tsx`。
  *
@@ -21,6 +20,7 @@ import {
   flowGraph, flowLabel, FLOW_LABEL_X, FLOW_NODE_WIDTH, FLOW_VIEWBOX, radarRows, RANK_MAX, topScores,
   type CreatorFlow, type RankRow,
 } from './taste';
+import { joinList, t } from '../../i18n';
 
 /** 雷达顶点外侧的维度名。左右两侧的名字往外排，能用的宽度是顶点到图框边；上下两个居中排，
  *  能用的是顶点到较近那条边的两倍。放不下就截断，全名在 `<title>`、浮层与读屏名称里。 */
@@ -54,7 +54,7 @@ const FLOW_FILL = [
 ];
 
 /** 口味维度两张图的系列：一个维度下命中的标签次数。颜色跟着口味页读数卡的 `chart-4`。 */
-const DIMENSION_CONFIG = { value: { label: '标签出现次数', colors: tone(CHART_COLORS[3]) } };
+const DIMENSION_CONFIG = { value: { label: t('manage:tasteCharts.tagOccurrences'), colors: tone(CHART_COLORS[3]) } };
 
 /** 排行条的最低高度按条数给，一条一格 32：窄屏里排行条独占一行、或维度不足三个画不出雷达时，
  *  它就是这么高。旁边有雷达时整块跟着雷达那一栏拉到等高，多出来的高度拉开条与条的间距。
@@ -79,7 +79,7 @@ export function TasteRadar({ rows, label }: { rows: RankRow[]; label: string }) 
   const top = points[0]!.value;
   const data = points.map((row) => ({ ...row, radius: radarRadius(row.value, top) }));
   return (
-    <div role="img" aria-label={`${label}：${data.map((row) => row.name).join('，')}`}>
+    <div role="img" aria-label={t('manage:tasteCharts.radarSummary', { label, items: joinList(data.map((row) => row.name)) })}>
       {/* 半径压到六成：维度名排在顶点外侧，七八个字的名字在窄栏里要放得下，不被图框切掉。 */}
       <EvilRadarChart data={data} config={RADAR_CONFIG} chartProps={{ outerRadius: '58%' }}
         className="aspect-auto h-70 text-text-secondary">
@@ -119,7 +119,6 @@ export function RankedBars({ rows, label }: { rows: RankRow[]; label: string }) 
 
 /** 创作者线索的来源流向。指一条流或一个节点，读数换成它。 */
 export function CreatorSankey({ flows }: { flows: CreatorFlow[] | undefined }) {
-  const uiText = useUiTranslation();
   const [shown, setShown] = useState<{ value: number; label: string; node: number | null } | null>(null);
   const graph = flowGraph(flows);
   if (!graph) return null;
@@ -131,10 +130,10 @@ export function CreatorSankey({ flows }: { flows: CreatorFlow[] | undefined }) {
       : shown.label === key);
   return (
     <section className={CHART_CARD}>
-      <ChartHead title={uiText("创作者线索来源")} figure={(shown ? shown.value : graph.total).toLocaleString()}
-        note={shown ? shown.label : '条线索'} />
+      <ChartHead title={t('manage:tasteCharts.creatorLeadSources')} figure={(shown ? shown.value : graph.total).toLocaleString()}
+        note={shown ? shown.label : t('manage:tasteCharts.leadsUnit', { count: graph.total })} />
       {/* 两侧各留一截给节点名，画布窄于 640 时字缩到读不清：手机上换成按线索数排的一列流向。 */}
-      <ol aria-label={uiText("来源网站与创作者线索")} className="flex flex-col sm:hidden">
+      <ol aria-label={t('manage:tasteCharts.sitesAndCreatorLeads')} className="flex flex-col sm:hidden">
         {[...graph.links].sort((a, b) => b.value - a.value).map((link) => (
           <li key={link.key}
             className="flex items-baseline justify-between gap-3 border-b border-separator-border py-2 text-body-2-regular text-text-primary last:border-b-0">
@@ -145,12 +144,12 @@ export function CreatorSankey({ flows }: { flows: CreatorFlow[] | undefined }) {
       </ol>
       <div className="min-w-0 max-sm:hidden">
         <svg viewBox={`0 0 ${FLOW_VIEWBOX.width} ${graph.height}`} fill="none"
-          role="img" aria-label={uiText("来源网站与创作者线索")}
+          role="img" aria-label={t('manage:tasteCharts.sitesAndCreatorLeads')}
           className="block h-auto w-full" onPointerLeave={() => setShown(null)}>
           <g>
             {graph.links.map((link) => (
               <path key={link.key} d={link.d} strokeWidth={link.width} tabIndex={0} role="img"
-                aria-label={uiText("{value0}：{value1} 条线索", { value0: String(link.label), value1: String(link.value) })}
+                aria-label={t('manage:tasteCharts.leadCount', { name: link.label, count: link.value })}
                 fillOpacity={0} strokeOpacity={linkLit(link, link.label) ? 0.55 : 0.08}
                 className={`outline-none transition-opacity ${FLOW_STROKE[link.color]}`}
                 onPointerEnter={() => setShown({ value: link.value, label: link.label, node: null })}
@@ -161,7 +160,7 @@ export function CreatorSankey({ flows }: { flows: CreatorFlow[] | undefined }) {
           <g>
             {graph.nodes.map((item) => (
               <g key={item.id} tabIndex={0} role="img"
-                aria-label={uiText("{value0}：{value1} 条线索", { value0: String(item.name), value1: String(item.value) })}
+                aria-label={t('manage:tasteCharts.leadCount', { name: item.name, count: item.value })}
                 className="outline-none focus-visible:opacity-100"
                 onPointerEnter={() => setShown(
                   { value: item.value, label: item.name, node: item.index })}
@@ -185,7 +184,7 @@ export function CreatorSankey({ flows }: { flows: CreatorFlow[] | undefined }) {
         </svg>
       </div>
       <footer className="flex justify-between gap-3 text-caption-1-regular text-text-secondary max-sm:hidden">
-        <span>{uiText("来源网站")}</span><span>{uiText("创作者 · 线索占比")}</span>
+        <span>{t('manage:tasteCharts.sourceSites')}</span><span>{t('manage:tasteCharts.creatorsLeadShare')}</span>
       </footer>
     </section>
   );

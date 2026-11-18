@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 实体资料页顶上那块资料卡，连同资料卡下面、作品上面那一行未入库的新作。
  *
  * 资料卡按 Board 的 profile 卡排：一块 secondary 底、18px 圆角的卡，正文是头像加身份三行
@@ -14,13 +13,14 @@ import { createPortal } from 'react-dom';
 import { entityFaceImg, facePos } from '@peach/card-art';
 import { entityPath, esc, firstGrapheme, icon } from '@peach/legacy/core';
 import { textLang } from '../../core/text-lang';
-import { entityDisplayName, nameFallback, nameLanguage } from '../../core/entity-names';
+import { entityDisplayName, nameScript } from '../../core/entity-names';
 import { useEntityNames } from '../use-entity-names';
 
 import { Button } from '@/components/base/buttons/button';
 
 import { AvatarPicker } from '../avatar-picker/avatar-picker-page';
 import { Note } from '../components/note';
+import { PendingWork } from '../components/pending-work';
 import { FavoriteButton } from '../library-shortcuts/shortcut-controls';
 import { busyProps } from '../settings/busy-props';
 import { FeedNewRow } from '../feed-new/feed-new-row';
@@ -32,6 +32,18 @@ import {
   type EntityHeroActions, type EntityHeroData, type EntityHeroHelpers, type EntityHeroProps,
   type HeroCostar, type HeroFollow, type LinkMark, type LinkView,
 } from './entity-hero';
+import { codedText, serverLabels } from '../../core/server-text';
+import { interfaceLanguage, t } from '../../i18n';
+
+/** 译文里数字的占位记号：`{{num}}` 先代入它，再按它切开放进 `<b>`。 */
+const NUM_MARK = '\u0001';
+
+/** 数字加粗的计数：`text` 是用 `{ count, num: NUM_MARK }` 取好的译文，`{{num}}` 的位置换成 `<b>`；
+ *  单复数仍按 `count` 选，英文语序由译文决定。 */
+function BoldCount({ text, count }: { text: string; count: number }) {
+  const [before, after = ''] = text.split(NUM_MARK);
+  return <>{before}<b>{count.toLocaleString(interfaceLanguage)}</b>{after}</>;
+}
 
 /** 同台艺人圆框里那张图：实体图优先，退到代表作头像，按检出的人脸取景。 */
 function costarImg(person: HeroCostar): string {
@@ -41,11 +53,9 @@ function costarImg(person: HeroCostar): string {
   });
 }
 
-export function EntityHeroPage({ kind, name, entity, feedNew, feedHost, actions, helpers }: EntityHeroProps) {
-  const uiText = useUiTranslation();
+export function EntityHeroPage({ kind, name, entity, feedNew, feedHost, feedError, retryFeed, actions, helpers }: EntityHeroProps) {
   useEntityNames();
   const displayName = entityDisplayName(kind, entity.canonical_name, Number(entity.id));
-  const fallback = nameFallback(kind, entity.canonical_name, Number(entity.id));
   const people = isPeople(kind);
   const company = isCompany(kind);
   const facts = people ? factRows(entity.profile) : company ? companyFactRows(entity.company_profile) : [];
@@ -61,7 +71,7 @@ export function EntityHeroPage({ kind, name, entity, feedNew, feedHost, actions,
 
   return (
     <>
-      <section data-entity-card="" aria-label={uiText("资料")}>
+      <section data-entity-card="" aria-label={t('catalog:entityHero.profile')}>
         <div data-entity-profile={facts.length ? 'facts' : ''}>
           <div data-entity-portrait-wrap="">
             <Portrait kind={kind} name={displayName} helpers={helpers} people={people} company={company} />
@@ -74,18 +84,20 @@ export function EntityHeroPage({ kind, name, entity, feedNew, feedHost, actions,
           </div>
           <div data-entity-identity="">
             <div data-entity-title="">
-              <h2 lang={textLang(displayName)} title={fallback ? uiText(fallback) : undefined}>{displayName}</h2>
-              {kind !== 'tag' ? <NamePicker current={entity.canonical_name} choices={nameChoices(entity, nameLanguage())}
-                onChoose={actions.chooseName} onAddAlias={actions.addAlias} /> : null}
+              <h2 lang={textLang(displayName)}>{displayName}</h2>
+              {kind !== 'tag' ? <NamePicker current={entity.canonical_name} choices={nameChoices(entity, nameScript())}
+                onChoose={actions.chooseName} onAddAlias={actions.addAlias} onMerge={actions.mergeDuplicate}
+                onDelete={actions.deleteProfile} onContribute={actions.contributeName} /> : null}
               {entity.id ? <FavoriteButton item={{ entity_id: Number(entity.id), kind, name: entity.canonical_name || name, favorite: entity.favorite }} /> : null}
             </div>
-            {fallback ? <span data-name-fallback="" data-copy-key={`performer-name-fallback.${nameLanguage()}`} className="text-caption-1-regular text-text-secondary">{uiText(fallback)}</span> : null}
+            <PendingWork work={entity.pending_work} />
             <AliasLine kind={kind} entity={entity} actions={actions} />
             {entity.related_identities?.length ? (
               <div className="flex min-w-0 flex-wrap gap-2 text-caption-1-regular text-text-secondary">
                 {/* 账号名常是一长串无空格的英文，窄屏下得能在任意处折行。 */}
                 {entity.related_identities.map((identity) => {
-                  const text = `${uiText(identity.relation === 'same_person' ? '同一人' : '关联账号')}：${entityDisplayName(identity.kind, identity.canonical_name, identity.id)}`;
+                  const name = entityDisplayName(identity.kind, identity.canonical_name, identity.id);
+                  const text = identity.relation === 'same_person' ? t('catalog:entityHero.samePersonIdentity', { name }) : t('catalog:entityHero.linkedAccount', { name });
                   return (
                     <button type="button" key={identity.id} title={text}
                       className="min-w-0 max-w-full text-text-primary underline wrap-anywhere"
@@ -118,7 +130,7 @@ export function EntityHeroPage({ kind, name, entity, feedNew, feedHost, actions,
           ) : null}
         </div>
         {costars.length ? (
-          <div data-entity-foot="" aria-label={uiText("同台艺人")}>
+          <div data-entity-foot="" aria-label={t('catalog:entityHero.costars')}>
             <div ref={costarRow} data-related-people="">
               {costars.map((person) => (
                 <button key={person.k} type="button" data-related-performer={person.k}
@@ -134,7 +146,7 @@ export function EntityHeroPage({ kind, name, entity, feedNew, feedHost, actions,
       </section>
       {/* 新作那一行摆在壳留好的 `section.feednew[data-feed-new]` 里，与首页那一行同一个组件。 */}
       {feedHost ? createPortal(<FeedNewRow feedNew={feedNew} host={feedHost} wire={helpers.wireFeedRow}
-        act={(feedId, action) => actions.feedAction(feedId, action)} />, feedHost) : null}
+        act={(feedId, action) => actions.feedAction(feedId, action)} error={feedError} retry={retryFeed} />, feedHost) : null}
     </>
   );
 }
@@ -162,7 +174,6 @@ function Portrait({ kind, name, helpers, people, company }: {
 
 /** 身份资料各项带图标；别名独立排列，归属有实体时提供站内入口。 */
 function AliasLine({ kind, entity, actions }: { kind: string; entity: EntityHeroData; actions: EntityHeroActions }) {
-  const uiText = useUiTranslation();
   const agency = agencyOf(entity);
   const go = (target: string, to: string) => (event: MouseEvent) => {
     event.preventDefault();
@@ -171,26 +182,26 @@ function AliasLine({ kind, entity, actions }: { kind: string; entity: EntityHero
   const agencyNode = agency ? (agency.linked
     ? <a href={entityPath('agency', agency.name, agency.id)} data-agency={agency.name} onClick={go('agency', agency.name)}>{agency.name}</a>
     : agency.name) : null;
-  const count = <><b>{entity.asset_count.toLocaleString()}</b>{uiText(" 个视频")}</>;
+  const count = <BoldCount text={t('catalog:entityHero.videoCountBold', { count: entity.asset_count, num: NUM_MARK })} count={entity.asset_count} />;
   if (kind === 'performer' || kind === 'creator') {
-    const groups = entity.name_display?.groups[nameLanguage()] ?? entity.name_groups;
+    const groups = entity.name_display?.groups[nameScript()] ?? entity.name_groups;
     const line = nameLine(groups);
     return (
       <div data-entity-alias="meta">
         <IdentityMeta entity={entity} />
-        <span data-meta-item="" title={uiText("视频")}><Glyph name="film" /><span>{count}</span></span>
+        <span data-meta-item="" title={t('catalog:shared.videos')}><Glyph name="film" /><span>{count}</span></span>
         {entity.follow?.key ? <FollowMeta follow={entity.follow} actions={actions} /> : null}
-        {agencyNode ? <span data-meta-item="" title={uiText("事务所")}><Glyph name="briefcase" /><span>{agencyNode}</span></span> : null}
+        {agencyNode ? <span data-meta-item="" title={t('catalog:shared.agencies')}><Glyph name="briefcase" /><span>{agencyNode}</span></span> : null}
         {line ? (
           <div data-meta-item="names">
             <Glyph name="id-card" />
-            <span data-alias-names="" title={uiText("别名")}>{line.names.map((one, at) => <span key={at} lang={textLang(one)}>{one}</span>)}</span>
+            <span data-alias-names="" title={t('catalog:entityHero.aliases')}>{line.names.map((one, at) => <span key={at} lang={textLang(one)}>{one}</span>)}</span>
             {line.rest > 0 ? (
-              <MorePop id="entityAliasPop" hook="alias" rest={line.rest} label={uiText("另外 {value0} 个别名", { value0: String(line.rest.toLocaleString()) })}
-                heading={`${line.total.toLocaleString()} 个别名`}>
+              <MorePop id="entityAliasPop" hook="alias" rest={line.rest} label={t('catalog:entityHero.moreAliases', { count: line.rest })}
+                heading={t('catalog:entityHero.aliasCount', { count: line.total })}>
                 <dl>
                   {(groups?.groups || []).map((group, at) => (
-                    <NameGroup key={at} label={group.label} names={group.names} />
+                    <NameGroup key={at} label={codedText(group, 'label')} names={group.names} />
                   ))}
                 </dl>
               </MorePop>
@@ -203,15 +214,16 @@ function AliasLine({ kind, entity, actions }: { kind: string; entity: EntityHero
   const aliases = entity.display_aliases || [];
   /* 事务所页数的是人，不是片；片商页同理，旗下有几个 label 是它自己的读数（ADR-0051）。 */
   const members = kind === 'agency'
-    ? <> · <b>{(entity.member_count || 0).toLocaleString()}</b>{uiText(" 位艺人")}</>
-    : (entity.labels || []).length ? <> · <b>{entity.labels!.length.toLocaleString()}</b>{uiText(" 个厂牌")}</> : null;
+    ? <> · <BoldCount text={t('catalog:entityHero.performerCountBold', { count: entity.member_count || 0, num: NUM_MARK })} count={entity.member_count || 0} /></>
+    : (entity.labels || []).length
+      ? <> · <BoldCount text={t('catalog:entityHero.labelCountBold', { count: entity.labels!.length, num: NUM_MARK })} count={entity.labels!.length} /></> : null;
   const maker = entity.maker;
   return (
     <div data-entity-alias="meta">
       {kind === 'creator' ? <IdentityMeta entity={entity} /> : null}
-      <span data-meta-item="" title={uiText("视频")}><Glyph name="film" /><span>{count}{members}</span></span>
-      {agencyNode ? <span data-meta-item="" title={uiText("事务所")}><Glyph name="briefcase" /><span>{agencyNode}</span></span> : null}
-      {maker ? <span data-meta-item="" title={uiText("片商")}><Glyph name="clapperboard" /><a href={entityPath('studio', maker.name, maker.id)} data-studio-link={maker.name}
+      <span data-meta-item="" title={t('catalog:shared.videos')}><Glyph name="film" /><span>{count}{members}</span></span>
+      {agencyNode ? <span data-meta-item="" title={t('catalog:shared.agencies')}><Glyph name="briefcase" /><span>{agencyNode}</span></span> : null}
+      {maker ? <span data-meta-item="" title={t('catalog:entityHero.studio')}><Glyph name="clapperboard" /><a href={entityPath('studio', maker.name, maker.id)} data-studio-link={maker.name}
         onClick={go('studio', maker.name)}>{maker.name}</a></span> : null}
       {aliases.length ? <CompanyAliases aliases={aliases} /> : null}
     </div>
@@ -221,15 +233,14 @@ function AliasLine({ kind, entity, actions }: { kind: string; entity: EntityHero
 /** 公司别名：先列几个，余下的收进「+N」，浮层里一个名字一行。片商改过几轮名、挂过一串
  *  label 时别名能有三十多个，全摊开会占掉资料卡十几行。 */
 function CompanyAliases({ aliases }: { aliases: string[] }) {
-  const uiText = useUiTranslation();
   const { shown, rest } = shownTags(aliases, COMPANY_ALIASES_SHOWN);
   return (
     <div data-meta-item="names" data-company-names="">
       <Glyph name="id-card" />
-      <span data-alias-names="" title={uiText("别名")}>{shown.map((name, at) => <span key={at}>{name}</span>)}</span>
+      <span data-alias-names="" title={t('catalog:entityHero.aliases')}>{shown.map((name, at) => <span key={at}>{name}</span>)}</span>
       {rest ? (
-        <MorePop id="entityAliasPop" hook="alias" rest={rest} label={uiText("另外 {value0} 个别名", { value0: String(rest.toLocaleString()) })}
-          heading={`${aliases.length.toLocaleString()} 个别名`}>
+        <MorePop id="entityAliasPop" hook="alias" rest={rest} label={t('catalog:entityHero.moreAliases', { count: rest })}
+          heading={t('catalog:entityHero.aliasCount', { count: aliases.length })}>
           <dl><NameGroup names={aliases.map((name) => ({ name }))} /></dl>
         </MorePop>
       ) : null}
@@ -240,13 +251,13 @@ function CompanyAliases({ aliases }: { aliases: string[] }) {
 /** 关注里绑在这位名下的来源：读数是还没入库的更新，整段是站内去处（同事务所链接的钨蓝），
  *  点开切到这一页的在线视图。 */
 function FollowMeta({ follow, actions }: { follow: HeroFollow; actions: EntityHeroActions }) {
-  const uiText = useUiTranslation();
   const from = follow.providers.join(' · ');
   return (
-    <span data-meta-item="" data-entity-follow="" title={from ? uiText("关注 · {value0}", { value0: String(from) }) : uiText("关注")}>
+    <span data-meta-item="" data-entity-follow="" title={from ? t('catalog:entityHero.followingFrom', { source: from }) : t('catalog:entityHero.following')}>
       <Glyph name="rss" />
       <a href="?media=online" onClick={(event) => { event.preventDefault(); actions.openFollowAuthor(follow.key) }}>
-        {follow.n.toLocaleString()}{uiText(" 项更新")}</a>
+        {t('catalog:entityHero.updateCount', { count: follow.n })}
+      </a>
     </span>
   );
 }
@@ -256,7 +267,6 @@ function FollowMeta({ follow, actions }: { follow: HeroFollow; actions: EntityHe
 function HeldAuthors({ follow, displayName, actions }: {
   follow: HeroFollow; displayName: string; actions: EntityHeroActions;
 }) {
-  const uiText = useUiTranslation();
   const [busy, setBusy] = useState('');
   const confirm = async (key: string, name: string) => {
     if (busy) return;
@@ -272,10 +282,13 @@ function HeldAuthors({ follow, displayName, actions }: {
   return (
     <div data-entity-held="" className="flex flex-col gap-2">
       {follow.held.map((group) => (
-        <Note key={group.key} tone="info" title={uiText("关注里有同名作者 {value0}", { value0: String(group.name) })}
+        <Note key={group.key} tone="info" title={t('catalog:entityHero.sameNameAuthor', { name: group.name })}
           action={<Button size="small" {...busyProps(busy === group.key)}
-            onClick={() => { void confirm(group.key, group.name) }}>{uiText("是同一个人")}</Button>}>
-          {[group.providers.join(' · '), `${group.n.toLocaleString()} 项更新`].filter(Boolean).join(' · ')}{uiText("。和 ")}{displayName}{uiText(" 是同一个人吗？")}</Note>
+            onClick={() => { void confirm(group.key, group.name) }}>{t('catalog:entityHero.samePerson')}</Button>}>
+          {t('catalog:entityHero.samePersonAsk', {
+            details: [group.providers.join(' · '), t('catalog:entityHero.updateCount', { count: group.n })].filter(Boolean).join(' · '), name: displayName,
+          })}
+        </Note>
       ))}
     </div>
   );
@@ -286,7 +299,7 @@ function IdentityMeta({ entity }: { entity: EntityHeroData }) {
   if (!entity.identity_labels?.length) return null;
   return (
     <span data-meta-item="classification" data-identity-classification="">
-      <Glyph name="user-round" /><span>{entity.identity_labels.join(' · ')}</span>
+      <Glyph name="user-round" /><span>{serverLabels('identity.category', entity.identity_categories, entity.identity_labels).join(' · ')}</span>
     </span>
   );
 }
@@ -317,14 +330,13 @@ function FactRowView({ glyph, label, clip, children }: { glyph: string; label: s
 
 /** 站上的标签只是读数，不是这一页的筛选，所以是标签的脸、不接点击。 */
 function FactTags({ tags }: { tags: string[] }) {
-  const uiText = useUiTranslation();
   const { shown, rest } = shownTags(tags);
   return (
     <>
       {shown.map((tag) => <span key={tag} data-fact-tag="" title={tag}>{tag}</span>)}
       {rest ? (
-        <MorePop id="entityTagPop" hook="fact" rest={rest} label={uiText("另外 {value0} 个标签", { value0: String(rest.toLocaleString()) })}
-          heading={`${tags.length.toLocaleString()} 个标签`}>
+        <MorePop id="entityTagPop" hook="fact" rest={rest} label={t('catalog:entityHero.moreTags', { count: rest })}
+          heading={t('catalog:peopleIndex.tagCount', { count: tags.length })}>
           <div data-fact-tags="">{tags.map((tag) => <span key={tag} data-fact-tag="" title={tag}>{tag}</span>)}</div>
         </MorePop>
       ) : null}
@@ -344,7 +356,6 @@ function LinkIcon({ mark }: { mark: LinkMark }) {
 /** 外链排成一行次级按钮：36px 高、一圈线。纯图标的链接自己不带可读文字，名字留在 title 与
  *  读屏名称里；官网那种「点之前看不出是谁」的链接才写字。 */
 function HeroLinkView({ link }: { link: LinkView }) {
-  const uiText = useUiTranslation();
   switch (link.type) {
     case 'icon':
       return (
@@ -363,7 +374,7 @@ function HeroLinkView({ link }: { link: LinkView }) {
       return (
         <span data-link="private" title={link.sources ? link.sources.join('\n') : link.label}>
           <LinkIcon mark={{ globe: true }} />
-          <span data-link-label="">{link.sources ? link.label : uiText("来源 · {value0}", { value0: String(link.label) })}</span>
+          <span data-link-label="">{link.sources ? link.label : t('catalog:entityHero.sourceLink', { site: link.label })}</span>
         </span>
       );
     default:
@@ -404,7 +415,7 @@ function EntryMarks({ entity, actions, helpers }: {
   };
   const toggle = async (on: boolean) => {
     if (!await write(on)) return;
-    helpers.receipt(on ? '已订阅新作' : '已取消订阅新作', { undo: async () => { await write(!on) } });
+    helpers.receipt(on ? t('catalog:entityHero.newReleasesOn') : t('catalog:entityHero.newReleasesOff'), { undo: async () => { await write(!on) } });
     if (on) actions.refreshFeedAfterCheck();
   };
   return (

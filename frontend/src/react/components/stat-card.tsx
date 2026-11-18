@@ -38,11 +38,9 @@ export function plainStatClass({ interactive = false }: { interactive?: boolean 
     className: 'flex min-h-33 flex-col gap-2 p-4 text-left' });
 }
 
-/** 一排五张净面读数卡：窄一档两张一排，手机上一张一排（遗留骨架 `.ui-cleanupstats` 的 1119／559 两档）。 */
+/** 一排五张净面读数卡：窄一档两张一排，手机上一张一排；数据管理首屏骨架用的也是这一串。 */
 export const PLAIN_STAT_STRIP = 'inline-grid w-full grid-cols-5 gap-4 max-plain-stat-pair:grid-cols-2'
   + ' max-plain-stat-single:grid-cols-1';
-
-import { useSystemTranslation } from '../i18n';
 
 export function PlainStat(
   { label, icon: Icon, mark, aside, figure, meta, wrapMeta = false }:
@@ -51,7 +49,6 @@ export function PlainStat(
     figure: string; meta?: string; wrapMeta?: boolean;
   },
 ) {
-  const systemText = useSystemTranslation();
   return (
     <>
       <span className="flex min-w-0 items-center gap-2 text-body-medium text-text-secondary">
@@ -60,12 +57,12 @@ export function PlainStat(
             {Icon ? <Icon aria-hidden className="size-4" /> : mark}
           </i>
         ) : null}
-        <span className="min-w-0 truncate">{systemText(label)}</span>
+        <span className="min-w-0 truncate">{label}</span>
         {aside ? <span className="ml-auto shrink-0 text-caption-1-regular">{aside}</span> : null}
       </span>
-      <strong className="block text-title-1-medium tabular-nums text-text-primary">{systemText(figure)}</strong>
+      <strong className="block text-title-1-medium tabular-nums text-text-primary">{figure}</strong>
       <span className={`block min-h-4 text-caption-1-regular text-text-tertiary ${wrapMeta ? '' : 'truncate'}`}>
-        {meta ? systemText(meta) : null}
+        {meta}
       </span>
     </>
   );

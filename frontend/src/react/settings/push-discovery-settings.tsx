@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 「推送发现」：新文件落地就进数据库，不必等下一轮全量扫描。
  *
  * 两条通道各一个开关。本地那条订阅本机文件夹的文件系统事件；网盘那条等 CloudDrive2 往
@@ -16,7 +15,7 @@ import { useTranslation as useUiTranslation } from "../i18n";
 import { useState, type FormEvent } from 'react';
 import { RiDeleteBinLine } from '@remixicon/react';
 
-import { SettingsRow } from '../components/settings-rows';
+import { SettingsRow } from '@/components/application/settings/settings-rows';
 import { Button } from '@/components/base/buttons/button';
 import { Input } from '@/components/base/input/input';
 import { Select, SelectItem } from '../components/select';
@@ -29,6 +28,8 @@ import { CodeBlock } from '../components/code-block';
 import { Note } from '../components/note';
 import { Disclosure, ErrorText, FieldLabel, Footer, Help, Rows, Section, Stack } from './section';
 import { busyProps, useAction } from './use-action';
+import { codedText } from '../../core/server-text';
+import { joinList, t } from '../../i18n';
 
 const SAVE_URL = '/api/configuration/push-discovery';
 const SECRET_URL = '/api/configuration/push-discovery/secret';
@@ -37,7 +38,6 @@ export function PushDiscoveryForm({ initial, receipt }: {
   initial: PushDiscoveryState;
   receipt(message: string): void;
 }) {
-  const uiText = useUiTranslation();
   const [state, setState] = useState(initial);
   const [rows, setRows] = useState<PushDiscoveryPrefix[]>(initial.prefixes);
   const [failure, setFailure] = useState('');
@@ -65,47 +65,49 @@ export function PushDiscoveryForm({ initial, receipt }: {
       enabled: state.enabled, watch_local: state.watch_local, cloud: state.cloud, prefixes: rows,
     };
     void action.run('save', (signal) => apiSend<PushDiscoveryState>(SAVE_URL, body, 'POST', signal),
-      (next) => settle(next, '已保存配置'), (cause) => setFailure(errorMessage(cause)));
+      (next) => settle(next, t('settings:shared.settingsSaved')), (cause) => setFailure(errorMessage(cause)));
   };
 
   const rotate = () => {
     void action.run('secret', (signal) => apiSend<PushDiscoveryState>(SECRET_URL, {}, 'POST', signal),
-      (next) => settle(next, '已更换共享密钥'), (cause) => setFailure(errorMessage(cause)));
+      (next) => settle(next, t('settings:pushDiscovery.secretRotated')), (cause) => setFailure(errorMessage(cause)));
   };
 
-  const ingested = uiText('已入库 {count} 个文件', { count: live.queue.ingested })
-    + (live.queue.failed ? uiText('，{count} 个入库失败', { count: live.queue.failed }) : '')
-    + (live.queue.pending ? uiText('，队列里还有 {count} 条', { count: live.queue.pending }) : '');
+  const ingested = [
+    t('settings:pushDiscovery.ingestedCount', { count: live.queue.ingested }),
+    live.queue.failed ? t('settings:pushDiscovery.failedCount', { count: live.queue.failed }) : '',
+    live.queue.pending ? t('settings:pushDiscovery.pendingCount', { count: live.queue.pending }) : '',
+  ].filter(Boolean).join(t('shell:format.clauseSeparator'));
   const watching = live.local_running
-    ? `正在监视 ${live.local_roots.join('、')}` : live.local_message || '没有运行';
+    ? t('settings:pushDiscovery.monitoring', { paths: joinList(live.local_roots) }) : (live.local_message ? codedText(live, 'local_message') : '') || t('settings:pushDiscovery.notRunningDetail');
 
   return (
-    <Section id="pushDiscovery" title={uiText("自动发现新文件")} onSubmit={submit}>
+    <Section id="pushDiscovery" guide="discovery" title={t('settings:fileDiscovery.title')} onSubmit={submit}>
       <Stack>
-        <div className="flex flex-wrap items-center gap-2"><span className="text-body-regular text-text-secondary">{uiText("本机监视")}</span>
-          <StatusLabel tone={!live.enabled || !live.watch_local ? 'neutral' : live.local_running ? 'progress' : 'warning'}>{!live.enabled || !live.watch_local ? uiText("未启用") : live.local_running ? uiText("运行中") : uiText("未运行")}</StatusLabel></div>
+        <div className="flex flex-wrap items-center gap-2"><span className="text-body-regular text-text-secondary">{t('settings:pushDiscovery.localMonitoring')}</span>
+          <StatusLabel tone={!live.enabled || !live.watch_local ? 'neutral' : live.local_running ? 'progress' : 'warning'}>{!live.enabled || !live.watch_local ? t('settings:shared.notEnabled') : live.local_running ? t('settings:shared.running') : t('settings:pushDiscovery.notRunning')}</StatusLabel></div>
       </Stack>
       <Rows>
-        <SettingsRow label={uiText("发现新文件后自动入库")} description={live.enabled ? ingested : undefined}>
-          <Switch aria-label={uiText("发现新文件后自动入库")} isSelected={state.enabled} isDisabled={!state.available}
+        <SettingsRow label={t('settings:fileDiscovery.autoImport')} description={live.enabled ? ingested : undefined}>
+          <Switch aria-label={t('settings:fileDiscovery.autoImport')} isSelected={state.enabled} isDisabled={!state.available}
             onChange={(enabled) => setState({ ...state, enabled })} />
         </SettingsRow>
-        <SettingsRow label={uiText("监视本机文件夹")} description={live.enabled && live.watch_local ? watching : undefined}>
-          <Switch aria-label={uiText("监视本机文件夹")} isSelected={state.watch_local}
+        <SettingsRow label={t('settings:fileDiscovery.monitorLocal')} description={live.enabled && live.watch_local ? watching : undefined}>
+          <Switch aria-label={t('settings:fileDiscovery.monitorLocal')} isSelected={state.watch_local}
             isDisabled={!state.available || !state.enabled}
             onChange={(watchLocal) => setState({ ...state, watch_local: watchLocal })} />
         </SettingsRow>
-        <SettingsRow label={uiText("接收 CloudDrive2 通知")}>
-          <Switch aria-label={uiText("接收 CloudDrive2 通知")} isSelected={state.cloud}
+        <SettingsRow label={t('settings:fileDiscovery.cloudNotify')} description={t('settings:fileDiscovery.cloudNotifyHelp')}>
+          <Switch aria-label={t('settings:fileDiscovery.cloudNotify')} isSelected={state.cloud}
             isDisabled={!state.available || !state.enabled}
             onChange={(cloud) => setState({ ...state, cloud })} />
         </SettingsRow>
         {live.enabled && live.cloud ? (
-          <SettingsRow label={uiText("Webhook 配置")} description={live.config_toml
-            ? uiText("贴进 CloudDrive2「设置 → Webhooks」，需要会员；更换密钥后要重贴。")
+          <SettingsRow label={t('settings:fileDiscovery.webhookConfig')} description={live.config_toml
+            ? t('settings:pushDiscovery.webhookHelp')
             : live.origin
-              ? uiText("还没有共享密钥，保存配置后生成。")
-              : uiText("要先有 CloudDrive2 能访问的局域网地址才能生成。")}>
+              ? t('settings:pushDiscovery.noSecret')
+              : t('settings:pushDiscovery.needsLanUrl')}>
           </SettingsRow>
         ) : null}
       </Rows>
@@ -113,7 +115,7 @@ export function PushDiscoveryForm({ initial, receipt }: {
           定期全量扫描补上，所以这里只报原因，不给重试。 */}
       {live.enabled && live.queue.last_error ? (
         <Stack divided>
-          <Note tone="error" title={uiText("最近一次入库失败")}>{live.queue.last_error}</Note>
+          <Note tone="error" title={t('settings:pushDiscovery.lastImportFailed')}>{live.queue.last_error}</Note>
         </Stack>
       ) : null}
       {live.enabled && live.cloud && live.config_toml ? (
@@ -121,50 +123,53 @@ export function PushDiscoveryForm({ initial, receipt }: {
           <div className="flex flex-col gap-3">
             {/* 收起来是因为抄它的人不用读它：三十行里只有地址和密钥两处跟这台机器有关，
                 两处都已经填好了。展开是留给要核对推到哪儿的那一次。 */}
-            <Disclosure summary={uiText("查看配置")}>
-              <CodeBlock code={live.config_toml} language="toml" label={uiText("CloudDrive2 配置")} bounded={false} copyLabel={uiText("复制配置")}
-                onCopy={() => receipt('已复制 CloudDrive2 配置')} />
-              <Help>{uiText("Windows 桌面版粘贴后显示「无效」时，把这段存成 .toml 文件，放进 %LOCALAPPDATA%\\CloudDrive.WinUI\\webhooks\\ 目录。")}</Help>
+            <Disclosure summary={t('settings:fileDiscovery.viewConfig')}>
+              <CodeBlock code={live.config_toml} language="toml" label={t('settings:pushDiscovery.configLabel')} bounded={false} copyLabel={t('settings:pushDiscovery.copyConfig')}
+                onCopy={() => receipt(t('settings:pushDiscovery.configCopied'))} />
+              <Help>{t('settings:pushDiscovery.invalidPasteHelp')}</Help>
             </Disclosure>
           </div>
         </Stack>
       ) : null}
-      {state.enabled && state.cloud ? (
-        <Stack divided>
+      {/* 前缀表不只给云通知用：云下载按它推出网盘目标目录与落地路径，开关关着也在生效，所以一直摆出来。 */}
+      <Stack divided>
           <div className="flex flex-col gap-3">
-            <FieldLabel>{uiText("云端路径前缀")}</FieldLabel>
-            <div role="group" aria-label={uiText("云端路径前缀")} className="flex flex-col gap-3">
+            <FieldLabel>{t('settings:pushDiscovery.cloudPrefixes')}</FieldLabel>
+            <Help>{t('settings:pushDiscovery.cloudPrefixesHelp')}</Help>
+            <div role="group" aria-label={t('settings:pushDiscovery.cloudPrefixes')} className="flex flex-col gap-3">
               {rows.map((row, index) => (
                 <div key={index} className="flex items-start gap-2">
-                  <Input className="min-w-0 flex-1" aria-label={uiText("云端路径前缀 {value0}", { value0: String(index + 1) })}
+                  <Input className="min-w-0 flex-1" aria-label={t('settings:pushDiscovery.prefixLabel', { index: index + 1 })}
                     placeholder="/115" autoComplete="off" maxLength={200} value={row.prefix}
                     onChange={(prefix) => edit(index, { prefix })} />
-                  <Select aria-label={uiText("前缀 {value0} 对应的媒体根", { value0: String(index + 1) })} prefix={uiText("对应目录")} selectedKey={row.root}
+                  <Select aria-label={t('settings:pushDiscovery.prefixRootLabel', { index: index + 1 })} prefix={t('settings:pushDiscovery.mapsTo')} selectedKey={row.root}
                     onSelectionChange={(key) => { if (key !== null) edit(index, { root: String(key) }); }}>
                     {roots.map((root) => <SelectItem key={root} id={root}>{root}</SelectItem>)}
                   </Select>
-                  <Button variant="danger" iconOnly leadingIcon={RiDeleteBinLine} aria-label={uiText("移除这一条")}
+                  <Button variant="danger" iconOnly leadingIcon={RiDeleteBinLine} aria-label={t('settings:pushDiscovery.removeRow')}
                     onClick={() => setRows((list) => list.filter((_row, i) => i !== index))} />
                 </div>
               ))}
             </div>
             <div>
               <Button variant="secondary"
-                onClick={() => setRows((list) => [...list, { prefix: '', root: roots[0] ?? '' }])}>{uiText("添加前缀")}</Button>
+                onClick={() => setRows((list) => [...list, { prefix: '', root: roots[0] ?? '' }])}>
+                {t('settings:pushDiscovery.addPrefix')}
+              </Button>
             </div>
           </div>
-        </Stack>
-      ) : null}
-      {/* 保存失败的原因归这一块，不跟着前缀表一起收起：域名或前缀写坏时那张表可能正好
-          没在屏上，而失败的正是刚按下的那颗「保存配置」。 */}
+      </Stack>
+      {/* 保存失败的原因单独一块：域名或前缀写坏时，失败的正是刚按下的那颗「保存配置」。 */}
       {failure || action.error
         ? <Stack divided><ErrorText>{failure || action.error}</ErrorText></Stack> : null}
       <Footer>
         {live.enabled && live.cloud && live.config_toml ? (
           <Button variant="secondary" onClick={rotate} disabled={!state.available}
-            {...busyProps(action.busy === 'secret')}>{uiText("更换密钥")}</Button>
+            {...busyProps(action.busy === 'secret')}>{t('settings:fileDiscovery.rotateSecret')}</Button>
         ) : null}
-        <Button type="submit" disabled={!state.available} {...busyProps(action.busy === 'save')}>{uiText("保存配置")}</Button>
+        <Button type="submit" disabled={!state.available} {...busyProps(action.busy === 'save')}>
+          {t('settings:shared.saveSettings')}
+        </Button>
       </Footer>
     </Section>
   );

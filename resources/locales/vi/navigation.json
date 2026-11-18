@@ -1,0 +1,120 @@
+{
+  "configurationSections": {
+    "diagnostics": "Chẩn đoán hệ thống",
+    "downloads": "Kênh tải xuống",
+    "feeds": "Nguồn và đăng ký",
+    "library": "Thư viện",
+    "maintenance": "Bảo trì",
+    "network": "Mạng và truy cập"
+  },
+  "durationFilter": {
+    "invalid": "Nhập khoảng thời gian không âm hợp lệ. Mức tối đa phải lớn hơn 0.",
+    "maximum": "Thời lượng tối đa (phút)",
+    "maximumLabel": "Tối đa (phút)",
+    "minimum": "Thời lượng tối thiểu (phút)",
+    "minimumLabel": "Tối thiểu (phút)",
+    "minutes_one": "{{count, number}} phút",
+    "minutes_other": "{{count, number}} phút",
+    "noLimit": "Không giới hạn"
+  },
+  "favoritesTabs": {
+    "agencies": "Công ty quản lý",
+    "creators": "Nhà sáng tạo",
+    "savedFilters": "Bộ lọc đã lưu",
+    "series": "Loạt tác phẩm",
+    "studios": "Hãng phim"
+  },
+  "followTabs": {
+    "follows": "Danh sách theo dõi",
+    "manageTags": "Quản lý thẻ",
+    "newFollow": "Thêm theo dõi"
+  },
+  "javTabs": {
+    "collection": "Bộ sưu tập",
+    "discover": "Khám phá",
+    "newReleases": "Tác phẩm mới",
+    "wanted": "Muốn xem"
+  },
+  "manage": {
+    "activity": "Tác vụ",
+    "cleanup": "Quản lý dữ liệu",
+    "configuration": "Cài đặt",
+    "quality": "Phiên bản HD",
+    "review": "Duyệt dữ liệu",
+    "stats": "Thống kê",
+    "subscriptions": "Quản lý theo dõi",
+    "taste": "Sở thích",
+    "trash": "Thùng rác"
+  },
+  "navigationGroups": {
+    "favorites": "Mục yêu thích của tôi",
+    "jav": "Khu vực JAV",
+    "preferences": "Sở thích",
+    "review": "Danh mục duyệt",
+    "sidebar": "Thanh bên",
+    "tagVocabulary": "Gắn thẻ từ vựng"
+  },
+  "pageTitle": {
+    "portrait": "Khung dọc",
+    "search": "Tìm kiếm {{term}}"
+  },
+  "preferenceSections": {
+    "appearance": "Giao diện và điều hướng",
+    "content": "Hiển thị nội dung",
+    "jav": "JAV và tác phẩm mới",
+    "playback": "Phát",
+    "search": "Tìm kiếm"
+  },
+  "reviewCategories": {
+    "actressAvatars": "Ảnh đại diện diễn viên",
+    "codeDirectories": "Thư mục mã tác phẩm cần xác minh",
+    "creatorTags": "Thẻ nhà sáng tạo",
+    "endCardEvidence": "Bằng chứng cuối phim và nguồn gốc",
+    "fc2CommentFlags": "Dấu đánh dấu từ bình luận FC2",
+    "fc2SimilarCodes": "Tác phẩm FC2 khác mã tương tự",
+    "labelLogos": "Logo hãng phim",
+    "metadataFields": "Trường thông tin",
+    "westernIdentities": "Đối chiếu danh tính phương Tây"
+  },
+  "shared": {
+    "all": "Tất cả"
+  },
+  "sidebar": {
+    "flagged": "Đã đánh dấu",
+    "following": "Đang theo dõi",
+    "home": "Trang chủ",
+    "immerse": "Chế độ đắm chìm",
+    "jav": "JAV",
+    "manage": "Quản lý",
+    "performers": "Diễn viên",
+    "playlists": "Danh sách phát",
+    "studios": "Hãng phim",
+    "tags": "Thẻ"
+  },
+  "sidebarFilters": {
+    "collapseGroup": "Thu gọn {{title}}",
+    "contentTags": "Thẻ nội dung",
+    "duration": "Thời lượng",
+    "expandGroup": "Mở rộng tất cả {{title}}",
+    "followingTags": "Thẻ đang theo dõi",
+    "orientation": "Tỷ lệ khung hình",
+    "region": "Khu vực",
+    "releaseYear": "Năm phát hành",
+    "storage": "Dung lượng lưu trữ",
+    "videoProperties": "Thuộc tính video"
+  },
+  "sidebarWidth": {
+    "label": "Thay đổi kích thước thanh bên, nhấp đúp hoặc nhấn Enter để đặt lại",
+    "pixels": "{{count}} px",
+    "resetHint": "Nhấp đúp để đặt lại"
+  },
+  "sidebarReorder": {
+    "canceled": "Đã hủy đặt hàng lại",
+    "moved": "{{label}}, đã chuyển tới vị trí {{position}}",
+    "unchanged": "Thứ tự không thay đổi"
+  },
+  "tagTabs": {
+    "online": "Trực tuyến",
+    "localLabel": "Cục bộ"
+  }
+}

@@ -5,8 +5,7 @@
 import { iconSwapHtml, setIconSwap } from '@peach/legacy/ui';
 
 import { PHOTO_SIZES } from './layout';
-import { translate as t } from '../i18n';
-import { setShellAttribute } from '../i18n/shell';
+import { t } from '../i18n';
 
 export type Density = 'big' | 'dense';
 const DENSITY_KEY = 'density';
@@ -26,7 +25,7 @@ function paintSizeGlyph(button: HTMLElement, size: string): void {
     button.innerHTML = iconSwapHtml(big[2], small[2], size === small[0] ? 'b' : 'a');
     if (drift) button.append(drift);
   } else setIconSwap(button, size === small[0] ? 'b' : 'a');
-  setShellAttribute(button, 'aria-label', size === 'big' ? '切换为小图' : '切换为大图');
+  setAttribute(button, 'aria-label', size === 'big' ? t('settings:density.switchToSmall') : t('settings:density.switchToLarge'));
 }
 
 /* 同值不重写：视频墙滚动时这几处每秒被叫十几次，`<body>` 上写一次属性就是整棵树重新匹配样式。 */
@@ -43,7 +42,7 @@ export function applyDensity(density: Density = currentDensity()): void {
   const button = densityButton();
   if (!button) return;
   setAttribute(button, 'aria-pressed', String(density === 'dense'));
-  setAttribute(button, 'title', t('当前：{layout}', { layout: t(density === 'big' ? '大图' : '密集') }));
+  setAttribute(button, 'title', t('settings:density.current', { size: density === 'big' ? t('settings:tileSize.large') : t('settings:density.compact') }));
   paintSizeGlyph(button, density === 'big' ? 'big' : 'small');
 }
 
@@ -59,6 +58,6 @@ export function paintPhotoSizeButton(size: string): void {
   const button = densityButton();
   if (!button) return;
   setAttribute(button, 'aria-pressed', String(size === 'small'));
-  setAttribute(button, 'title', t('当前：{layout}', { layout: t(size === 'big' ? '大图' : '小图') }));
+  setAttribute(button, 'title', t('settings:density.current', { size: size === 'big' ? t('settings:tileSize.large') : t('settings:tileSize.small') }));
   paintSizeGlyph(button, size);
 }

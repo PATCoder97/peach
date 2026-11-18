@@ -27,43 +27,9 @@ describe('首次运行页', { skip: origin && media && dataRoot ? false : '只�
   before(async () => { browser = await launch(); });
   after(async () => { await browser?.close(); });
 
-  it('英越语言选择即时生效、保留表单并在刷新后恢复', { timeout: 60_000 }, async () => {
-    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
-    const errors: string[] = [];
-    try {
-      await context.addInitScript(() => {
-        if (!localStorage.getItem('peach.locale.v1')) localStorage.setItem('peach.locale.v1', 'en');
-      });
-      const page = await context.newPage();
-      page.on('pageerror', error => errors.push(error.message));
-      await page.goto(origin, { waitUntil: 'load' });
-      await page.getByRole('heading', { name: 'Welcome to Peach', exact: true }).waitFor();
-      const choose = async (name: string) => {
-        await page.locator('[data-language-setting] button').click();
-        await page.getByRole('option', { name, exact: true }).click();
-      };
-      await choose('Tiếng Việt');
-      await page.getByRole('heading', { name: 'Chào mừng đến với Peach', exact: true }).waitFor();
-      assert.equal(await page.locator('html').getAttribute('lang'), 'vi');
-      await page.getByRole('button', { name: 'Bắt đầu thiết lập', exact: true }).click();
-      const folder = page.getByRole('textbox', { name: 'Thư mục nội dung 1', exact: true });
-      await folder.fill(media);
-      await choose('English');
-      assert.equal(await page.getByRole('textbox', { name: 'Media folders 1', exact: true }).inputValue(), media);
-      await choose('Tiếng Việt');
-      assert.equal(await folder.inputValue(), media);
-      assert.deepEqual((await layout(page)).offenders, []);
-      await page.reload({ waitUntil: 'load' });
-      await page.getByRole('heading', { name: 'Chào mừng đến với Peach', exact: true }).waitFor();
-      assert.equal(await page.locator('html').getAttribute('lang'), 'vi');
-      assert.equal(await page.evaluate(() => localStorage.getItem('peach.locale.v1')), 'vi');
-      assert.deepEqual(errors, []);
-    } finally { await context.close(); }
-  });
-
   it('填错原位写回，改对后进入完成态', { timeout: 120_000 }, async () => {
     const viewport = VIEWPORTS.find((candidate) => candidate.name === 'desktop')!;
-    const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
+    const context = await browser.newContext({ viewport, reducedMotion: 'reduce', locale: 'zh-CN' });
     const problems: string[] = [];
     try {
       const page: Page = await context.newPage();
@@ -91,6 +57,14 @@ describe('首次运行页', { skip: origin && media && dataRoot ? false : '只�
       // 加载：题目到齐后表单出现，等待态结束，页面不横向溢出。
       const heading = page.getByRole('heading', { name: '欢迎使用 Peach' });
       await heading.waitFor({ state: 'visible', timeout: 15_000 });
+      // 第一步就能选语言：换界面语言整页重载成新语言，换回「自动」再按浏览器语言回到中文。
+      await page.locator('button[aria-labelledby~="setup-language-label"]').click();
+      await Promise.all([page.waitForEvent('load'), page.getByRole('option', { name: 'English', exact: true }).click()]);
+      await page.getByRole('heading', { name: 'Welcome to Peach' }).waitFor({ state: 'visible', timeout: 15_000 });
+      await page.locator('button[aria-labelledby~="setup-language-label"]').click();
+      await Promise.all([page.waitForEvent('load'), page.getByRole('option', { name: 'Auto', exact: true }).click()]);
+      await heading.waitFor({ state: 'visible', timeout: 15_000 });
+      assert.deepEqual((await layout(page)).offenders, []);
       await page.getByRole('button', { name: '开始设置', exact: true }).click();
       const folder = page.getByRole('textbox', { name: '媒体目录 1' });
       await folder.waitFor({ state: 'visible', timeout: 15_000 });
@@ -178,6 +152,8 @@ describe('首次运行页', { skip: origin && media && dataRoot ? false : '只�
       await page.getByRole('button', { name: '完成设置' }).click();
       const acceptedResponse = await accepted;
       assert.equal(acceptedResponse.status(), 200, await acceptedResponse.text());
+      const answers = acceptedResponse.request().postDataJSON() as Record<string, unknown>;
+      assert.equal(answers.interface_language, 'auto');
       assert.deepEqual(JSON.parse(await readFile(join(selectedData, 'secrets/follow/peach-proxy.json'), 'utf8')), {
         mode: 'proxy', proxy: 'socks5h://user:private-proxy@127.0.0.1:17890',
       });

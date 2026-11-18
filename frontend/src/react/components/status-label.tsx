@@ -1,6 +1,5 @@
 import type { HTMLAttributes } from 'react';
 import { Chip } from '@/components/base/badges/chip';
-import { useTranslation } from '../i18n';
 
 export type StatusTone = 'success' | 'progress' | 'warning' | 'error' | 'neutral';
 export const STATUS_COLORS = {
@@ -9,8 +8,5 @@ export const STATUS_COLORS = {
 
 /** 稳定结果与配置状态使用标签，连接状态由 ConnectionStatus 承担。 */
 export function StatusLabel({ tone = 'neutral', ...props }: Omit<HTMLAttributes<HTMLSpanElement>, 'color'> & { tone?: StatusTone }) {
-  const t = useTranslation();
-  return <Chip data-status-tone={tone} variant="caption" color={STATUS_COLORS[tone]} {...props}>
-    {typeof props.children === 'string' ? t(props.children) : props.children}
-  </Chip>;
+  return <Chip data-status-tone={tone} variant="caption" color={STATUS_COLORS[tone]} {...props} />;
 }

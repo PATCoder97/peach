@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 复核筛选与批量动作：分组方式、分类筛选、全选本页留在吸顶栏，所选项目的判定动作
  * 使用首页同款底部悬浮框。
  *
@@ -9,11 +8,13 @@ import { RiCheckDoubleLine } from '@remixicon/react';
 
 import { Button } from '@/components/base/buttons/button';
 import { Select, SelectItem } from '../components/select';
-import { SelectionDock } from '../components/selection-dock';
+import { exitPageSelection } from '../components/page-selection';
+import { SelectionDock, type DockAction } from '../components/selection-dock';
 import { FilterGlassRows } from '../components/filter-glass';
 import { useViewGlide } from '../components/use-view-glide';
-import type { DecisionStatus, ReviewGroup, ReviewGrouping, ReviewQueue, ReviewRow } from './review';
+import type { ReviewGroup, ReviewGrouping, ReviewQueue, ReviewRow } from './review';
 import { commonReviewSources, REVIEW_QUEUES, REVIEW_QUEUE_LABELS } from './review';
+import { t } from '../../i18n';
 
 export interface BulkToolbarProps {
   queueView?: ReviewQueue;
@@ -32,30 +33,31 @@ export interface BulkToolbarProps {
   /** 当前这一页上的行，全选就是全选它们。 */
   pageKeys: string[];
   selected: ReadonlySet<string>;
+  /** 当前筛选下全部页的行；比本页多时给「全选全部」，一次选中跨页的整份。 */
+  allKeys?: readonly string[];
   onSelected(next: Set<string>): void;
   /** 选中的那些行，用来算共同来源。 */
   selectedRows: ReviewRow[];
   metadata: boolean;
-  /** 所选项目里还能不能按下「通过所选」。 */
-  approvable: boolean;
   busy: boolean;
   feedback: string;
   onUnifySource(source: string): void;
-  onRun(status: DecisionStatus): void;
+  /** 所选行上的判定键（忽略、稍后、放回待处理、通过），每颗都声明确认与撤销。 */
+  actions: readonly DockAction[];
 }
 
 export function BulkToolbar(props: BulkToolbarProps) {
-  const uiText = useUiTranslation();
   const {
-    groupOptions, groupBy, onGroupBy, groups, filter, onFilter, pageKeys, selected, onSelected,
-    selectedRows, metadata, approvable, busy, feedback, onUnifySource, onRun, queueView = 'pending',
+    groupOptions, groupBy, onGroupBy, groups, filter, onFilter, pageKeys, allKeys = pageKeys, selected, onSelected,
+    selectedRows, metadata, busy, feedback, onUnifySource, actions, queueView = 'pending',
     queueCounts, onQueueChange, locked, fields, fieldFilter, onFieldFilter,
   } = props;
   const shown = pageKeys.filter((key) => selected.has(key));
   const allShown = shown.length > 0 && shown.length === pageKeys.length;
+  const everything = allKeys.length > pageKeys.length && allKeys.every((key) => selected.has(key));
   const sources = commonReviewSources(selectedRows);
   const needsSource = metadata && selectedRows.some((row) => (row.candidates?.length || 0) > 1);
-  const sourceLabel = sources.length ? '统一选择来源' : '所选项目无共同来源';
+  const sourceLabel = sources.length ? t('manage:reviewToolbar.sourceForAll') : t('manage:reviewToolbar.noCommonSource');
   const statePane = useRef<HTMLSpanElement>(null);
   const stateRow = useRef<HTMLDivElement>(null);
   const controlRow = useRef<HTMLDivElement>(null);
@@ -82,17 +84,17 @@ export function BulkToolbar(props: BulkToolbarProps) {
 
   return (
     <>
-      <FilterGlassRows label={uiText("复核筛选")} topLabel={uiText("处理状态")} attrs={{ 'data-review-filter': '' }}
+      <FilterGlassRows label={t('manage:reviewToolbar.filters')} topLabel={t('manage:reviewToolbar.processingStatus')} attrs={{ 'data-review-filter': '' }}
         className="mb-0 flex-row flex-wrap" topClassName="max-w-full flex-none"
         bottomClassName={pageKeys.length ? 'min-h-12 max-w-full flex-none flex-wrap' : 'hidden'}
         bottomRef={controlRow}
         panes={<span ref={statePane} data-view-glide="" aria-hidden="true" />}
-        top={<div ref={stateRow} role="group" aria-label={uiText("复核状态")} data-entity-states=""
+        top={<div ref={stateRow} role="group" aria-label={t('manage:reviewToolbar.reviewStatus')} data-entity-states=""
           onPointerLeave={stateGlide.leave}>
           {REVIEW_QUEUES.map(key => <button key={key} type="button" data-entity-state={key} data-entity-press=""
             disabled={busy} aria-pressed={queueView === key} onPointerEnter={stateGlide.hover}
             onClick={() => { if (key !== queueView) onQueueChange(key) }}>
-            <span data-copy-key={`review.queue.${key}`}>{uiText(REVIEW_QUEUE_LABELS[key])}</span>{' '}
+            <span data-copy-key={`review.queue.${key}`}>{REVIEW_QUEUE_LABELS[key]}</span>{' '}
             <span className="ms-1.5 tabular-nums text-caption-1-medium text-text-secondary">
               {queueCounts ? queueCounts[key].toLocaleString() : '…'}
             </span>
@@ -100,57 +102,54 @@ export function BulkToolbar(props: BulkToolbarProps) {
           <span data-entity-sep="" aria-hidden="true" className={joinedRows ? undefined : 'invisible'} />
         </div>}
         bottom={pageKeys.length ? <>
-        {metadata && fields.length ? <Select aria-label={uiText("筛选资料字段")} size="sm"
-          prefix={<span data-copy-key="review.filter.field" className="pointer-events-auto">{uiText("字段")}</span>}
+        {metadata && fields.length ? <Select aria-label={t('manage:reviewToolbar.filterField')} size="sm"
+          prefix={<span data-copy-key="review.filter.field" className="pointer-events-auto">{t('manage:reviewToolbar.field')}</span>}
           selectedKey={fieldFilter || '*'} isDisabled={busy}
           onSelectionChange={(key) => { if (key !== null) onFieldFilter(String(key) === '*' ? '' : String(key)) }}>
-          <SelectItem id="*">{uiText("全部")}</SelectItem>
+          <SelectItem id="*">{t('manage:shared.all')}</SelectItem>
           {fields.map(field => <SelectItem key={field.key} id={field.key}>
-            {`${uiText(field.title)} · ${field.rows.length}`}
+            {`${field.title} · ${field.rows.length}`}
           </SelectItem>)}
         </Select> : null}
-        <Select aria-label={uiText("筛选分组方式")} size="sm" selectedKey={groupBy}
+        <Select aria-label={t('manage:reviewToolbar.groupBy')} size="sm" selectedKey={groupBy}
           onSelectionChange={(key) => { if (key !== null) onGroupBy(String(key) as ReviewGrouping) }}>
-          {groupOptions.map(([key, name]) => <SelectItem key={key} id={key}>{uiText(name)}</SelectItem>)}
+          {groupOptions.map(([key, name]) => <SelectItem key={key} id={key}>{name}</SelectItem>)}
         </Select>
         {/* 只有一组时没什么可筛的：一个「全部分类」的下拉读起来像坏了。 */}
         {groups.length > 1 ? (
-          <Select aria-label={groupBy === 'field' ? uiText("筛选字段分类") : uiText("筛选当前分类")} size="sm" prefix={uiText("分类")}
+          <Select aria-label={groupBy === 'field' ? t('manage:reviewToolbar.filterFieldGroup') : t('manage:reviewToolbar.filterGroup')} size="sm" prefix={t('manage:reviewToolbar.group')}
             selectedKey={filter || '*'}
             onSelectionChange={(key) => { if (key !== null) onFilter(String(key) === '*' ? '' : String(key)) }}>
-            <SelectItem id="*">{uiText("全部")}</SelectItem>
+            <SelectItem id="*">{t('manage:shared.all')}</SelectItem>
             {groups.map((group) => (
               <SelectItem key={group.key} id={group.key}>
-                {`${uiText(group.title)} · ${group.rows.length}`}
+                {`${group.title} · ${group.rows.length}`}
               </SelectItem>
             ))}
           </Select>
         ) : null}
         {locked ? null : <Button variant="secondary" size="small" leadingIcon={RiCheckDoubleLine}
           aria-pressed={allShown} disabled={busy} onClick={toggleAll}>
-          {uiText(allShown ? '清空当前选择' : filter ? '全选当前分类' : '全选本页')}
+          {allShown ? t('manage:reviewToolbar.clearSelection') : filter ? t('manage:reviewToolbar.selectGroup') : t('manage:reviewToolbar.selectPage')}
+        </Button>}
+        {locked || allKeys.length <= pageKeys.length || everything ? null : <Button variant="secondary" size="small"
+          disabled={busy} onClick={() => onSelected(new Set([...selected, ...allKeys]))}>
+          {t('manage:reviewToolbar.selectAll', { count: allKeys.length })}
         </Button>}
         </> : null} />
 
-        <SelectionDock label={uiText("复核所选项目")} visible={!locked && selected.size > 0} count={`已选 ${selected.size} 项`}>
-          {needsSource && queueView !== 'ignored' ? (
-            <Select aria-label={uiText("统一选择来源")} size="sm" selectedKey=""
+        <SelectionDock label={t('manage:reviewToolbar.selectedDock')} visible={!locked && selected.size > 0} count={t('manage:reviewToolbar.selectedCount', { count: selected.size })}
+          actions={actions}
+          leading={needsSource && queueView !== 'ignored' ? (
+            <Select aria-label={t('manage:reviewToolbar.sourceForAll')} size="sm" selectedKey=""
               isDisabled={busy || !sources.length}
               onSelectionChange={(key) => { if (key !== null && key !== '') onUnifySource(String(key)) }}>
               <SelectItem id="">{sourceLabel}</SelectItem>
               {sources.map((source) => <SelectItem key={source} id={source}>{source}</SelectItem>)}
             </Select>
-          ) : null}
-          {queueView !== 'ignored' ? <Button variant="ghost" size="small" disabled={busy || !selected.size}
-            onClick={() => onRun('rejected')}>{uiText("忽略所选")}</Button> : null}
-          {queueView === 'pending' ? <Button variant="secondary" size="small" disabled={busy || !selected.size}
-            onClick={() => onRun('skipped')}>{uiText("稍后处理所选")}</Button> : <Button
-            variant={queueView === 'ignored' ? 'primary' : 'secondary'} size="small" disabled={busy || !selected.size}
-            onClick={() => onRun('restore')}>{uiText("恢复所选")}</Button>}
-          {queueView !== 'ignored' ? <Button variant="primary" size="small" disabled={busy || !selected.size || !approvable}
-            onClick={() => onRun('approved')}>{uiText("通过所选")}</Button> : null}
+          ) : null}>
           <Button variant="ghost" size="small" disabled={busy}
-            onClick={() => onSelected(new Set())}>{uiText("取消选择")}</Button>
+            onClick={exitPageSelection}>{t('manage:reviewToolbar.deselect')}</Button>
           {feedback
             ? <p role="status" className="w-full text-body-2-regular text-text-secondary">{feedback}</p>
             : null}

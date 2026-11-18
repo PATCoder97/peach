@@ -1,10 +1,12 @@
 ﻿[CmdletBinding()]
 param(
-    [ValidateSet('full', 'auto', 'follow', 'catalog', 'media', 'sync', 'metadata', 'tooling', 'web', 'checks', 'core', 'packaging')]
+    [ValidateSet('full', 'auto', 'follow', 'catalog', 'media', 'sync', 'metadata', 'tooling', 'delivery', 'web', 'checks', 'core', 'packaging')]
     [string]$Scope = 'auto',
     [switch]$Fresh,
     [switch]$Resume,
     [string[]]$Focus = @(),
+    # 定向运行失败后把失败文件单独重跑一次；CI 浏览器分片用它消化负载偶发。
+    [switch]$RerunFailures,
     [string]$Base = 'master',
     [int]$ShardIndex = 0,
     [int]$ShardCount = 1,
@@ -16,7 +18,7 @@ $ErrorActionPreference = 'Stop'
 $WorktreeRoot = (Resolve-Path -LiteralPath (Split-Path -Parent $PSScriptRoot)).Path
 $GitCommonRaw = (& git -C $WorktreeRoot rev-parse --git-common-dir).Trim()
 if ($LASTEXITCODE -ne 0 -or -not $GitCommonRaw) {
-    throw 'Không xác định được worktree chính của Peach.'
+    throw '无法定位 Peach 主工作树。'
 }
 
 if ([IO.Path]::IsPathRooted($GitCommonRaw)) {
@@ -30,7 +32,7 @@ $Python = Join-Path $MainRoot '.venv\Scripts\python.exe'
 $LocalPython = Join-Path $WorktreeRoot '.venv\Scripts\python.exe'
 if (Test-Path -LiteralPath $LocalPython -PathType Leaf) { $Python = $LocalPython }
 if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) {
-    throw "Không tìm thấy venv của dự án Peach chính: $Python"
+    throw "Peach 主项目 venv 不存在：$Python"
 }
 
 $SourceRoot = (Resolve-Path -LiteralPath (Join-Path $WorktreeRoot 'src')).Path
@@ -56,18 +58,19 @@ try {
     $Python = $LocalPython
     $LoadedModule = (& $Python -c 'import peach; print(peach.__file__)').Trim()
     if ($LASTEXITCODE -ne 0 -or -not $LoadedModule) {
-        throw 'Không nhập được peach từ worktree hiện tại.'
+        throw '无法导入当前工作树中的 peach。'
     }
     $LoadedPath = (Resolve-Path -LiteralPath $LoadedModule).Path
     $ExpectedPrefix = $SourceRoot.TrimEnd('\') + '\'
     if (-not $LoadedPath.StartsWith($ExpectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Kiểm thử đã nạp sai mã nguồn: $LoadedPath; cần nằm trong $SourceRoot"
+        throw "测试加载了错误源码：$LoadedPath；预期位于 $SourceRoot"
     }
 
-    Write-Host "Mã nguồn Peach: $LoadedPath"
+    Write-Host "Peach source: $LoadedPath"
     $PeachTestExtra = @()
     if ($Fresh) { $PeachTestExtra += '--fresh' }
     if ($Resume) { $PeachTestExtra += '--resume' }
+    if ($RerunFailures) { $PeachTestExtra += '--rerun-failures' }
     foreach ($PeachFocusSelector in $Focus) { $PeachTestExtra += @('--focus', $PeachFocusSelector) }
     & $Python scripts\test_runner.py --scope $Scope --base $Base --shard-index $ShardIndex --shard-count $ShardCount --jobs $Jobs @PeachTestExtra
     exit $LASTEXITCODE

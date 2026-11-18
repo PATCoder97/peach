@@ -49,10 +49,20 @@ class SegmentGenerationLifecycleTests(unittest.IsolatedAsyncioTestCase):
             with self.subTest(cancelled=cancelled):
                 first_started, release_first = asyncio.Event(), asyncio.Event()
                 finish = asyncio.Event()
+                second_started = asyncio.Event()
+                registered = {name: asyncio.Event() for name in ('waiting', 'new', 'last')}
+                register_consumer = self.registry.register
+
+                def register(session, task, *, register_consumer=register_consumer, registered=registered):
+                    accepted = register_consumer(session, task)
+                    if accepted and session in registered:
+                        registered[session].set()
+                    return accepted
+
                 calls = active = peak = 0
 
                 async def generate(source, start, duration, target, *, first_started=first_started,
-                                   release_first=release_first, finish=finish, **kwargs):
+                                   release_first=release_first, finish=finish, second_started=second_started, **kwargs):
                     nonlocal calls, active, peak
                     calls += 1
                     active += 1
@@ -62,6 +72,7 @@ class SegmentGenerationLifecycleTests(unittest.IsolatedAsyncioTestCase):
                             first_started.set()
                             await release_first.wait()
                             raise SegmentUnavailable("controlled failure")
+                        second_started.set()
                         await finish.wait()
                         target.parent.mkdir(parents=True, exist_ok=True)
                         target.write_bytes(b"segment")
@@ -70,12 +81,13 @@ class SegmentGenerationLifecycleTests(unittest.IsolatedAsyncioTestCase):
                         active -= 1
 
                 tasks = []
-                with mock.patch.object(self.service, "_generate_uncached", generate):
+                with (mock.patch.object(self.service, "_generate_uncached", generate),
+                      mock.patch.object(self.registry, 'register', register)):
                     try:
                         tasks.append(asyncio.create_task(self.generate("first")))
                         await asyncio.wait_for(first_started.wait(), 1)
                         tasks.append(asyncio.create_task(self.generate("waiting")))
-                        await asyncio.sleep(0)
+                        await asyncio.wait_for(registered['waiting'].wait(), 5)
                         if cancelled:
                             tasks[0].cancel()
                         else:
@@ -83,8 +95,10 @@ class SegmentGenerationLifecycleTests(unittest.IsolatedAsyncioTestCase):
                         await asyncio.gather(tasks[0], return_exceptions=True)
                         tasks.append(asyncio.create_task(self.generate("new")))
                         tasks.append(asyncio.create_task(self.generate("last")))
-                        for _ in range(5):
-                            await asyncio.sleep(0)
+                        arrivals = [registered[name].wait() for name in ('new', 'last')]
+                        if not cancelled:
+                            arrivals.append(second_started.wait())
+                        await asyncio.wait_for(asyncio.gather(*arrivals), 5)
                         self.assertEqual(peak, 1)
                         self.assertTrue(self.service._generation_locks)
                     finally:
@@ -92,6 +106,7 @@ class SegmentGenerationLifecycleTests(unittest.IsolatedAsyncioTestCase):
                         finish.set()
                         await asyncio.gather(*tasks, return_exceptions=True)
                         self.service.cached_path(self.source, 1, 0).unlink(missing_ok=True)
+                self.assertEqual(peak, 1)
                 self.assertEqual(self.service._generation_locks, {})
 
     async def test_arrivals_share_the_target_while_its_cancelled_generator_is_reaped(self):
@@ -208,7 +223,7 @@ class MediaResponseLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.app.state.hls_service = self.service
         self.children = []
         self.tasks = []
-        self.spawned = asyncio.Event()
+        self.ready = asyncio.Event()
         self.original_spawn = asyncio.create_subprocess_exec
         self.addAsyncCleanup(self.stop_owned_work)
 
@@ -228,12 +243,14 @@ class MediaResponseLifecycleTests(unittest.IsolatedAsyncioTestCase):
     async def owned_spawn(self, *args, **kwargs):
         child = await self.original_spawn(*args, **kwargs)
         self.children.append(child)
-        self.spawned.set()
+        self.assertEqual((await child.stderr.readline()).rstrip(b'\r\n'), b'ready')
+        self.ready.set()
         return child
 
     def attempts(self, delay):
         return [("owned output", lambda out: [getattr(sys, '_base_executable', sys.executable), "-c",
-            "import sys,time; from pathlib import Path; time.sleep(float(sys.argv[1])); "
+            "import sys,time; from pathlib import Path; print('ready',file=sys.stderr,flush=True); "
+            "time.sleep(float(sys.argv[1])); "
             "Path(sys.argv[2]).write_bytes(b'segment')", str(delay), str(out)])]
 
     def request(self, path, query=b""):
@@ -270,7 +287,7 @@ class MediaResponseLifecycleTests(unittest.IsolatedAsyncioTestCase):
                 mock.patch.object(self.service, "_attempts", return_value=self.attempts(60)), \
                 mock.patch("peach.segments.asyncio.create_subprocess_exec", self.owned_spawn):
             task, messages, sent = self.request("/stream/hls/1/0.ts", b"session=one&t=secret")
-            await asyncio.wait_for(self.spawned.wait(), 2)
+            await asyncio.wait_for(self.ready.wait(), 10)
             messages.put_nowait({"type": "http.disconnect"})
             self.assertTrue(await self.finished(task), "断连请求仍占着生成槽")
         self.assertIsNotNone(self.children[0].returncode)
@@ -288,27 +305,31 @@ class MediaResponseLifecycleTests(unittest.IsolatedAsyncioTestCase):
 
     async def shared_client_leaves(self, *, explicit):
         joined = asyncio.Event()
-        generate = self.service.generate
+        sessions = self.app.state.stream_sessions
+        register = sessions.register
         release = self.root / "release-segment"
         attempts = [("controlled output", lambda out: [
             getattr(sys, '_base_executable', sys.executable), "-c",
             "import sys,time\nfrom pathlib import Path\n"
+            "print('ready',file=sys.stderr,flush=True)\n"
             "while not Path(sys.argv[1]).exists(): time.sleep(0.01)\n"
             "Path(sys.argv[2]).write_bytes(b'segment')",
             str(release), str(out)])]
 
-        async def observed(*args, **kwargs):
-            if kwargs["session"] == "two":
+        # 第二个客户端登记后、下一次让出之前就挂到了共享生成上；刚进 generate 时还没有。
+        def observed(session, task):
+            registered = register(session, task)
+            if session == "two":
                 joined.set()
-            return await generate(*args, **kwargs)
+            return registered
 
         with mock.patch.object(routes_media, "_hls_plan", return_value=(
                 None, self.source, [(0, 6)], False)), \
                 mock.patch.object(self.service, "_attempts", return_value=attempts), \
-                mock.patch.object(self.service, "generate", observed), \
+                mock.patch.object(sessions, "register", observed), \
                 mock.patch("peach.segments.asyncio.create_subprocess_exec", self.owned_spawn):
             first, messages, _ = self.request("/stream/hls/1/0.ts", b"session=one&t=secret")
-            await asyncio.wait_for(self.spawned.wait(), 2)
+            await asyncio.wait_for(self.ready.wait(), 10)
             second, _, sent = self.request("/stream/hls/1/0.ts", b"session=two&t=secret")
             await asyncio.wait_for(joined.wait(), 1)
             if explicit:
@@ -435,16 +456,22 @@ class MediaResponseLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.app.state.stream_sessions.active_count("owned"), 0)
 
     async def test_file_runtime_errors_reach_the_application_error_handler(self):
+        entered, fail = asyncio.Event(), asyncio.Event()
+
         @self.app.get("/owned-stream")
         async def stream():
             return BufferedFileResponse(self.source)
 
         async def broken_headers(response, scope, receive, send):
+            entered.set()
+            await fail.wait()
             raise RuntimeError("owned response failure")
 
         with mock.patch.object(FileResponse, "__call__", broken_headers), \
                 mock.patch("peach.api._server_error_headers", return_value={"X-Peach-Error-ID": "test"}) as errors:
             task, _, sent = self.request("/owned-stream")
+            await asyncio.wait_for(entered.wait(), 10)
+            fail.set()
             observed = None
             try:
                 await asyncio.wait_for(task, 1)

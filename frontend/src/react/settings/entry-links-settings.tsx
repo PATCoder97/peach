@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 「外部入口」：人物资料页上通向 みんなのAV、JavDB 与 MISSAV 的那几枚直达入口。
  *
  * 这里只有 JavDB 与 MISSAV 两个地址框，这两站主域名连不上时在这里换成能打开的镜像；
@@ -18,12 +17,12 @@ import type { EntryLinkSite, EntryLinksState } from '../bundle';
 import { ErrorText, Footer, Help, Section, Stack } from './section';
 import { busyProps, useAction } from './use-action';
 import { SiteLabel } from '../components/source-label';
+import { t } from '../../i18n';
 
 export function EntryLinksForm({ initial, receipt }: {
   initial: EntryLinksState;
   receipt(message: string): void;
 }) {
-  const uiText = useUiTranslation();
   const [sites, setSites] = useState<EntryLinkSite[]>(initial.sites);
   const action = useAction();
 
@@ -37,25 +36,25 @@ export function EntryLinksForm({ initial, receipt }: {
       apiSend<EntryLinksState>('/api/configuration/entry-links', body, 'POST', signal),
       (next) => {
         setSites(next.sites);
-        receipt('已保存配置');
+        receipt(t('settings:shared.settingsSaved'));
       });
   };
 
   return (
-    <Section title={uiText("作品资料站点")} onSubmit={submit}>
+    <Section guide="entry-links" title={t('settings:entryLinks.title')} onSubmit={submit}>
       <Stack>
         <Help>{ENTRY_LINKS_HELP}</Help>
         {sites.map((site) => (
-          <Input key={site.key} id={`entry-link-${site.key}`} label={<SiteLabel site={site.key} label={uiText('{site} 地址', { site: site.label })} />}
+          <Input key={site.key} id={`entry-link-${site.key}`} label={<SiteLabel site={site.key} label={t('settings:entryLinks.siteAddress', { site: site.label })} />}
             autoComplete="off" maxLength={100} value={site.host}
             placeholder={site.default_host}
             onChange={(host) => change(site.key, host)}
-            validationBehavior="aria" hint={uiText(ENTRY_LINKS_HINT)} />
+            validationBehavior="aria" hint={ENTRY_LINKS_HINT} />
         ))}
         {action.error ? <ErrorText>{action.error}</ErrorText> : null}
       </Stack>
       <Footer>
-        <Button type="submit" {...busyProps(action.busy === 'save')}>{uiText("保存配置")}</Button>
+        <Button type="submit" {...busyProps(action.busy === 'save')}>{t('settings:shared.saveSettings')}</Button>
       </Footer>
     </Section>
   );

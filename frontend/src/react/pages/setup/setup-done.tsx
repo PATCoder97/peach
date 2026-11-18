@@ -1,6 +1,3 @@
-import { useTranslation as useUiTranslation } from "../../i18n";
-import { translate as t } from '../../../i18n/index';
-import { useTranslation } from '../../i18n';
 /* 设置完成：扫描是否已排队、进入 Peach 的入口，运行信息默认折叠。口令不出现在页面上。
  *
  * 独立包的服务端在 `redirect` 里给入口地址，过 `RESTART_REDIRECT_MS` 自己跳过去，与配置页保存后
@@ -13,17 +10,15 @@ import { RESTART_REDIRECT_MS } from '../../restart-redirect';
 import { Disclosure, ExternalLink, Fact, FactList } from '../../settings/section';
 import type { SetupDone } from './setup-api';
 import { SetupShell } from './setup-scene';
+import { t } from '../../../i18n';
 
 export function SetupDoneView({ done }: { done: SetupDone }) {
-  const uiText = useUiTranslation();
-  useTranslation();
   const entry = useRef<HTMLAnchorElement>(null);
-  const title = t('Peach · 设置完成');
 
   useEffect(() => {
-    document.title = title;
+    document.title = t('shell:setupDone.documentTitle');
     entry.current?.focus();
-  }, [title]);
+  }, []);
 
   useEffect(() => {
     const target = done.redirect;
@@ -35,25 +30,27 @@ export function SetupDoneView({ done }: { done: SetupDone }) {
   return (
     <SetupShell step="done">
     <section data-setup-form-panel="" aria-labelledby="auth-card-title">
-      <div data-setup-top=""><span className="text-body-2-regular text-text-secondary">{t("设置完成")}</span></div>
+      <div data-setup-top=""><span className="text-body-2-regular text-text-secondary">{t('shell:setupDone.eyebrow')}</span></div>
       <div data-setup-step-scroll=""><div data-setup-step-content="">
       <header data-setup-step-heading="">
-        <h1 id="auth-card-title" className="text-title-1-semibold text-text-primary">{t("可以开始使用了")}</h1>
-        <p className="text-body-regular text-text-secondary">{t("你的 Peach 已准备就绪。")}</p>
+        <h1 id="auth-card-title" className="text-title-1-semibold text-text-primary">{t('shell:setupDone.title')}</h1>
+        <p className="text-body-regular text-text-secondary">{t('shell:setupDone.ready')}</p>
       </header>
       <div>
       <p className="text-body-regular text-text-primary">
-        {done.restored ? t("已连接已有数据目录。") : done.skip_media
-          ? t("可在「媒体库与入库」添加媒体目录并开始扫描。") : done.scan_requested
-          ? t("首次扫描已排队，在后台整理媒体库，期间可以照常使用 Peach。")
-          : t("稍后在配置页开始扫描媒体库。")}
+        {done.restored ? t('shell:setupDone.restored') : done.skip_media
+          ? t('shell:setupDone.addMediaLater') : done.scan_requested
+          ? t('shell:setupDone.scanQueued')
+          : t('shell:setupDone.scanLater')}
       </p>
-      <Disclosure summary={uiText("运行信息")}>
+      <Disclosure summary={t('shell:setupDone.runtime')}>
         <FactList>
           {done.facts.map((fact) => (
             <Fact key={fact.term} term={fact.term}>
               {fact.value}
-              {fact.download_url
+              {fact.install_tool
+                ? <span className="text-text-secondary">{t('shell:setupDone.installInSettings')}</span>
+                : fact.download_url
                 ? <ExternalLink href={fact.download_url}>{fact.download_label ?? fact.download_url}</ExternalLink>
                 : null}
             </Fact>
@@ -62,7 +59,7 @@ export function SetupDoneView({ done }: { done: SetupDone }) {
       </Disclosure>
       </div></div></div>
       <footer data-setup-footer="" data-setup-footer-end="" data-copy-interact>
-        <ButtonLink ref={entry} href={done.url}>{done.history_guide ? t("导入浏览器历史记录") : t("进入 Peach")}</ButtonLink>
+        <ButtonLink ref={entry} href={done.url}>{done.history_guide ? t('shell:setupDone.importHistory') : t('shell:setupDone.enter')}</ButtonLink>
       </footer>
     </section>
     </SetupShell>

@@ -6,7 +6,6 @@
  * 24px 圆角，窄屏收内边距。
  * `busy` 时卡上写 `aria-busy`，题目还没取回来。 */
 import type { ReactNode } from 'react';
-import { LanguageSetting } from '../components/language-setting';
 
 export function AuthCard({ title, lede, busy = false, children }: {
   title: string;
@@ -25,7 +24,6 @@ export function AuthCard({ title, lede, busy = false, children }: {
           {lede ? <p className="whitespace-pre-line text-body-2-regular text-text-secondary wrap-anywhere">{lede}</p> : null}
         </header>
         {children}
-        <LanguageSetting compact />
       </section>
     </main>
   );

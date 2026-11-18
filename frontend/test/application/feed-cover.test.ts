@@ -1,24 +1,7 @@
-import { afterEach, expect, it, vi } from 'vitest';
+import { expect, it, vi } from 'vitest';
 
 import { advanceImageFallback } from '../../src/card-art/image-fallback';
-import { feedNewCardHtml, feedNewCoverHtml, feedNetworkNote } from '../../src/application/feed.js';
-import { setLocale } from '../../src/i18n';
-
-afterEach(() => setLocale('zh-CN'));
-
-it('新作操作与网络提示使用所选语言，标题姓名与作品键保留原文', () => {
-  for (const [locale, open, retry] of [['en','Open title details: 中文-123','next run'],['vi','Mở chi tiết tác phẩm: 中文-123','lượt tiếp theo']] as const) {
-    setLocale(locale);
-    const host = document.createElement('div');
-    host.innerHTML = feedNewCardHtml({id:1,code:'中文-123',title:'标题原文',performers:'姓名原文'});
-    expect(host.querySelector('.feednewopen')?.getAttribute('aria-label')).toBe(open);
-    expect(host.querySelector('.feednewopen')?.getAttribute('href')).toBe('/works/%E4%B8%AD%E6%96%87-123');
-    expect(host.querySelector('[data-feed-action="want"]')).not.toBeNull();
-    expect(host.textContent).toContain('标题原文');
-    expect(host.textContent).toContain('姓名原文');
-    expect(feedNetworkNote(2,[{has_cover:false}])).toContain(retry);
-  }
-});
+import { feedNewCoverHtml } from '../../src/application/feed.js';
 
 // 封面片段只读条目字段，其余域控制器换成空壳，免得装载整套应用。
 vi.mock('../../src/application/catalog.js', () => ({ catalogState: {} }));
@@ -45,6 +28,19 @@ it('代理取不到封面时换成「封面未取得」占位，不留裂图', (
   expect(advanceImageFallback(host.querySelector('img'))).toBe('drop');
   expect(host.querySelector('img')).toBeNull();
   expect(host.querySelector('span.nopic')?.textContent).toBe('封面未取得');
+});
+
+it('还没有封面时写出状态与原因，排队的给「优先处理」，取过没取到的给「立即重试」', () => {
+  for (const [state, title, action] of [['queued', '排队中', '优先处理'], ['missing', '无封面', '立即重试']] as const) {
+    const host = render({ code: 'ABC-001', has_cover: false, cover_url: '', cover_state: state, cover_reason: '等下一轮订阅检查分批取图' });
+    const cell = host.querySelector(`[data-feed-cover-state="${state}"]`)!;
+    expect(cell.querySelector('.nopic')?.textContent).toBe(title);
+    expect(cell.querySelector('.feedcoverreason')?.textContent).toBe('等下一轮订阅检查分批取图');
+    const button = cell.querySelector<HTMLButtonElement>('button[data-feed-action="prioritise"]')!;
+    expect([button.textContent, button.dataset.code]).toEqual([action, 'ABC-001']);
+  }
+  const fetching = render({ code: 'ABC-001', has_cover: false, cover_url: '', cover_state: 'fetching' });
+  expect(fetching.querySelector('[data-feed-cover-state="fetching"] button')).toBeNull();
 });
 
 it('没有可代理的地址或番号时直接显示无封面，不发请求', () => {

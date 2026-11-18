@@ -1,77 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { confirmModal, formModal } from '../src/ui-kit';
-import { setLocale } from '../src/i18n';
+import { confirmModal } from '../src/ui-kit';
 
-afterEach(() => document.body.replaceChildren());
-it('批量删除确认切换语言时保留数量和不可恢复提示', async () => {
-  setLocale('en');
-  const write = vi.fn();
-  const pending = confirmModal({title:'永久删除所选项目',body:'将处理选中的 3 项。文件和馆藏记录会永久删除，无法恢复。',
-    confirmLabel:'永久删除所选项目',danger:true,onConfirm:write});
-  const dialog = document.querySelector('dialog')!;
-  try {
-    expect(dialog.textContent).toContain('3 selected items');
-    expect(dialog.textContent).toContain('cannot be recovered');
-    setLocale('vi');
-    expect(dialog.textContent).toContain('3 mục đã chọn');
-    expect(dialog.textContent).toContain('không thể khôi phục');
-    dialog.querySelector<HTMLButtonElement>('[data-modal-cancel]')!.click();
-    expect((await pending).confirmed).toBe(false);
-    expect(write).not.toHaveBeenCalled();
-  } finally { if(dialog.open)dialog.close(); setLocale('zh-CN') }
-});
-it('标签改名确认翻译影响范围并按纯文本保留原始名称', async () => {
-  setLocale('en');
-  const pending = confirmModal({title:'重命名标签',body:'「旧标签」将更名为「<新名字>」，涉及 2 个资源。旧名称保留为别名。',confirmLabel:'重命名标签'});
-  const dialog = document.querySelector('dialog')!;
-  try {
-    expect(dialog.textContent).toContain('Rename 「旧标签」 to “<新名字>”, affecting 2 assets');
-    setLocale('vi');
-    expect(dialog.textContent).toContain('Đổi tên 「旧标签」 thành “<新名字>”, ảnh hưởng 2 tài nguyên');
-    expect(dialog.querySelector('新名字')).toBeNull();
-    dialog.querySelector<HTMLButtonElement>('[data-modal-cancel]')!.click();
-    expect((await pending).confirmed).toBe(false);
-  } finally { if(dialog.open)dialog.close(); setLocale('zh-CN') }
-});
-it('表单弹层换语言时保留输入、焦点和提交操作', async () => {
-  setLocale('en');
-  const write = vi.fn();
-  const view = formModal({ title: '新建播放列表', confirmLabel: '新建', body: '<input aria-label="name">', onConfirm: write });
-  const field = view.dialog.querySelector('input')!;
-  field.value = '我的播放列表';
-  try {
-    expect(view.dialog.querySelector('h3')?.textContent).toBe('Create playlist');
-    setLocale('vi');
-    expect(view.dialog.querySelector('h3')?.textContent).toBe('Tạo danh sách phát');
-    expect(view.dialog.querySelector('input')).toBe(field);
-    expect(field.value).toBe('我的播放列表');
-    expect(document.activeElement).toBe(field);
-    expect(view.confirmButton.textContent).toBe('Tạo mới');
-    view.confirmButton.click();
-    expect((await view.done).confirmed).toBe(true);
-    expect(write).toHaveBeenCalledOnce();
-  } finally { if(view.dialog.open)view.close(); setLocale('zh-CN') }
-});
-it('确认弹层换语言时保留文件名和同一按钮，取消仍不执行写入', async () => {
-  const write = vi.fn();
-  setLocale('en');
-  const pending = confirmModal({ title: '清理所选', body: '已安排 3 项处理', items: ['技术详情.mp4'],
-    confirmLabel: '清理所选', onConfirm: write });
-  const dialog = document.querySelector('dialog')!;
-  const cancel = dialog.querySelector<HTMLButtonElement>('[data-modal-cancel]')!;
-  try {
-    expect(dialog.querySelector('h3')?.textContent).toBe('Clean selected');
-    expect(dialog.textContent).toContain('Scheduled 3 operations');
-    setLocale('vi');
-    expect(dialog.querySelector('h3')?.textContent).toBe('Dọn mục đã chọn');
-    expect(dialog.textContent).toContain('Đã lên lịch 3 thao tác');
-    expect(dialog.querySelector('[data-modal-cancel]')).toBe(cancel);
-    expect(dialog.querySelector('li')?.textContent).toBe('技术详情.mp4');
-    cancel.click();
-    expect((await pending).confirmed).toBe(false);
-    expect(write).not.toHaveBeenCalled();
-  } finally { if (dialog.open) dialog.close(); setLocale('zh-CN') }
-});
+afterEach(() => { document.querySelectorAll('dialog[open]').forEach(dialog => (dialog as HTMLDialogElement).close()); document.body.replaceChildren(); vi.useRealTimers(); vi.restoreAllMocks() });
 it('确认清单逐条呈现文件名，文件名保持纯文本', async () => {
   const names = ['作品一.mp4', '<img src=x onerror=alert(1)>.mp4'];
   const pending = confirmModal({title:'清理记录',body:'清理 2 项',items:names,confirmLabel:'清理记录'});
@@ -88,6 +18,9 @@ it('危险操作聚焦取消，取消不写入，关闭归还焦点', async () =
   const pending = confirmModal({title:'清理记录',body:'清理 2 项',confirmLabel:'清理记录',danger:true,onConfirm:write});
   const cancel = document.querySelector<HTMLButtonElement>('[data-modal-cancel]')!;
   expect(document.activeElement).toBe(cancel);
+  const dialog = document.querySelector('dialog')!;
+  expect(dialog.getAttribute('role')).toBe('alertdialog');
+  expect(document.getElementById(dialog.getAttribute('aria-describedby')!)?.textContent).toBe('清理 2 项');
   cancel.click();
   expect((await pending).confirmed).toBe(false);
   expect(write).not.toHaveBeenCalled(); expect(document.activeElement).toBe(trigger);
@@ -105,4 +38,44 @@ it('等待写入时阻止重复提交和关闭，失败保留弹层可重试', a
   reject(new Error('磁盘离线')); await new Promise(resolve => setTimeout(resolve, 0));
   expect(dialog.textContent).toContain('磁盘离线'); expect(dialog.open).toBe(true);
   accept.click(); expect((await pending).result).toBe('done'); expect(write).toHaveBeenCalledTimes(2);
+});
+
+it('同一弹窗提供三个范围，每个按钮长按两秒只执行对应范围', async () => {
+  vi.useFakeTimers();
+  vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+  const write = vi.fn().mockResolvedValue('done');
+  const pending = confirmModal({ title:'删除',body:'请选择范围',confirmLabel:'删除',danger:true,
+    choices:['profile','trash','purge'].map(key => ({ key,label:key,description:`范围 ${key}`,
+      danger:true,holdToConfirm:true,onConfirm:() => write(key) })) });
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('[data-modal-confirm]')];
+  expect(buttons.map(button => button.dataset.modalConfirm)).toEqual(['profile','trash','purge']);
+  expect(document.activeElement).toBe(document.querySelector('[data-modal-cancel]'));
+  buttons[0]!.click();
+  buttons[0]!.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,button:0,isPrimary:true,pointerId:1}));
+  await vi.advanceTimersByTimeAsync(1000);
+  buttons[0]!.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1}));
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(write).not.toHaveBeenCalled();
+  buttons[1]!.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));
+  await vi.advanceTimersByTimeAsync(1999);
+  expect(write).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(1);
+  expect(write).toHaveBeenCalledExactlyOnceWith('trash');
+  expect(await pending).toEqual({confirmed:true,result:'done',choice:'trash'});
+});
+
+it('危险弹窗点击遮罩会关闭并取消未完成的长按', async () => {
+  vi.useFakeTimers();
+  vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+  const write = vi.fn().mockResolvedValue('done');
+  const pending = confirmModal({title:'删除',body:'删除所选',confirmLabel:'删除',danger:true,
+    holdToConfirm:true,onConfirm:write});
+  const dialog = document.querySelector('dialog')!;
+  dialog.querySelector('button[data-modal-confirm]')!.dispatchEvent(new KeyboardEvent('keydown',
+    {key:' ',bubbles:true,cancelable:true}));
+  await vi.advanceTimersByTimeAsync(1000);
+  dialog.click();
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(await pending).toEqual({confirmed:false});
+  expect(write).not.toHaveBeenCalled();
 });

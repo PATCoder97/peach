@@ -10,7 +10,6 @@ import { notifyManager, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, expect, it, vi } from 'vitest';
 
 import * as legacyUi from '@peach/legacy/ui';
-import { setLocale } from '../../src/i18n';
 
 import { JOB_RUNNING_POLL_MS } from '../../src/react/background-job';
 import { queryClient } from '../../src/react/query';
@@ -25,10 +24,7 @@ import { TastePage } from '../../src/react/taste/taste-page';
 import { choose, click, mount, mountRoot, settle } from './render';
 
 // 客户端是模块级的单例（所有 React 根共用一个），用例之间不清就互相喂数据。
-afterEach(async () => {
-  queryClient.clear();
-  await act(async () => setLocale('zh-CN'));
-});
+afterEach(() => queryClient.clear());
 
 /* Query 派发更新用的是它自己抓住的那个真 `setTimeout(0)`，假时钟推不动它：推完时钟
    断言到的还是上一帧的 DOM。用例里改成当场派发。 */
@@ -143,25 +139,6 @@ async function open(plan: Plan = {}, props = legacyProps()) {
 /** 轮询是组件里的定时器，推进时钟会引起重画，得在 act 里推。 */
 const tick = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) });
 
-it('口味总结随语言切换翻译动态结论与建议，保留标签原文', async () => {
-  const view = await open({ taste: [payload({ analysis: {
-    headline: 'Peach 观看行为目前更集中在标签甲。',
-    confidence: { level: 'high', label: '可信度较高' },
-    points: [{ label: 'Peach 印证', text: '标签甲' }],
-    explore: [{ tag: '标签甲', title: '探索 标签甲', detail: '浏览信号 12 次 · 馆藏 3 部 · 已有观看印证' }],
-    next_steps: [],
-  } })] });
-  await act(async () => setLocale('en'));
-  expect(view.host.textContent).toContain('Viewing activity in Peach currently focuses more on 标签甲.');
-  expect(view.host.textContent).toContain('Explore 标签甲');
-  expect(view.host.textContent).toContain('High confidence');
-  await act(async () => setLocale('vi'));
-  expect(view.host.textContent).toContain('Hoạt động xem trong Peach hiện tập trung hơn vào 标签甲.');
-  expect(view.host.textContent).toContain('Khám phá 标签甲');
-  expect(view.host.textContent).toContain('Độ tin cậy cao');
-  expect(view.host.textContent).toContain('12 tín hiệu duyệt web · 3 tác phẩm trong thư viện · Đã đối chiếu với lượt xem');
-});
-
 /** 按可见文字找那一枚控件。名次行与线索行都是整行一个按钮。 */
 const rowNamed = (root: ParentNode, text: string) =>
   [...root.querySelectorAll('button')].find((button) => button.textContent?.includes(text)) ?? null;
@@ -177,7 +154,7 @@ it('首屏读 prefetch 落进缓存的那一份，两套证据是页签不是并
   expect(tasteGets(fetcher)).toHaveLength(1);
   expect(tasteGets(fetcher)[0]?.[0]).toBe(`${TASTE_URL}?window=all`);
   expect([...host.querySelectorAll('[role=tab]')].map((tab) => tab.textContent).slice(0, 2))
-    .toEqual(['浏览器记录', 'Peach 观看与评价']);
+    .toEqual(['Peach 观看与评价', '浏览器记录']);
   expect(host.textContent).toContain('900');
   expect(host.textContent).not.toContain('个作品有内部行为证据');
 });
@@ -271,7 +248,7 @@ it('浏览器画像的雷达、排行与浏览活跃热力图都按这一份数�
   const { host } = await open();
   const portrait = host.querySelector('section[aria-label="浏览器画像"]')!;
   expect(portrait.querySelector('div[role=img]')?.getAttribute('aria-label'))
-    .toBe('主要口味维度：维度甲，维度乙，维度丙');
+    .toBe('主要口味维度：维度甲、维度乙、维度丙');
   expect(portrait.querySelector('section[aria-label="口味维度排名"]')).not.toBeNull();
   const heats = [...host.querySelectorAll('svg[role=img]')].map((heat) => heat.getAttribute('aria-label'));
   expect(heats).toEqual(expect.arrayContaining(['浏览活跃时间', '每日活跃']));
@@ -300,6 +277,23 @@ it('后台重算时隔一会儿再问，算完换上新结果就停', async () =
   expect(host.textContent).not.toContain('正在更新口味分析');
   await tick(STALE_POLL_MS * 3);
   expect(tasteGets(fetcher)).toHaveLength(2);
+});
+
+it('一直读到旧的就把间隔拉长：2、4、8 秒，算完就停', async () => {
+  vi.useFakeTimers();
+  const stale = payload({ stale: true });
+  const { fetcher } = await open({ taste: [stale, stale, stale, payload()] });
+  expect(tasteGets(fetcher)).toHaveLength(1);
+  await tick(STALE_POLL_MS);
+  expect(tasteGets(fetcher)).toHaveLength(2);
+  await tick(STALE_POLL_MS * 2 - 1);
+  expect(tasteGets(fetcher), '第二次还是旧的，等四秒').toHaveLength(2);
+  await tick(1);
+  expect(tasteGets(fetcher)).toHaveLength(3);
+  await tick(STALE_POLL_MS * 4);
+  expect(tasteGets(fetcher)).toHaveLength(4);
+  await tick(60_000);
+  expect(tasteGets(fetcher)).toHaveLength(4);
 });
 
 it('重算失败时不再轮询，提示条说明更新失败，「立即重试」让服务端跳过等待再算一次', async () => {

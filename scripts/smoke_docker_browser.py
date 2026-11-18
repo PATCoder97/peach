@@ -6,8 +6,9 @@ from pathlib import Path
 import subprocess
 import tempfile
 import time
+import uuid
 
-from .smoke_docker import docker, request
+from smoke_docker import docker, process_identity, ready, request
 
 
 PROBE_FILE = Path(__file__).resolve().parents[1] / 'tests/support/docker_browser_probe.py'
@@ -21,7 +22,7 @@ def create(name: str, volume: str, image: str) -> None:
     finally:
         docker('rm', '--force', invalid, check=False)
     assert rejected.returncode == 1 and 'PEACH_VNC_PASSWORD_FILE' in rejected.stderr, rejected.stderr
-    docker('create', '--name', name, '--init', '--network', 'none', '--shm-size', '512m',
+    docker('create', '--name', name, '--network', 'none', '--shm-size', '512m',
            '--mount', f'type=volume,source={volume},target=/data',
            '--env', 'PEACH_VNC_PASSWORD_FILE=/tmp/peach-smoke-password', image)
     # 这里只生成隔离测试的固定口令，不读取部署凭据。
@@ -38,7 +39,7 @@ def check(name: str, phase: str) -> None:
     source = next(item for item in sources if item['source'] == 'fc2ppvdb')
     assert source['browser'] and source['browser_in_container'], source
     docker('cp', str(PROBE_FILE), name + ':/tmp/peach-browser-probe.py')
-    result = json.loads(docker('exec', name, 'python', '/tmp/peach-browser-probe.py', phase))
+    result = json.loads(docker('exec', '--user', process_identity(name), name, 'python', '/tmp/peach-browser-probe.py', phase))
     assert result['chromium'] and result['novnc_password'], result
     print(json.dumps(result, ensure_ascii=False))
 
@@ -59,3 +60,30 @@ def component_failure(name: str) -> None:
             return
         time.sleep(.5)
     raise RuntimeError('Container vẫn chạy sau khi VNC đã dừng')
+
+
+def main(image: str) -> None:
+    """独立临时卷验证首次设置、实际降权、浏览器会话与组件失败退出。"""
+    name = 'peach-browser-smoke-' + uuid.uuid4().hex[:12]
+    volume = name + '-data'
+    try:
+        docker('volume', 'create', volume)
+        create(name, volume, image)
+        ready(name, setup=True)
+        result = json.loads(request(name, '/api/setup', authenticated=False, body={
+            'media_dir': [], 'skip_media': True, 'scan_now': False, 'access_enabled': True,
+            'access_password': 'smoke-password', 'access_confirm': 'smoke-password'}))
+        assert result.get('url') == '/?onboarding=1', result
+        ready(name)
+        assert process_identity(name) == '1000:1000'
+        check(name, 'seed')
+        docker('restart', '--time', '75', name)
+        ready(name)
+        assert process_identity(name) == '1000:1000'
+        check(name, 'check')
+        component_failure(name)
+        print(json.dumps({'image': image, 'checks': ['first-setup', 'non-root', 'chromium', 'novnc-auth',
+                                                    'browser-session-restart', 'component-failure']}))
+    finally:
+        docker('rm', '--force', name, check=False)
+        docker('volume', 'rm', volume, check=False)

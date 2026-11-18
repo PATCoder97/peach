@@ -1,135 +1,84 @@
 name: Docker
 
-# 分叉仓库推送版本标签时自动验收并发布个人镜像；手动入口可发布指定分支。
-# 普通 push/PR 由 Test 调用；标签独立构建、验收和发布镜像。
+# 只验收不发布：镜像的版本号、edge 与 latest 由 release.yml 在 GitHub Release 成功后推送，
+# edge 与 latest 始终指向最新发布的版本（ADR-0121）。
 on:
+  pull_request:
+    paths: [Dockerfile, .dockerignore, compose.yaml, compose.browser.yaml, 'src/**', 'migrations/**', 'web/**', 'resources/**', pyproject.toml, uv.lock, setup.py, MANIFEST.in, scripts/smoke_docker.py, scripts/smoke_docker_browser.py, .github/workflows/docker.yml]
   push:
-    tags: ['v[0-9]*.[0-9]*.[0-9]*']
-  workflow_call:
+    branches: [master]
+    paths: [Dockerfile, .dockerignore, compose.yaml, compose.browser.yaml, 'src/**', 'migrations/**', 'web/**', 'resources/**', pyproject.toml, uv.lock, setup.py, MANIFEST.in, scripts/smoke_docker.py, scripts/smoke_docker_browser.py, .github/workflows/docker.yml]
   workflow_dispatch:
-    inputs:
-      source_ref:
-        description: 'Nhánh, tag hoặc commit để xây dựng; để trống để dùng nhánh workflow đã chọn'
-        type: string
-        required: false
-      publish:
-        description: 'Đẩy lên DOCKERHUB_USERNAME/peach sau khi kiểm tra thành công'
-        type: boolean
-        default: false
-      image_tag:
-        description: 'Tag ảnh Docker cá nhân'
-        type: string
-        default: vi-en
-        required: true
 
 permissions:
   contents: read
   actions: read
 
 concurrency:
-  group: docker-image-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   image:
-    name: Kiểm tra ảnh Docker Linux amd64 (${{ matrix.variant }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+    name: Linux ${{ matrix.arch }} 镜像验收
     strategy:
       fail-fast: false
       matrix:
         include:
-          - variant: standard
+          - arch: amd64
+            runner: ubuntu-latest
             target: runtime
-            suffix: ''
-          - variant: browser
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            target: runtime
+          - arch: amd64-browser
+            runner: ubuntu-latest
             target: browser
-            suffix: '-browser'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.source_ref || github.ref }}
-          persist-credentials: false
-      - name: Kiểm tra đích ảnh Docker cá nhân
-        if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
-        id: target
-        env:
-          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
-          IMAGE_TAG: ${{ github.event_name == 'push' && github.ref_type == 'tag' && github.ref_name || inputs.image_tag }}
-          VERSION_TAG: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
-          IMAGE_SUFFIX: ${{ matrix.suffix }}
-        shell: bash
-        run: |
-          if [[ "$VERSION_TAG" == true ]]; then
-            if [[ ! "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo 'Phát hành tự động yêu cầu tag phiên bản dạng vX.Y.Z.' >&2
-              exit 1
-            fi
-            IMAGE_TAG="${IMAGE_TAG#v}"
-          fi
-          if [[ ! "$DOCKERHUB_USERNAME" =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
-            echo 'Hãy đặt DOCKERHUB_USERNAME hợp lệ trong Actions Variables.' >&2
-            exit 1
-          fi
-          if [[ ! "$IMAGE_TAG" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$ ]]; then
-            echo 'Tag ảnh Docker không hợp lệ; hãy dùng chữ, số, dấu gạch dưới, dấu chấm hoặc dấu gạch nối.' >&2
-            exit 1
-          fi
-          echo "image=$DOCKERHUB_USERNAME/peach:$IMAGE_TAG$IMAGE_SUFFIX" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
-      - name: Đọc commit xây dựng
-        id: source
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Kiểm tra CI Linux của tag phiên bản
-        if: github.event_name == 'push' && github.ref_type == 'tag'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python scripts/release_tag.py --repo "$GITHUB_REPOSITORY" --verify-sha "$GITHUB_SHA"
       - uses: docker/setup-buildx-action@v4
-      - name: Xây dựng ảnh Docker ứng viên
+      - name: 构建候选镜像
         uses: docker/build-push-action@v7
         with:
           context: .
           target: ${{ matrix.target }}
           load: true
-          tags: peach:ci
-          labels: org.opencontainers.image.revision=${{ steps.source.outputs.sha }}
-          cache-from: type=gha,scope=peach-linux-amd64-${{ matrix.variant }}
-          cache-to: type=gha,mode=max,scope=peach-linux-amd64-${{ matrix.variant }}
-      - name: Kiểm tra container tạm
-        env:
-          IMAGE_VARIANT: ${{ matrix.variant }}
+          tags: longmeidao/peach:test
+          cache-from: |
+            type=gha,scope=docker-${{ matrix.arch }}
+            ${{ matrix.target == 'browser' && 'type=gha,scope=docker-amd64' || '' }}
+          cache-to: type=gha,mode=max,scope=docker-${{ matrix.arch }}
+      - name: 验收临时容器
+        if: matrix.target == 'runtime'
+        run: python3 scripts/smoke_docker.py longmeidao/peach:test
+      - name: 验收浏览器与会话持久化
+        if: matrix.target == 'browser'
+        run: python3 scripts/smoke_docker.py longmeidao/peach:test --browser
+      - name: 导出 NAS 真机验收镜像
+        if: github.event_name == 'workflow_dispatch' && matrix.arch == 'amd64'
         run: |
-          if [[ "$IMAGE_VARIANT" == browser ]]; then
-            python3 scripts/smoke_docker.py peach:ci --browser
-          else
-            python3 scripts/smoke_docker.py peach:ci
-          fi
-      - name: Đăng nhập Docker Hub cá nhân
-        if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
-        uses: docker/login-action@v4
+          set -euo pipefail
+          image="peach-nas:candidate-${GITHUB_SHA:0:12}"
+          docker tag longmeidao/peach:test "$image"
+          docker image inspect "$image" > image-inspect.json
+          docker image save "$image" | gzip > peach-nas-amd64.tar.gz
+          sha256sum peach-nas-amd64.tar.gz > SHA256SUMS
+          printf '%s\n' "$GITHUB_SHA" > SOURCE_COMMIT
+      - name: 保存 NAS 真机验收产物
+        if: github.event_name == 'workflow_dispatch' && matrix.arch == 'amd64'
+        uses: actions/upload-artifact@v7
         with:
-          username: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Đẩy ảnh Docker đã kiểm tra
-        if: (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && inputs.publish)
-        env:
-          IMAGE: ${{ steps.target.outputs.image }}
-          IMAGE_SUFFIX: ${{ matrix.suffix }}
-          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
-        shell: bash
-        run: |
-          docker tag peach:ci "$IMAGE"
-          docker push "$IMAGE"
-          if [[ "$GITHUB_REPOSITORY" == peach-mitao/peach && "$GITHUB_REF_TYPE" == tag ]]; then
-            docker tag peach:ci "$DOCKERHUB_USERNAME/peach:edge$IMAGE_SUFFIX"
-            docker push "$DOCKERHUB_USERNAME/peach:edge$IMAGE_SUFFIX"
-          fi
-          {
-            echo '### Ảnh Docker Hub'
-            echo "Ảnh Docker: \`$IMAGE\`"
-            echo "Commit mã nguồn: \`$(git rev-parse HEAD)\`"
-            echo "Lệnh tải ảnh: \`docker pull $IMAGE\`"
-          } >> "$GITHUB_STEP_SUMMARY"
+          name: nas-candidate-${{ github.sha }}
+          path: |
+            peach-nas-amd64.tar.gz
+            image-inspect.json
+            SHA256SUMS
+            SOURCE_COMMIT
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error

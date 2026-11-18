@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 舞台（ADR-0031 第 11a 步）：详情浮窗 `<dialog id="stage">`、它的进出场、骨架与揭示、两座详情、
  * 播放器与小窗都在这一面里。
  *
@@ -33,6 +32,7 @@ import { JavDetailPage } from '../jav-detail/jav-detail-page';
 import { Miniplayer } from './miniplayer';
 import * as player from './stage-player';
 import type { StageApi, StageHost, StagePatch, StageRequest } from './stage-api';
+import { t } from '../../i18n';
 
 type Phase = 'skeleton' | 'reveal' | 'content';
 
@@ -69,7 +69,7 @@ const stageDialog = (): HTMLDialogElement | null => {
 };
 
 function stageHost(): StageHost {
-  if (!host) throw new Error('舞台还没有接上宿主（configureStage）');
+  if (!host) throw new Error(t('catalog:stagePlayer.stageHostMissing'));
   return host;
 }
 
@@ -96,9 +96,9 @@ function StageTree({ view: current }: { view: View | null }) {
   );
 }
 
-const DetailSkeleton = () => { const uiText = useUiTranslation(); return ((
-  <div data-skeleton="detail" role="status" aria-label={uiText("正在读取作品详情")} dangerouslySetInnerHTML={{ __html: detailSkeletonBody() }} />
-)); };
+const DetailSkeleton = () => (
+  <div data-skeleton="detail" role="status" aria-label={t('catalog:stagePlayer.loadingDetails')} dangerouslySetInnerHTML={{ __html: detailSkeletonBody() }} />
+);
 
 /* 点浮窗外面就退出。原生模态里「外面」还是这个 dialog 自己——遮罩归它，落在遮罩上的事件 target
    就是它本人，所以判据取坐标不取 target：按 target 判，浮窗身上任何一块不属于内容的地方都会被算成
@@ -120,7 +120,6 @@ function requestEscape(): void {
 }
 
 function StageDialog({ view: current }: { view: View }) {
-  const uiText = useUiTranslation();
   const ref = useRef<HTMLDialogElement>(null);
   /* 全局键盘入口与浮窗共用 requestEscape，在 keydown 上 preventDefault，避免焦点在 body 时
      绕过弹层判断。原生 cancel 保留给其他关闭请求；不可取消的事件不能阻止浏览器关闭浮窗。 */
@@ -143,10 +142,13 @@ function StageDialog({ view: current }: { view: View }) {
     : content.kind === 'jav' ? <JavDetailPage key={content.props.code} {...content.props} />
     : <FollowDetailPage key={content.props.id} {...content.props} />;
   return (
-    <dialog ref={ref} id="stage" data-stage="" data-stage-kind={content.kind} aria-label={uiText("作品详情")}
+    <dialog ref={ref} id="stage" data-stage="" data-stage-kind={content.kind} aria-label={t('catalog:stagePlayer.detailsLabel')}
       onKeyDown={(event) => {
         /* 里层弹层（标签搜索框、右键菜单）先处理 Escape 并 `preventDefault`，这一下就不再关浮窗。 */
         if (event.key !== 'Escape' || event.defaultPrevented) return;
+        /* React 事件按组件树冒泡：详情里开出、挂在 body 的模态框（编辑资料）按 Escape 也会冒到这里，
+           那一下归浏览器关那一层，舞台不接。 */
+        if (!event.currentTarget.contains(event.target as Node)) return;
         event.preventDefault();
         requestEscape();
       }}
@@ -202,7 +204,7 @@ function contentFor(request: StageRequest): Content {
       present: (item, queue) => {
         const performers = item.performers as string[] | undefined;
         player.setStageMeta({ kind: 'item', item, title: String(item.title || item.name || ''),
-          sub: String(performers?.[0] || item.creator || '未归属') });
+          sub: String(performers?.[0] || item.creator || t('catalog:shared.uncredited')) });
         toggleStageModes(settings().ambientMode, settings().theaterMode);
         queueMicrotask(() => { if (live()) base.present(item, queue) });
       },

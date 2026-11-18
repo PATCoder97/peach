@@ -9,6 +9,7 @@
 [![Release](https://img.shields.io/github/v/release/peach-mitao/peach?include_prereleases&sort=semver&label=release&logo=github)](https://github.com/peach-mitao/peach/releases)
 [![CI 流水线](https://img.shields.io/github/actions/workflow/status/peach-mitao/peach/test.yml?branch=master&label=CI&logo=githubactions&logoColor=white)](https://github.com/peach-mitao/peach/actions/workflows/test.yml)
 [![许可证](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue?logo=gnu&logoColor=white)](LICENSE)
+[![翻译进度](https://hosted.weblate.org/widget/peach/svg-badge.svg)](https://hosted.weblate.org/engage/peach/)
 [![Windows x64](https://img.shields.io/badge/Windows-x64-0078D4)](docs/TESTING_DESKTOP.md)
 [![macOS DMG](https://img.shields.io/badge/macOS-DMG-555555?logo=apple&logoColor=white)](docs/OPERATIONS.md#macos-独立测试包)
 [![年龄限制](https://img.shields.io/badge/age-18%2B-555555)](#许可证)
@@ -47,19 +48,17 @@
 - **播放与记录**：网页与外部播放器、字幕、倍速、旋转、续播和时间轴预览。
 - **关注与发现**：订阅人物与创作者更新，发现作品，管理「想要」清单。
 - **云下载**：按影片编号查找或提交磁力，下载完成后整理入库。
-- **馆藏管理**：管理标签、重复文件、多版本与分卷；资料和观看记录保存在本机。
-- **界面语言**：首次设置或外观设置中选择英文、越南文或简体中文，选择保存在当前浏览器，用于浏览、管理、设置和播放器控件；馆藏内容与诊断数据保留原文。覆盖范围见[界面语言](docs/LOCALIZATION.md)。
+- **馆藏管理**：管理标签、重复文件、多版本与分卷；按女优批量永久删除影片，保留人物档案和照片。资料和观看记录保存在本机。
+- **任务中心**：暂停、继续或取消本机后台任务，查看可取得的各任务 CPU、GPU 与下载活动。
 
 ## 下载与使用
 
 | 方式 | 入口 |
 | --- | --- |
-| Windows x64 | [安装版](https://github.com/peach-mitao/peach/releases/download/v0.50.0/Peach-0.50.0-windows-x64-setup.exe) · [免安装版](https://github.com/peach-mitao/peach/releases/download/v0.50.0/Peach-0.50.0-windows-x64.zip) |
-| macOS | [Apple Silicon / ARM64](https://github.com/peach-mitao/peach/releases/download/v0.50.0/Peach-0.50.0-macos-arm64.dmg) · [Intel / x86_64](https://github.com/peach-mitao/peach/releases/download/v0.50.0/Peach-0.50.0-macos-x86_64.dmg) |
+| Windows x64 | [安装版](https://github.com/peach-mitao/peach/releases/download/v0.57.0/Peach-0.57.0-windows-x64-setup.exe) · [免安装版](https://github.com/peach-mitao/peach/releases/download/v0.57.0/Peach-0.57.0-windows-x64.zip) |
+| macOS | [Apple Silicon / ARM64](https://github.com/peach-mitao/peach/releases/download/v0.57.0/Peach-0.57.0-macos-arm64.dmg) · [Intel / x86_64](https://github.com/peach-mitao/peach/releases/download/v0.57.0/Peach-0.57.0-macos-x86_64.dmg) |
 | Docker / NAS | [部署说明](docs/DOCKER.md) |
 | 源码运行 | [安装步骤](docs/OPERATIONS.md#从源码运行windowsmacos)，需要 Git、uv 和 Python 3.14+ |
-
-需要浏览器验证的来源可使用 `X.Y.Z-browser` 镜像，内含 Chromium 和密码保护的 noVNC 桌面，见[浏览器镜像配置](docs/DOCKER.md#带浏览器的镜像)。
 
 安装后选择媒体目录，扫描后即可浏览与播放。桌面测试包未签名，macOS 尚未完成公证；详见 [Windows](docs/TESTING_DESKTOP.md) 与 [macOS](docs/OPERATIONS.md#macos-独立测试包) 说明。
 
@@ -72,6 +71,10 @@
 ## 问题反馈
 
 [提交问题或建议](https://github.com/peach-mitao/peach/issues/new/choose)，附版本、复现步骤与报错。公开截图使用演示资料，遮盖隐私；不要上传影片或数据库。安全问题按[安全政策](SECURITY.md)私下报告。
+
+## 参与翻译
+
+Peach 的界面翻译在 [Hosted Weblate](https://hosted.weblate.org/engage/peach/) 上进行。现有英文是 AI 初稿，欢迎提建议和投票。做法见[贡献说明](CONTRIBUTING.md#翻译)。
 
 ## 相关项目
 

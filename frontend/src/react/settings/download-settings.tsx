@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 「云下载」：把磁力交给 115 或 PikPak 离线下载，文件落在已挂载的网盘目录，由推送发现入库。
  *
  * 两张卡。第一张是地址、令牌、目标目录与等待上限：115 走 CloudDrive2 的 gRPC，令牌在
@@ -25,7 +24,7 @@ import { apiGet, apiSend, errorMessage } from '../../api';
 import type {
   ConfigurationPanel, DownloadCheckReport, DownloadConfig, DownloadSaveResult, DownloadSettingsState, PikPakLoginResult,
 } from '../bundle';
-import { LoadingDots } from '../components/loading-dots';
+import { ActivityStatus } from '../components/activity-motion';
 import { Note } from '../components/note';
 import { SourceLabel, providerIcon } from '../components/source-label';
 import { groupRoot } from './configuration-panel';
@@ -35,6 +34,9 @@ import {
 import { busyProps, useAction } from './use-action';
 import { JavBrowserSettings } from './jav-browser-settings';
 import { CLOUD_LOCATIONS } from '../../core/media-sources';
+import { jobText, serverLabel } from '../../core/server-text';
+import { pollUntil } from '../../polling';
+import { t } from '../../i18n';
 
 export const DOWNLOADS_URL = '/api/configuration/downloads';
 const CHECK_URL = '/api/configuration/downloads/check';
@@ -43,7 +45,20 @@ const LOGIN_URL = '/api/configuration/downloads/pikpak/login';
 const LOGOUT_URL = '/api/configuration/downloads/pikpak/logout';
 const BROWSER_URL = '/api/configuration/downloads/pikpak/browser-login';
 const POLL_MS = 2000;
+/** 浏览器登录最多等这么久，过了由用户重新打开。 */
+const BROWSER_LOGIN_LIMIT_MS = 15 * 60_000;
 const PikPakIcon = providerIcon('pikpak');
+
+/** 设置块与检查报告里的问题：`problems` 是服务端按 zh-CN 渲染的原句，`problem_codes` 与之一一对应，
+ *  有译文用译文；缺 code 的旧原句照原文显示。 */
+const problemTexts = (body: Pick<DownloadSettingsState, 'problems' | 'problem_codes'>): string[] =>
+  (body.problems ?? []).map((problem, index) => {
+    const coded = body.problem_codes?.[index];
+    return coded?.code ? serverLabel(coded.code, problem, coded.params) : problem;
+  });
+/** 检查报告里缺的离线权限，`missing_codes` 与 `missing` 一一对应。 */
+const missingTexts = (report: DownloadCheckReport): string[] =>
+  report.missing.map((label, index) => serverLabel(report.missing_codes?.[index] ?? '', label));
 
 /** 「下载渠道」分组：CloudDrive2 与 PikPak 账号。 */
 export function DownloadGroup({ initial, receipt, panel, issues }: {
@@ -92,7 +107,6 @@ interface CardProps {
 }
 
 function DownloadForm({ state, settle, receipt, pikpakAccount }: CardProps & { pikpakAccount: boolean }) {
-  const uiText = useUiTranslation();
   const [config, setConfig] = useState<DownloadConfig>(state.config);
   const [token, setToken] = useState('');
   const [hours, setHours] = useState(String(state.config.wait_hours));
@@ -165,7 +179,7 @@ function DownloadForm({ state, settle, receipt, pikpakAccount }: CardProps & { p
           setSaveBlocked(false);
           setFailure('');
         }
-        receipt('已保存配置');
+        receipt(t('settings:shared.settingsSaved'));
       }, (cause) => setFailure(errorMessage(cause)));
   };
 
@@ -189,53 +203,55 @@ function DownloadForm({ state, settle, receipt, pikpakAccount }: CardProps & { p
         setSuggested((current) => ({ ...current, target: { path, exists: true } }));
         setSaveBlocked(false);
         setFailure('');
-        receipt('已新建目录');
+        receipt(t('settings:cloudDownload.directoryCreated'));
       }, (cause) => setFailure(errorMessage(cause)));
   };
 
   return (
-    <Section title={uiText("云下载")} onSubmit={submit}>
-      {state.problems?.length ? <Stack><Note tone="error" title={uiText("云下载配置需要检查")}>{state.problems.join('\n')}</Note></Stack> : null}
+    <Section guide="download" title={t('settings:cloudDownload.title')} onSubmit={submit}>
+      {state.problems?.length ? <Stack><Note tone="error" title={t('settings:cloudDownload.needsAttention')}>{problemTexts(state).join('\n')}</Note></Stack> : null}
       <Stack>
-        <Input label={uiText("CloudDrive2 地址")} placeholder={uiText("留空自动查找")} autoComplete="off" maxLength={200}
+        <Input label={t('settings:cloudDownload.cloudDriveUrl')} placeholder={t('settings:cloudDownload.addressPlaceholder')} autoComplete="off" maxLength={200}
           value={config.clouddrive_address} isDisabled={!state.available}
           onChange={(value) => setConfig({ ...config, clouddrive_address: value })} />
-        <Input label={uiText("CloudDrive2 API 令牌")} type="password" autoComplete="off" maxLength={400}
-          placeholder={state.token_set ? uiText("已保存，留空不改") : uiText("在 CloudDrive2「设置 → API 令牌」中生成")}
-          hint={uiText("需要离线任务权限。")}
+        <Input label={t('settings:cloudDownload.apiToken')} type="password" autoComplete="off" maxLength={400}
+          placeholder={state.token_set ? t('settings:shared.savedLeaveBlank') : t('settings:cloudDownload.tokenPlaceholder')}
+          hint={t('settings:cloudDownload.apiTokenHelp')}
           value={token} isDisabled={!state.available} onChange={setToken} />
-        {has115 ? <Input label={<SourceLabel source="115" label={uiText("115 目标目录")} />} placeholder={uiText("留空时根据媒体库目录自动填写")} autoComplete="off" maxLength={300}
+        {has115 ? <Input label={<SourceLabel source="115" label={t('settings:cloudDownload.target115')} />} placeholder={t('settings:cloudDownload.targetPlaceholder')} autoComplete="off" maxLength={300}
           validationBehavior="aria" isInvalid={missing}
-          hint={missing ? (saveBlocked ? '先新建这个目录，或填写已有目录。' : '这个目录不存在。') : uiText("应位于自动入库的云端路径前缀内。")}
+          hint={missing ? (saveBlocked ? t('settings:cloudDownload.createOrPick') : t('settings:cloudDownload.directoryMissing')) : t('settings:cloudDownload.target115Help')}
           value={target('115')} isDisabled={!state.available} onChange={(value) => setTarget('115', value)} /> : null}
-        {hasPikPak ? <><Input label={<SourceLabel source="pikpak" label={uiText("PikPak 目标目录")} />} placeholder={uiText("以 / 开头的网盘路径")} autoComplete="off" maxLength={300}
-          hint={uiText("目录要已经存在。")}
+        {hasPikPak ? <><Input label={<SourceLabel source="pikpak" label={t('settings:cloudDownload.targetPikpak')} />} placeholder={t('settings:cloudDownload.pikpakPathPlaceholder')} autoComplete="off" maxLength={300}
+          hint={t('settings:cloudDownload.targetPikpakHelp')}
           value={target('pikpak')} isDisabled={!state.available} onChange={(value) => setTarget('pikpak', value)} />
         <div className="flex flex-col gap-1">
-          <FieldLabel><SourceLabel source="pikpak" label={uiText("PikPak 根目录对应的媒体目录")} /></FieldLabel>
+          <FieldLabel><SourceLabel source="pikpak" label={t('settings:cloudDownload.pikpakRootDirectory')} /></FieldLabel>
           {state.pikpak_roots.length ? (
-            <Select aria-label={uiText("PikPak 根目录对应的媒体目录")} selectedKey={config.pikpak_root || null}
-              isDisabled={!state.available} placeholder={uiText("检查时根据媒体库目录选择")}
+            /* 根目录只给登录后的 PikPak 直连与 PikPak 任务落地用：没登录、也没填账号时变灰。
+               上面的目标目录经 CloudDrive 转存时也要用，不跟着变灰。 */
+            <Select aria-label={t('settings:cloudDownload.pikpakRootDirectory')} selectedKey={config.pikpak_root || null}
+              isDisabled={!state.available || !pikpakAccount} placeholder={t('settings:cloudDownload.rootPlaceholder')}
               onSelectionChange={(key) => setConfig({ ...config, pikpak_root: key === null ? '' : String(key) })}>
               {state.pikpak_roots.map((root) => <SelectItem key={root} id={root}>{root}</SelectItem>)}
             </Select>
           ) : (
-            <Help>{uiText("先在「媒体库与入库」添加 PikPak 挂载文件夹。")}</Help>
+            <Help>{t('settings:cloudDownload.addPikpakMount')}</Help>
           )}
         </div></> : null}
-        <Input label={uiText("等待上限（小时）")} type="number" inputMode="numeric" autoComplete="off"
-          hint={uiText("超时标为停滞；可填 1–{value0} 小时。", { value0: String(state.max_wait_hours) })}
+        <Input label={t('settings:cloudDownload.maxWait')} type="number" inputMode="numeric" autoComplete="off"
+          hint={t('settings:cloudDownload.waitHint', { max: state.max_wait_hours })}
           value={hours} isDisabled={!state.available} onChange={setHours} />
       </Stack>
-      {action.busy === 'auto' ? <Stack divided><LoadingDots label={uiText("正在检查 CloudDrive2")} /></Stack> : null}
+      {action.busy === 'auto' ? <Stack divided><ActivityStatus kind="radar" label={t('settings:cloudDownload.checking')} /></Stack> : null}
       {report ? (
         <CheckReport report={report} detected={detected} suggested={suggested}
           create={state.available ? create : undefined} creating={action.busy === 'folder'} />
       ) : null}
       {failure || action.error ? <Stack divided><ErrorText>{failure || action.error}</ErrorText></Stack> : null}
-      <Footer status={state.available ? undefined : '云下载只在允许修改数据库的设备上可用。'}>
-        <Button variant="secondary" onClick={check} disabled={!state.available} {...busyProps(action.busy === 'check')}>{uiText("检查连接")}</Button>
-        <Button type="submit" disabled={!state.available} {...busyProps(action.busy === 'save')}>{uiText("保存配置")}</Button>
+      <Footer status={state.available ? undefined : t('settings:cloudDownload.primaryOnly')}>
+        <Button variant="secondary" onClick={check} disabled={!state.available} {...busyProps(action.busy === 'check')}>{t('settings:cloudDownload.testConnection')}</Button>
+        <Button type="submit" disabled={!state.available} {...busyProps(action.busy === 'save')}>{t('settings:shared.saveSettings')}</Button>
       </Footer>
     </Section>
   );
@@ -265,41 +281,40 @@ function CheckReport({ report, detected, suggested, create, creating }: {
   create?: (path: string) => void;
   creating: boolean;
 }) {
-  const uiText = useUiTranslation();
   const folder = suggested.target;
   const hasFacts = Boolean(detected || folder || suggested.root || report.permissions.length || report.folder || report.quota);
   if (!hasFacts && !report.problems.length) return null;
   return (
     <Stack divided>
       {hasFacts ? <FactList>
-        {detected ? <Fact term={uiText("CloudDrive2 地址")}>{uiText("探测到 {value0}，保存配置后生效", { value0: String(detected) })}</Fact> : null}
+        {detected ? <Fact term={t('settings:cloudDownload.cloudDriveUrl')}>{t('settings:cloudDownload.detectedAddress', { address: detected })}</Fact> : null}
         {folder?.exists ? (
-          <Fact term={<SourceLabel source="115" label={uiText("115 目标目录")} />}>
-            {suggested.saved ? uiText("已根据媒体库目录填入 {value0}", { value0: String(folder.path) }) : uiText("根据媒体库目录填入 {value0}，保存配置后生效", { value0: String(folder.path) })}
+          <Fact term={<SourceLabel source="115" label={t('settings:cloudDownload.target115')} />}>
+            {suggested.saved ? t('settings:cloudDownload.filledSaved', { path: folder.path }) : t('settings:cloudDownload.filledPending', { path: folder.path })}
           </Fact>
         ) : null}
         {folder && !folder.exists ? (
-          <Fact term={<SourceLabel source="115" label={uiText("115 目标目录")} />}>
-            {uiText("{value0} 不存在", { value0: String(folder.path) })}
-            {create ? <Button variant="secondary" size="small" onClick={() => create(folder.path)} {...busyProps(creating)}>{uiText("新建这个目录")}</Button> : null}
+          <Fact term={<SourceLabel source="115" label={t('settings:cloudDownload.target115')} />}>
+            {t('settings:cloudDownload.pathMissing', { path: folder.path })}
+            {create ? <Button variant="secondary" size="small" onClick={() => create(folder.path)} {...busyProps(creating)}>{t('settings:cloudDownload.createDirectory')}</Button> : null}
           </Fact>
         ) : null}
-        {suggested.root ? <Fact term={<SourceLabel source="pikpak" label={uiText("PikPak 根目录")} />}>{uiText("根据媒体库目录填入 {value0}，保存配置后生效", { value0: String(suggested.root) })}</Fact> : null}
+        {suggested.root ? <Fact term={<SourceLabel source="pikpak" label={t('settings:cloudDownload.pikpakRoot')} />}>{t('settings:cloudDownload.filledPending', { path: suggested.root })}</Fact> : null}
         {report.permissions.length ? (
-          <Fact term={uiText("离线权限")}>
+          <Fact term={t('settings:cloudDownload.offlinePermissions')}>
             {report.missing.length
-              ? report.missing.map(permission => <Chip key={permission} variant="caption" color="yellow">{uiText("缺 {value0}", { value0: String(permission) })}</Chip>)
-              : <Chip variant="caption" color="lime">{uiText("齐全")}</Chip>}
+              ? missingTexts(report).map(permission => <Chip key={permission} variant="caption" color="yellow">{t('settings:cloudDownload.missingPermission', { permission })}</Chip>)
+              : <Chip variant="caption" color="lime">{t('settings:cloudDownload.permissionsComplete')}</Chip>}
           </Fact>
         ) : null}
         {report.folder ? (
-          <Fact term={uiText("目标目录")}>{report.folder.can_offline ? uiText("{value0} 可以离线下载", { value0: String(report.folder.path) }) : uiText("{value0} 不支持离线下载", { value0: String(report.folder.path) })}</Fact>
+          <Fact term={t('settings:cloudDownload.targetDirectory')}>{report.folder.can_offline ? t('settings:cloudDownload.offlineSupported', { path: report.folder.path }) : t('settings:cloudDownload.offlineUnsupported', { path: report.folder.path })}</Fact>
         ) : null}
         {report.quota ? (
-          <Fact term={<SourceLabel source="115" label={uiText("115 离线配额")} />}>{uiText("本月还剩 {value0} 条，共 {value1} 条", { value0: String(report.quota.left), value1: String(report.quota.total) })}</Fact>
+          <Fact term={<SourceLabel source="115" label={t('settings:cloudDownload.quota115')} />}>{t('settings:cloudDownload.quotaLeft', { count: report.quota.left, total: report.quota.total })}</Fact>
         ) : null}
       </FactList> : null}
-      {report.problems.map((problem) => <ErrorText key={problem}>{problem}</ErrorText>)}
+      {problemTexts(report).map((problem) => <ErrorText key={problem}>{problem}</ErrorText>)}
     </Stack>
   );
 }
@@ -311,7 +326,6 @@ function PikPakAccount({ state, settle, receipt, username, setUsername }: CardPr
   username: string;
   setUsername(value: string): void;
 }) {
-  const uiText = useUiTranslation();
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [captcha, setCaptcha] = useState('');
@@ -323,26 +337,22 @@ function PikPakAccount({ state, settle, receipt, username, setUsername }: CardPr
   const browser = state.pikpak_browser;
   const waiting = browser.state === 'waiting';
 
+  /* 等浏览器里那次登录：两秒读一次，读失败退避，页面不可见时暂停，等满上限就停。 */
   useEffect(() => {
     if (!waiting) return;
     const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout>;
-    const poll = async () => {
-      try {
-        const next = await apiGet<DownloadSettingsState>(BROWSER_URL, controller.signal);
-        if (controller.signal.aborted) return;
+    void pollUntil({
+      signal: controller.signal, everyMs: POLL_MS, limitMs: BROWSER_LOGIN_LIMIT_MS,
+      read: (signal) => apiGet<DownloadSettingsState>(BROWSER_URL, signal),
+      apply: (next) => {
         settle(next);
-        if (next.pikpak_browser.state === 'done') receipt('已登录 PikPak');
-        else if (next.pikpak_browser.state !== 'waiting') setOutcome(next.pikpak_browser.message);
-        if (next.pikpak_browser.state !== 'waiting') return;
-      } catch (cause) {
-        if (controller.signal.aborted) return;
-        setFailure(errorMessage(cause));
-      }
-      timer = setTimeout(poll, POLL_MS);
-    };
-    timer = setTimeout(poll, POLL_MS);
-    return () => { controller.abort(); clearTimeout(timer); };
+        if (next.pikpak_browser.state === 'done') receipt(t('settings:pikpakAccount.signedInReceipt'));
+        else if (next.pikpak_browser.state !== 'waiting') setOutcome(jobText(next.pikpak_browser));
+      },
+      done: (next) => next.pikpak_browser.state !== 'waiting',
+      failed: (cause) => setFailure(errorMessage(cause)),
+    });
+    return () => controller.abort();
   }, [waiting]);
 
   const openBrowser = () => {
@@ -353,7 +363,7 @@ function PikPakAccount({ state, settle, receipt, username, setUsername }: CardPr
 
   const cancelBrowser = () => {
     void action.run('cancel', (signal) => apiSend<DownloadSettingsState>(`${BROWSER_URL}/cancel`, {}, 'POST', signal),
-      (next) => { settle(next); setFailure(''); setOutcome(next.pikpak_browser.message); },
+      (next) => { settle(next); setFailure(''); setOutcome(jobText(next.pikpak_browser)); },
       (cause) => setFailure(errorMessage(cause)));
   };
 
@@ -371,45 +381,49 @@ function PikPakAccount({ state, settle, receipt, username, setUsername }: CardPr
         }
         setCaptcha('');
         setPassword('');
-        receipt('已登录 PikPak');
+        receipt(t('settings:pikpakAccount.signedInReceipt'));
       }, (cause) => setFailure(errorMessage(cause)));
   };
 
   const logout = () => {
     void action.run('logout', (signal) => apiSend<DownloadSettingsState>(LOGOUT_URL, {}, 'POST', signal),
-      (next) => { settle(next); setFailure(''); receipt('已登出 PikPak'); },
+      (next) => { settle(next); setFailure(''); receipt(t('settings:pikpakAccount.signedOutReceipt')); },
       (cause) => setFailure(errorMessage(cause)));
   };
 
   const passwordForm = (
     <>
-      <Input label={uiText("账号")} placeholder={uiText("邮箱或手机号")} autoComplete="username" maxLength={200}
+      <Input label={t('settings:shared.account')} placeholder={t('settings:pikpakAccount.usernamePlaceholder')} autoComplete="username" maxLength={200}
         value={username} isDisabled={!state.available} onChange={setUsername} />
-      <Input label={uiText("密码")} type="password" autoComplete="current-password" maxLength={200}
+      <Input label={t('settings:shared.password')} type="password" autoComplete="current-password" maxLength={200}
         value={password} isDisabled={!state.available} onChange={setPassword} />
-      <Checkbox isSelected={remember} isDisabled={!state.available} onChange={setRemember}>{uiText("保存密码，登录过期时自动重新登录")}</Checkbox>
+      <Checkbox isSelected={remember} isDisabled={!state.available} onChange={setRemember}>
+        {t('settings:pikpakAccount.rememberPassword')}
+      </Checkbox>
       {captcha ? (
-        <Note tone="warning" title={uiText("需要人机验证")}
-          extra={<div className="pt-2"><ExternalLink href={captcha}>{uiText("打开 PikPak 验证页")}</ExternalLink></div>}>{uiText("在浏览器里完成验证后，回到这里再点一次「登录」。")}</Note>
+        <Note tone="warning" title={t('settings:pikpakAccount.captchaTitle')}
+          extra={<div className="pt-2"><ExternalLink href={captcha}>{t('settings:pikpakAccount.openCaptcha')}</ExternalLink></div>}>
+          {t('settings:pikpakAccount.captchaHelp')}
+        </Note>
       ) : null}
     </>
   );
   const passwordLogin = (
-    <Button type="submit" variant="primary" disabled={!state.available || waiting} {...busyProps(action.busy === 'login')}>{uiText("登录")}</Button>
+    <Button type="submit" variant="primary" disabled={!state.available || waiting} {...busyProps(action.busy === 'login')}>{t('settings:shared.signIn')}</Button>
   );
   const outcomeFailed = browser.state === 'timeout' || browser.state === 'failed';
 
   return (
-    <Section title={uiText("PikPak 账号")} icon={<PikPakIcon />} onSubmit={login}
+    <Section guide="pikpak" title={t('settings:pikpakAccount.title')} icon={<PikPakIcon />} onSubmit={login}
       aside={<StatusLabel tone={account.logged_in ? 'success' : waiting ? 'progress' : outcomeFailed ? 'error' : 'neutral'}>
-        {account.logged_in ? uiText("已登录") : waiting ? uiText("等待登录") : outcomeFailed ? uiText("登录未完成") : uiText("待登录")}</StatusLabel>}>
+        {account.logged_in ? t('settings:pikpakAccount.signedIn') : waiting ? t('settings:pikpakAccount.waiting') : outcomeFailed ? t('settings:pikpakAccount.incomplete') : t('settings:pikpakAccount.notSignedIn')}</StatusLabel>}>
       {account.logged_in ? (
         <FactList>
-          <Fact term={uiText("账号")}>{account.username || uiText("已登录")}</Fact>
+          <Fact term={t('settings:shared.account')}>{account.username || t('settings:pikpakAccount.signedIn')}</Fact>
           {account.method === 'browser' ? (
-            <Fact term={uiText("登录方式")}>{uiText("浏览器登录，由 Peach 续期")}</Fact>
+            <Fact term={t('settings:pikpakAccount.method')}>{t('settings:pikpakAccount.browserMethod')}</Fact>
           ) : (
-            <Fact term={uiText("密码")}>{account.remember ? uiText("已保存，登录过期时自动重新登录") : uiText("未保存，登录过期后需要回到这里重新登录")}</Fact>
+            <Fact term={t('settings:shared.password')}>{account.remember ? t('settings:pikpakAccount.passwordSaved') : t('settings:pikpakAccount.passwordNotSaved')}</Fact>
           )}
         </FactList>
       ) : (
@@ -420,14 +434,14 @@ function PikPakAccount({ state, settle, receipt, username, setUsername }: CardPr
       )}
       {failure || action.error ? <Stack divided><ErrorText>{failure || action.error}</ErrorText></Stack> : null}
       <Footer status={!account.logged_in && waiting
-        ? <LoadingDots label={browser.message || uiText("等你在浏览器窗口里登录 PikPak")} /> : null}>
+        ? <ActivityStatus kind="clock" label={jobText(browser) || t('settings:pikpakAccount.waitingBrowser')} /> : null}>
         {account.logged_in ? (
-          <Button variant="secondary" onClick={logout} disabled={!state.available} {...busyProps(action.busy === 'logout')}>{uiText("登出")}</Button>
+          <Button variant="secondary" onClick={logout} disabled={!state.available} {...busyProps(action.busy === 'logout')}>{t('settings:shared.signOut')}</Button>
         ) : <>{!browser.available ? null : waiting ? (
-          <Button variant="secondary" type="button" onClick={cancelBrowser} {...busyProps(action.busy === 'cancel')}>{uiText("取消")}</Button>
+          <Button variant="secondary" type="button" onClick={cancelBrowser} {...busyProps(action.busy === 'cancel')}>{t('settings:shared.cancel')}</Button>
         ) : (
           <Button variant="secondary" type="button" onClick={openBrowser} disabled={!state.available}
-            {...busyProps(action.busy === 'browser')}>{uiText("用浏览器登录")}</Button>
+            {...busyProps(action.busy === 'browser')}>{t('settings:pikpakAccount.browserSignIn')}</Button>
         )}{passwordLogin}</>}
       </Footer>
     </Section>

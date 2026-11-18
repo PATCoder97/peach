@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 裁剪封面：作品详情页标题旁那枚键点开的一屏。
  *
  * 裁的是**取景框**，不是图片。横版封套里正封那一块本来就不是一张新图，而是一组
@@ -30,6 +29,7 @@ import { useOverlayScrollbar } from '../components/overlay-scrollbar';
 import { CropFrame } from '../crop/crop-frame';
 import { busyProps } from '../settings/use-action';
 import { sendCoverCrop } from './cover-crop';
+import { t } from '../../i18n';
 
 /** 雪碧图里的 Lucide `crop`。这枚键和旧版工具条的定位、同步删除排在一行，那两枚是
  *  15px、线宽 2 的线条字形；Remix 那枚是填充轮廓，并排看笔画粗一圈。 */
@@ -43,18 +43,17 @@ function CropIcon({ className }: { className: string }) {
 }
 
 export function CoverCrop({ code, coverUrl, box, onSaved }: CoverCropProps) {
-  const uiText = useUiTranslation();
   const [open, setOpen] = useState(false);
   return (
     <>
       <button type="button" aria-haspopup="dialog" data-cover-crop
-        aria-label={uiText("裁剪 {value0} 的封面", { value0: String(code) })} title={uiText("裁剪封面：框出正封那一块")}
+        aria-label={t('catalog:coverCrop.cropFor', { code })} title={t('catalog:coverCrop.buttonTip')}
         onClick={() => setOpen(true)}
         className="flex size-7 cursor-pointer items-center justify-center rounded-lg text-foreground-icon-secondary outline-none transition-colors hover:bg-background-primary-hover hover:text-foreground-icon-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring">
         <CropIcon className="size-3.75" />
       </button>
       {/* 详情浮窗是顶层的原生 dialog，弹层由舞台统一挂进同一层（`stage.tsx`）。 */}
-      <ModalFrame isOpen={open} onOpenChange={setOpen} width="cover-crop" label={uiText("裁剪封面")}>
+      <ModalFrame isOpen={open} onOpenChange={setOpen} width="cover-crop" label={t('catalog:coverCrop.title')}>
         <CropBody code={code} coverUrl={coverUrl} box={box} onSaved={onSaved}
           close={() => setOpen(false)} />
       </ModalFrame>
@@ -63,7 +62,6 @@ export function CoverCrop({ code, coverUrl, box, onSaved }: CoverCropProps) {
 }
 
 function CropBody({ code, coverUrl, box: saved, onSaved, close }: CoverCropProps & { close(): void }) {
-  const uiText = useUiTranslation();
   const [size, setSize] = useState<CropSize | null>(null);
   const [box, setBox] = useState<CropBox | null>(null);
   const [locked, setLocked] = useState(true);
@@ -90,16 +88,17 @@ function CropBody({ code, coverUrl, box: saved, onSaved, close }: CoverCropProps
       <div className="flex shrink-0 items-start gap-4 p-5">
         <ModalGlyph><CropIcon className="size-6" /></ModalGlyph>
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <Heading slot="title" className="text-title-3-semibold text-text-primary">{uiText("裁剪封面")}</Heading>
+          <Heading slot="title" className="text-title-3-semibold text-text-primary">{t('catalog:coverCrop.title')}</Heading>
           <p className="text-body-2-regular text-text-secondary">
-            {code}{uiText("：框出正封那一块，封面原图不动。拖动方框移动，滚轮或角上那枚方块改大小。")}</p>
+            {code}{t('catalog:coverCrop.hint')}
+          </p>
           {submit.error ? <Note tone="error">{errorMessage(submit.error)}</Note> : null}
         </div>
-        <IconButton icon={RiCloseLine} size="small" aria-label={uiText("关闭")} onClick={close} />
+        <IconButton icon={RiCloseLine} size="small" aria-label={t('catalog:shared.close')} onClick={close} />
       </div>
       <div ref={frame} className="flex min-h-0 flex-1 flex-col items-center gap-4 overflow-y-auto border-t border-separator-border px-5 py-4">
         <CropFrame src={coverUrl} aspect={locked ? PANEL_ASPECT : null} box={box} size={size}
-          label={uiText("{value0} 的正封取景框", { value0: String(code) })}
+          label={t('catalog:coverCrop.frameLabel', { code })}
           onSize={(next) => { if (isUsableSize(next)) ready(next) }}
           onBox={setBox} />
       </div>
@@ -108,13 +107,13 @@ function CropBody({ code, coverUrl, box: saved, onSaved, close }: CoverCropProps
           setLocked(next);
           if (next && box && size) setBox(clampBox(box, size, PANEL_ASPECT));
         }}>
-          <span className="text-body-2-regular text-text-secondary">{uiText("锁定正封比例")}</span>
+          <span className="text-body-2-regular text-text-secondary">{t('catalog:coverCrop.lockRatio')}</span>
         </Switch>
         <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
           <Button variant="secondary" {...busyProps(busy)}
-            onClick={() => { if (!busy) submit.mutate(null) }}>{uiText("恢复默认")}</Button>
+            onClick={() => { if (!busy) submit.mutate(null) }}>{t('catalog:shared.reset')}</Button>
           <Button disabled={!box || !size} {...busyProps(busy)}
-            onClick={() => { if (box && !busy) submit.mutate(box) }}>{uiText("用这一块")}</Button>
+            onClick={() => { if (box && !busy) submit.mutate(box) }}>{t('catalog:avatarPicker.useArea')}</Button>
         </div>
       </div>
     </>
