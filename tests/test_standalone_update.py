@@ -710,15 +710,22 @@ class StandaloneUpdateTests(unittest.TestCase):
         source, output, manifest, target, archive, release = self.release_fixture()
         self.assertEqual(update_compat.verify(output, "1.0.0"), {})
         rows = [update_compat.release_row(output, "1.0.0")]
-        strict = update_compat.check_clients(update_compat.ROOT, rows, manifest, "1.0.0", oldest="0.47.3")
-        self.assertIn("更新包工具清单无效", " ".join(strict["v0.47.3"]),
-                      "0.47.x 要求工具集合完全相等，人脸模型加入后它读不了更新包")
         future = json.loads(json.dumps(manifest))
         future["tools"]["future-tool"] = {"files": {"tools/future/x.bin": "a" * 64}, "asset": {}}
         orphaned = update_compat.check_clients(update_compat.ROOT, rows, future, "1.0.0")
         self.assertTrue(orphaned)
         for reasons in orphaned.values():
             self.assertIn("future-tool", " ".join(reasons), "新增工具旧版不认得、又没登记为运行时补齐时拒绝发布")
+
+    def test_the_legacy_strict_client_rejects_added_tools_when_its_tag_is_available(self):
+        from scripts import update_compat
+        if 'v0.47.3' not in update_compat.client_tags(update_compat.ROOT, '1.0.0', oldest='0.47.3'):
+            self.skipTest('当前仓库没有 v0.47.3 历史客户端标签')
+        source, output, manifest, target, archive, release = self.release_fixture()
+        rows = [update_compat.release_row(output, '1.0.0')]
+        strict = update_compat.check_clients(update_compat.ROOT, rows, manifest, '1.0.0', oldest='0.47.3')
+        self.assertIn('更新包工具清单无效', ' '.join(strict['v0.47.3']),
+                      '0.47.x 要求工具集合完全相等，人脸模型加入后它读不了更新包')
 
     def test_tool_archive_cannot_replace_application_files(self):
         archive = self.archive(["Peach/tools/ffmpeg/bin/ffmpeg.exe", "Peach/Peach.exe"])

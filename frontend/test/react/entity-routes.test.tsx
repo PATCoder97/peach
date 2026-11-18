@@ -235,8 +235,7 @@ it('资料页就地更新：换筛选只重取作品、换版式一次都不取�
    两种都要读出同一个名字。标题按解码后的路径查路由元数据。 */
 const NAMES = ['A/B', '100%', 'Mia Nix', '三上悠亜', 'ラ/ブ 50%'];
 
-it('名字带斜杠、百分号、空格与日文：两种写法读出同一个名字，标题、链接与首屏请求都是它', async () => {
-  for (const name of NAMES) {
+it.each(NAMES)('特殊名字 %s：两种路径的标题、链接与首屏请求一致', async (name) => {
     const href = entityPath('performer', name);
     expect(href).toBe(`/performers/${encodeURIComponent(name)}`);
     for (const written of [href, `/performers/${encodeURI(name)}`]) {
@@ -257,7 +256,6 @@ it('名字带斜杠、百分号、空格与日文：两种写法读出同一个�
       for (const unmount of unmounts.splice(0)) await act(async () => { unmount() });
       document.body.innerHTML = '';
     }
-  }
 });
 
 it('资料页的路径不经 React Router 的 navigate：同页换 search、换一位与两种写法都交壳写地址', async () => {
