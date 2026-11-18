@@ -129,7 +129,7 @@ describe('界面语言', () => {
     expect(resolveInterfaceLanguage('auto', null, ['vi-VN', 'en'])).toBe('vi');
     expect(resolveInterfaceLanguage('auto', 'vi_VN', ['ja'])).toBe('vi');
     const vi = createTranslator('vi');
-    expect(vi.t('navigation:manage.configuration')).toBe('Cấu hình Peach');
+    expect(vi.t('navigation:manage.configuration')).toBe('Cài đặt');
     expect(vi.t('navigation:durationFilter.minutes', { count: 1234 })).toBe('1.234 phút');
     vi.addResource('en', 'navigation', 'englishFallback', 'English fallback');
     vi.addResource('zh-CN', 'navigation', 'englishFallback', '源文');
