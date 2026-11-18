@@ -43,4 +43,5 @@ Chromium 取页、noVNC 鉴权、重启后的浏览器会话，以及显示组�
 
 Actions 的 `Docker fork` 提供普通和 browser 两个 Linux amd64 目标，默认只构建和验收。
 明确选择发布后才使用现有 Docker Hub 配置推送同一份已验收镜像，browser 标签加 `-browser`。
-上游标准镜像的 CI 与多架构发行入口保持独立。
+`Docker` CI 同时验收 amd64、arm64 标准镜像与 amd64 browser 镜像，浏览器目标复用标准镜像的构建缓存。
+多架构发行继续使用上游标准镜像入口；browser 发布使用个人镜像流程。

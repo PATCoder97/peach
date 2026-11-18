@@ -27,8 +27,13 @@ jobs:
         include:
           - arch: amd64
             runner: ubuntu-latest
+            target: runtime
           - arch: arm64
             runner: ubuntu-24.04-arm
+            target: runtime
+          - arch: amd64-browser
+            runner: ubuntu-latest
+            target: browser
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     steps:
@@ -41,12 +46,19 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
+          target: ${{ matrix.target }}
           load: true
           tags: longmeidao/peach:test
-          cache-from: type=gha,scope=docker-${{ matrix.arch }}
+          cache-from: |
+            type=gha,scope=docker-${{ matrix.arch }}
+            ${{ matrix.target == 'browser' && 'type=gha,scope=docker-amd64' || '' }}
           cache-to: type=gha,mode=max,scope=docker-${{ matrix.arch }}
       - name: 验收临时容器
+        if: matrix.target == 'runtime'
         run: python3 scripts/smoke_docker.py longmeidao/peach:test
+      - name: 验收浏览器与会话持久化
+        if: matrix.target == 'browser'
+        run: python3 scripts/smoke_docker.py longmeidao/peach:test --browser
       - name: 导出 NAS 真机验收镜像
         if: github.event_name == 'workflow_dispatch' && matrix.arch == 'amd64'
         run: |

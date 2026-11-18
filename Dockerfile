@@ -111,7 +111,7 @@ CMD ["python", "-m", "peach.server"]
 FROM runtime AS browser
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium=156.0.8078.73-1~deb13u1 chromium-sandbox=156.0.8078.73-1~deb13u1 \
+    chromium=156.0.8078.79-1~deb13u1 chromium-sandbox=156.0.8078.79-1~deb13u1 \
     xvfb=2:21.1.16-1.3+deb13u4 openbox=3.6.1-12+b2 x11vnc=0.9.17-1 \
     novnc=1:1.6.0-2 websockify=0.12.0+dfsg1-4+b1 fonts-noto-cjk=1:20240730+repack1-1 \
     && rm -rf /var/lib/apt/lists/* \
