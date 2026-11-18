@@ -16,6 +16,9 @@ Entries are written for users to scan: one sentence each, saying where something
 
 ### Added / 新增
 
+- **Interface**: This fork adds Vietnamese to upstream's English translation system and preserves the previous browser language choice (PATCoder97/peach#17). / **界面**：本 fork 在上游英文翻译体系中补齐越南文，保留旧版浏览器的语言选择（PATCoder97/peach#17）。
+- **Desktop**: The optional browser Docker image retains Chromium, noVNC and persistent sessions alongside the updated application (PATCoder97/peach#17). / **桌面**：可选 browser Docker 镜像保留 Chromium、noVNC 与持久会话，应用同步到当前代码（PATCoder97/peach#17）。
+
 - **Sourcing**: Opt in to sharing public metadata and submit Chinese performer names for review before they enter the public seed pack (#768). / **采集**：可预览并自愿贡献公开元信息，也可提交女优中文名，经复核后随种子分发（#768）。
 - **Review**: Select individual duplicate files for Trash, confirm the remaining count, and undo the selected disposal (#739). / **复核**：重复文件可逐份勾选回收，确认时显示保留数，处置后可撤销（#739）。
 - **Review**: Junk files with the same name and size collapse into expandable groups while retaining individual actions (#719). / **复核**：垃圾队列将同名同大小的候选折叠展示，展开后可逐份处理（#719）。

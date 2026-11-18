@@ -259,6 +259,15 @@
         }
       }
     },
+    "v0-59-0": {
+      "headline": "Tiếng Việt, chỉnh sửa thông tin và browser Docker",
+      "items": {
+        "vietnamese-interface": {"title": "Tiếng Anh và tiếng Việt", "body": "Chọn tiếng Anh hoặc tiếng Việt trong phần Ngôn ngữ giao diện. Lựa chọn tiếng Việt trước đây được giữ lại."},
+        "edit-details": {"title": "Sửa thông tin phim ngay tại trang chi tiết", "body": "Chỉnh sửa thông tin và thay ảnh bìa tại trang chi tiết; quá trình thu thập giữ nguyên các giá trị bạn đã sửa."},
+        "table-filters": {"title": "Lọc và chọn qua nhiều trang", "body": "Tìm trong bộ lọc ở tiêu đề cột và chọn các mục khớp qua nhiều trang trong thư viện và bảng rà soát."},
+        "docker-browser": {"title": "Ảnh Docker có trình duyệt tùy chọn", "body": "Biến thể browser giữ Chromium và noVNC cùng ứng dụng mới; hồ sơ trình duyệt được lưu trong volume dữ liệu."}
+      }
+    },
     "v0-58-0": {
       "headline": "Giao diện hoàn toàn bằng tiếng Anh, thiết lập NAS dễ dàng hơn",
       "items": {
