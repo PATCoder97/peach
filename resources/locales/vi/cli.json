@@ -1,0 +1,198 @@
+{
+  "listSeparator": ", ",
+  "settingsUnreadable": "{{error}}\nSửa tệp này hoặc tạo lại nó bằng `peach init --force`.",
+  "notInitialized": "Máy này chưa được khởi tạo; chạy `peach init` trước.",
+  "serve": {
+    "mdnsLoopback": "mDNS chưa được xuất bản: --host {{host}} chỉ cho phép truy cập cục bộ, vì vậy việc xuất bản Peach.local sẽ trỏ đến một địa chỉ không thể truy cập được. Sử dụng --host 0.0.0.0 để truy cập mạng LAN.",
+    "noAuthNotLoopback": "Từ chối bắt đầu: --no-auth chỉ được phép khi nghe trên địa chỉ cục bộ, còn --host {{host}} thì không.\nTắt đăng nhập trên địa chỉ LAN sẽ trao toàn bộ thư viện và ghi API cho bất kỳ thiết bị nào trên mạng.",
+    "noToken": "Từ chối khởi động: --host {{host}} cho phép các thiết bị khác và máy này chưa có mã thông báo truy cập.\nBắt đầu như thế này, mọi thiết bị trên mạng đều có thể đọc toàn bộ thư viện và gọi API ghi.\nChạy `peach token` để tạo và xem mã thông báo (được lưu trữ trong {{path}}), sau đó bắt đầu lại; chỉ để sử dụng cục bộ, hãy chuyển sang --host 127.0.0.1."
+  },
+  "sync": {
+    "disabled": "Vai trò cơ sở dữ liệu: bị vô hiệu hóa · Replication.enabled = false, thiết bị này có thể tự sửa đổi cơ sở dữ liệu",
+    "role": "Vai trò cơ sở dữ liệu: {{status}} · {{detail}}",
+    "conflict": "  Dịch vụ này chỉ đọc. Chọn một cơ sở dữ liệu theo cách thủ công: {{local}} cục bộ, {{shared}} được chia sẻ.",
+    "result": "Đồng bộ hóa cơ sở dữ liệu: {{action}} · {{result}}",
+    "pull": "Lấy từ bản sao được chia sẻ",
+    "push": "Đã đẩy tới bản sao được chia sẻ",
+    "inSync": "Hai bên đã xứng đôi rồi",
+    "takeOwnership": "Thiết bị này hiện là máy tính chính duy nhất"
+  },
+  "migrate": {
+    "notWriter": "Thiết bị này không thể di chuyển cơ sở dữ liệu: {{reason}}; di chuyển trên máy tính chính và đồng bộ hóa trước"
+  },
+  "status": {
+    "missingDb": "Không tìm thấy cơ sở dữ liệu: {{path}}",
+    "database": "Cơ sở dữ liệu {{path}}",
+    "locationRow": "  {{location}}{{count}} vật phẩm{{size}} TB",
+    "total": "Tổng số",
+    "media": "\n  Các loại phương tiện truyền thông:",
+    "processing": "\n  Tiến trình xử lý (video cục bộ {{total}}):",
+    "measure": {
+      "duration": "Có thời lượng (ffprobe)",
+      "snapshot": "Có bảng liên hệ",
+      "hash": "Có hàm băm",
+      "creator": "Có người sáng tạo",
+      "activity": "Có lịch sử xem"
+    },
+    "context": "\n  Bối cảnh:",
+    "contextLength": "Chiều dài",
+    "contextOrient": "Định hướng",
+    "contextQuality": "Chất lượng hình ảnh",
+    "contextValue": {
+      "landscape": "Khung ngang",
+      "long": "hơn 40 phút",
+      "low": "Chất lượng thấp",
+      "medium": "15–40 phút",
+      "portrait": "Khung dọc",
+      "quick": "dưới 5 phút",
+      "short": "5–15 phút"
+    },
+    "migrations": "\n  Di chuyển: tổng số {{total}}, {{pending}} đang chờ xử lý",
+    "sync": "  Đồng bộ hóa: {{action}} · {{reason}}; máy tính chính {{writer}}",
+    "writerLocal": "Thiết bị này",
+    "writerUnknown": "không xác định"
+  },
+  "mount": {
+    "badFormat": "--mount lấy STORAGE_ID=PATH, nhận được: {{value}}",
+    "unknownSource": "--mount lưu trữ ID không được khai báo trong [media.locations]: {{key}} (đã biết: {{known}})",
+    "noneDeclared": "chưa khai báo bộ nhớ"
+  },
+  "init": {
+    "exists": "Tệp cài đặt đã tồn tại: {{path}}",
+    "forceHint": "Thêm --force để tạo lại nó; ghi đè lên tệp này và để lại dữ liệu của bạn.",
+    "forceHintInteractive": "Chạy `peach init --force` để tạo lại nó; ghi đè lên tệp này và để lại dữ liệu của bạn.",
+    "brokenNote": "Lưu ý: {{error}}",
+    "brokenRebuilt": "Tệp bên dưới được xây dựng lại từ các giá trị mặc định tích hợp cùng với các biến môi trường và **không** giữ các giá trị từ tệp cũ.",
+    "brokenRepeat": "Chuyển lại bất kỳ tọa độ nào bạn đã tùy chỉnh trong tệp cũ bằng các tùy chọn khớp trong lệnh này.",
+    "settingsFile": "Tệp cài đặt: {{path}}",
+    "interviewIntro": "Câu hỏi chạy lần đầu: nhấn Enter để chấp nhận giá trị mặc định trong ngoặc.",
+    "aborted": "{{reason}} Đã thoát mà không ghi bất kỳ tệp nào.",
+    "dataRoot": "Thư mục dữ liệu đào: {{path}}",
+    "scanSkipped": "{{reason}} Bỏ qua quá trình quét; chạy `peach scan local` sau.",
+    "scanResult": "  Kết quả quét: {{summary}}"
+  },
+  "scan": {
+    "offline": "{{location}}: điểm gắn kết ngoại tuyến, không được quét",
+    "unknownSource": "✗ Lưu trữ không khai báo {{location}}; được biết đến trong [media.locations]: {{known}}",
+    "noneDeclared": "(không có trong tệp cài đặt)"
+  },
+  "process": {
+    "progress": "{{stage}}: {{checked}}/{{total}}",
+    "discovered": "{{stage}}: tìm thấy {{count}} tệp",
+    "cancelled": "Nhiệm vụ bị hủy bỏ; kết quả đã lưu được giữ lại.",
+    "followups": "Theo dõi: {{declared}} đã khai báo, {{queued}} đã xếp hàng, {{duplicates}} đã xếp hàng"
+  },
+  "tree": {
+    "dbExists": "Cơ sở dữ liệu đã tồn tại, bỏ qua việc tạo nó: {{path}}",
+    "fromExistingHint": "Để tạo tệp cài đặt cho triển khai hiện có, hãy sử dụng `peach init --from-existing`.",
+    "database": "Cơ sở dữ liệu: {{path}} (áp dụng di chuyển {{count}})",
+    "ca": "CA cục bộ: {{path}}",
+    "noCa": "CA cục bộ chưa được tạo ({{error}}). Cài đặt openssl và chạy lại `peach init --force` để thêm nó."
+  },
+  "token": {
+    "path": "Mã thông báo truy cập: {{path}}",
+    "reused": " (sử dụng lại cái hiện có)",
+    "lanHint": "Các dịch vụ được liên kết với một địa chỉ LAN phải có khả năng đọc được địa chỉ đó; xem nó với `peach token`.",
+    "file": "Tệp mã thông báo: {{path}}",
+    "value": "Mã thông báo: {{token}}",
+    "relogin": "Các trình duyệt đã đăng nhập phải đăng nhập lại; các dịch vụ đang chạy sẽ nhận mã thông báo này sau khi khởi động lại.",
+    "shared": "Khi hai máy lấy kết quả đánh giá của nhau, chúng sẽ gửi mã thông báo của riêng mình, do đó người đọc phải sử dụng cùng một tệp với người viết."
+  },
+  "tunnel": {
+    "state": "Bang: {{state}}",
+    "url": "Địa chỉ: {{url}}",
+    "reason": "Lý do: {{reason}}",
+    "public": "Địa chỉ công cộng: {{url}}",
+    "stopping": "Đang dừng liên kết tạm thời…"
+  },
+  "blanks": {
+    "header": "Các tọa độ này trống (không phải lỗi; thiết lập một máy để trống):",
+    "row": "  {{field}} trống → {{effect}}; để thiết lập nó, hãy chạy lại với {{flag}}",
+    "writerOriginFlag": "--nhà văn-nguồn gốc https://<writer address>",
+    "writerOriginEffect": "người đọc không phản ánh đánh giá",
+    "smbHostFlag": "--smb-máy chủ <writer hostname>",
+    "smbUserFlag": "--người dùng smb <keychain account>",
+    "noSharedMount": "điểm chuyển giao chia sẻ không được gắn kết",
+    "mounts": "  [media.mounts] trống → không thể đọc được thư mục lưu trữ; đặt chúng với --mount <STORAGE_ID>=<MEDIA_DIR> (bộ nhớ đã biết: {{known}})"
+  },
+  "next": {
+    "header": "\nCác bước tiếp theo:",
+    "existing1": "  1. Mở file trên và kiểm tra, đặc biệt là [media.mounts] và [replication].",
+    "existing2": "  2. Khởi động lại dịch vụ để áp dụng nó. Cho đến lúc đó không có gì thay đổi.",
+    "existing3": "  3. Nhận mã thông báo bằng `peach token`: các dịch vụ được liên kết với địa chỉ LAN sẽ không khởi động nếu không có mã này và các thiết bị đang sử dụng phải đăng nhập lại.",
+    "open": "  2. Mở http://127.0.0.1:{{port}}/ trong trình duyệt để xác nhận trang hoạt động.",
+    "lanLoopback": "  3. Để truy cập mạng LAN, hãy sử dụng --host 0.0.0.0 và cài đặt CA cục bộ trên mỗi thiết bị. Mật khẩu truy cập là tùy chọn và được đặt trên trang cấu hình.",
+    "lan": "  3. Thiết bị LAN cần cài đặt CA cục bộ. Mật khẩu truy cập là tùy chọn và được đặt trên trang cấu hình."
+  },
+  "sources": {
+    "intro": "Kiểm tra các trang nguồn và CDN hình ảnh; có thể truy cập được không có nghĩa là metadata hoặc phiên đăng nhập đã được xác minh."
+  },
+  "help": {
+    "localImage": "Đọc một hình ảnh đồng hành",
+    "mediaRead": "Đọc thư mục đa phương tiện và các tệp đồng hành có giới hạn thời gian",
+    "init": "Lần chạy đầu tiên: không có tùy chọn, đặt câu hỏi trong thiết bị đầu cuối; bất kỳ tùy chọn nào hoặc --no-input chạy không tương tác",
+    "noInput": "Bỏ qua các câu hỏi và tạo từ các tùy chọn và giá trị mặc định tích hợp",
+    "dataRoot": "Thư mục dữ liệu đào; mặc định là cái hiện được phát hiện",
+    "fromExisting": "Chỉ tạo tệp cài đặt cho quá trình triển khai đang chạy; không tạo thư mục hoặc cơ sở dữ liệu",
+    "force": "Ghi đè lên tệp cài đặt hiện có",
+    "host": "Địa chỉ nghe dịch vụ",
+    "port": "Cổng dịch vụ",
+    "mdnsName": "Đặt tên máy này xuất bản trên mạng LAN (<name>.local)",
+    "writerOrigin": "Nguồn gốc của người viết người đọc phản chiếu các bài đánh giá từ",
+    "writerProxy": "Proxy HTTP chỉ được sử dụng cho nguồn gốc của người viết",
+    "sharedRoot": "Điểm chuyển giao chung để sao chép sổ cái",
+    "smbHost": "Máy chủ của điểm trung chuyển chung",
+    "smbShare": "Chia sẻ tên",
+    "smbUser": "Tài khoản được sử dụng để gắn kết chia sẻ",
+    "mountMetavar": "BỘ LƯU TRỮ_ID=ĐƯỜNG DẪN",
+    "mount": "Ánh xạ ID lưu trữ tới thư mục phương tiện cục bộ, ví dụ: local=/mnt/media; có thể lặp lại",
+    "setup": "Chỉ phục vụ biểu mẫu chạy lần đầu: bỏ qua thư mục dữ liệu Peach được phát hiện và không yêu cầu mã thông báo",
+    "noAuth": "Bỏ qua trang đăng nhập; chỉ được phép truy cập cục bộ và không bao giờ đọc hoặc thay đổi tệp mã thông báo",
+    "scan": "Quét các thư mục của một bộ lưu trữ và lưu chi tiết tệp vào cơ sở dữ liệu",
+    "scanLocation": "ID lưu trữ (asset.location), được khai báo trong [media.locations]",
+    "scanRoot": "Thư mục phương tiện để quét; khi bị bỏ qua, sử dụng cấu hình của bộ lưu trữ ([media.mounts] bên ngoài Windows)",
+    "process": "Quét tệp và điền metadata của thư viện",
+    "token": "Hiển thị mã thông báo truy cập mạng LAN, tạo một mã thông báo nếu cần",
+    "rotate": "Thay thế mã thông báo; cookie đã phát hành ngừng hoạt động ngay lập tức",
+    "tunnel": "Chạy hoặc kiểm tra Đường hầm Cloudflare (mật khẩu truy cập phải được đặt theo mặc định)",
+    "httpsPort": "Cổng HTTPS thực tế của triển khai nguồn (8443 trên macOS, 443 ở nơi khác theo mặc định)",
+    "checkSources": "Sau khi cài đặt, hãy chạy kiểm tra giới hạn các nguồn metadata bên ngoài và CDN hình ảnh mà không cần đọc video",
+    "source": "Chỉ kiểm tra ID nguồn này; có thể lặp lại, mặc định cho tất cả các nguồn metadata",
+    "sourcesJson": "In kết quả JSON mà không cần thông tin xác thực",
+    "doctor": "Chẩn đoán cấu hình, cơ sở dữ liệu, công cụ và gắn kết từng mục mà không cần sửa chữa gì",
+    "doctorJson": "In báo cáo JSON được biên tập lại",
+    "doctorHost": "Chẩn đoán địa chỉ nghe dịch vụ này",
+    "doctorPort": "Chẩn đoán cổng dịch vụ này"
+  },
+  "server": {
+    "description": "Chạy dịch vụ Peach được quản lý từ trình duyệt",
+    "accessIgnored": "Quyền truy cập đã được thiết lập, bỏ qua {{env}}; thay đổi mật khẩu truy cập trong Cài đặt trong Mạng và truy cập.",
+    "accessRejected": "{{env}} không được sử dụng: {{error}}. Mở Peach trong trình duyệt sẽ dẫn đến thiết lập quyền truy cập.",
+    "accessWriteFailed": "Không thể lưu {{env}}: {{error}}",
+    "accessSet": "Mật khẩu truy cập được đặt từ {{env}}.",
+    "processFailed": "Xử lý thư viện không thành công với mã thoát {{code}}",
+    "updateTokenFailed": "Không thể tạo mã thông báo cập nhật bằng một cú nhấp chuột: {{error}}",
+    "listening": "Peach đang nghe trên {{host}}:{{port}}. Truy cập từ bên ngoài container tuân theo ánh xạ cổng máy chủ.",
+    "firstSetup": "Thiết lập lần đầu: mở Peach trong trình duyệt trên máy chủ hoặc mạng LAN và theo dõi trang.",
+    "firstOpen": "Mở lần đầu: mở Peach trong trình duyệt trên máy chủ hoặc mạng LAN, sau đó đặt mật khẩu truy cập hoặc tắt đăng nhập.",
+    "firstSignIn": "Đăng nhập lần đầu: chạy mã thông báo đào trong đó Peach chạy để xem mã thông báo truy cập, sau đó đặt mật khẩu truy cập sau khi đăng nhập.",
+    "lanAccess": "Truy cập NAS/LAN: đặt PEACH_BIND trong Compose thành IP LAN của máy chủ; 127.0.0.1 chỉ cho phép máy chủ."
+  },
+  "trayCommand": {
+    "description": "Khởi động khay Peach (mục thanh menu trên macOS) và quản lý các dịch vụ trên thiết bị này; thường chạy mà không có đối số.",
+    "silent": "Chỉ hiển thị khay sau khi bắt đầu",
+    "show": "Mở trình duyệt sau khi khởi động"
+  },
+  "nasSetup": {
+    "description": "Tạo tệp Soạn cho trình quản lý bộ chứa NAS. Nó không giao tiếp với Docker hoặc bắt đầu hoặc ghi đè quá trình triển khai hiện có.",
+    "help": {
+      "bind": "Địa chỉ IP LAN của NAS",
+      "media": "Thư mục phương tiện hiện có trên máy chủ; chỉ đọc/phương tiện bên trong vùng chứa",
+      "hostname": "Giữ tên này để các tác vụ vẫn thuộc về cùng một nhân viên sau khi vùng chứa được tạo lại",
+      "uid": "UID số chạy Peach, 1000 theo mặc định; sử dụng nó để giữ quyền chia sẻ NAS",
+      "gid": "GID số chạy Peach, 1000 theo mặc định",
+      "prepareRender": "Đối với nút kết xuất có chế độ 0600, điểm vào vùng chứa sẽ chuyển nút đó cho nhóm dịch vụ; nút máy chủ không bị thay đổi",
+      "output": "Lưu vào một tệp mới và từ chối ghi đè lên tệp hiện có; in ra đầu ra tiêu chuẩn theo mặc định"
+    }
+  }
+}

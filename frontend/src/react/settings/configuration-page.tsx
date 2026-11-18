@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 配置页（`/settings/library`）：这台运行 Peach 的电脑上那些要「保存配置」的多字段表单。
  * 每个分区各占一格页签，一次只摆一组；本机配置权限与数据库写入权限由服务端分别判定。
  * 设置弹层里的「Peach 配置」入口指到这里。
@@ -7,20 +6,21 @@ import { useTranslation as useUiTranslation } from "../i18n";
  * 紧跟这一组的根节点，根节点就是那一格页签面板。小标题在样式里不显示，它的字已经写在页签上；
  * 没有内容的组连标题与页签一起省略。页签条第一帧就在，和整页同一次提交画出来。 */
 import { useQuery } from '@tanstack/react-query';
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
-import { peachHistory, shellNavigate, settingsPath } from '@peach/history';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { CONFIGURATION_SECTIONS, peachHistory, sectionTitle, shellNavigate, settingsPath } from '@peach/history';
 
 import { errorMessage } from '../../api';
 import { Button } from '@/components/base/buttons/button';
 import type { ConfigurationData, ConfigurationPanel, ConfigurationProps } from '../bundle';
 import { Note } from '../components/note';
-import { PillTabList } from '../components/pill-tabs';
+import { SortableBoardTabs } from '../components/navigation-order';
 import { CONFIGURATION_KEY, fetchConfiguration } from './configuration';
 import { DownloadGroup } from './download-settings';
 import { GeneralSettings } from './general-settings';
 import { MaintenanceSettings } from './maintenance-settings';
 import { MediaSettings } from './media-settings';
 import { MediaProcessingSettings, PlaybackTranscodeSettings } from './media-processing-settings';
+import { TaskSpeedSettings } from './service-preferences';
 import { CodePatternSettings } from './code-pattern-settings';
 import { NetworkSettings } from './network-settings';
 import { SourceSettings } from './source-settings';
@@ -28,9 +28,9 @@ import { groupRoot } from './configuration-panel';
 import { downloadsShape, maintenanceShape, networkShape } from './configuration-shape';
 import { rememberShape } from '../../configuration-skeleton';
 import { busyProps } from './use-action';
+import { t } from '../../i18n';
 
 export function ConfigurationPage({ receipt, reopenTutorial, section = '', diagnostics }: ConfigurationProps & { diagnostics?: ReactElement }) {
-  const uiText = useUiTranslation();
   const config = useQuery({
     queryKey: CONFIGURATION_KEY, queryFn: ({ signal }) => fetchConfiguration(signal),
   });
@@ -38,8 +38,8 @@ export function ConfigurationPage({ receipt, reopenTutorial, section = '', diagn
   if (!data) {
     return (
       <div className="ui-configpage">
-        <Note tone="error" title={uiText("配置读取失败")}>
-          {config.error ? errorMessage(config.error) : uiText("未取得配置，请刷新页面重试。")}
+        <Note tone="error" title={t('settings:configurationPage.loadFailedTitle')}>
+          {config.error ? errorMessage(config.error) : t('settings:configurationPage.loadFailed')}
         </Note>
       </div>
     );
@@ -51,15 +51,14 @@ export function ConfigurationPage({ receipt, reopenTutorial, section = '', diagn
 function ConfigurationIssues({ data, sections, reload, refreshing }: {
   data: ConfigurationData; sections: string[]; reload(): void; refreshing: boolean;
 }) {
-  const uiText = useUiTranslation();
   return <>{sections.map(key => {
     const issue = data.section_errors?.[key];
     return issue ? <Note key={key} tone="error" title={issue.title}
-      action={<Button variant="secondary" size="small" onClick={reload} {...busyProps(refreshing)}>{uiText("重新读取")}</Button>}>{issue.message}</Note> : null;
+      action={<Button variant="secondary" size="small" onClick={reload} {...busyProps(refreshing)}>{t('settings:shared.reload')}</Button>}>{issue.message}</Note> : null;
   })}</>;
 }
 
-interface Group { title: string; body(panel: ConfigurationPanel): ReactElement }
+interface Group { id: string; title: string; body(panel: ConfigurationPanel): ReactElement }
 
 /* 页签与面板的 id 前缀按页签条计数：每画出一条新的页签条领一个号。 */
 let tabSequence = 0;
@@ -71,7 +70,6 @@ function ConfigurationGroups(
     data: ConfigurationData; diagnostics?: ReactElement; reload(): void; refreshing: boolean;
   },
 ) {
-  const uiText = useUiTranslation();
   const [prefix] = useState(() => `board-tabs-${++tabSequence}`);
   const [chosen, setChosen] = useState(section);
   const workspace = useRef<HTMLDivElement>(null);
@@ -87,7 +85,7 @@ function ConfigurationGroups(
   useLayoutEffect(() => {
     if (previous.current === chosen) return;
     previous.current = chosen;
-    const nav = workspace.current?.querySelector<HTMLElement>('[role="tablist"]');
+    const nav = workspace.current?.querySelector<HTMLElement>('.ui-board-local-nav');
     const panel = workspace.current?.querySelector<HTMLElement>('.ui-board-group-active');
     if (!nav || !panel) return;
     const boundary = parseFloat(getComputedStyle(nav).top);
@@ -106,7 +104,6 @@ function ConfigurationGroups(
     media.addEventListener('change', changed);
     return () => media.removeEventListener('change', changed);
   }, []);
-  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const group = { data, receipt };
   const issues = (sections: string[]) => <ConfigurationIssues data={data} sections={sections} reload={reload} refreshing={refreshing} />;
   const networkKeys = ['peach_proxy', 'access', 'tunnel', 'push_discovery',
@@ -115,20 +112,21 @@ function ConfigurationGroups(
     || networkKeys.some(key => data.section_errors?.[key]));
   const downloads = data.downloads;
   const groups: Group[] = [
-    { title: '媒体库与入库', body: (panel) => <div {...groupRoot(panel)}>
+    { id: 'library', title: CONFIGURATION_SECTIONS.library, body: (panel) => <div {...groupRoot(panel)}>
       {issues(['media_sources', 'library_count', 'mount_dependencies'])}
       {!data.section_errors?.media_sources && !data.section_errors?.library_count ? <MediaSettings {...group} /> : null}
       <CodePatternSettings receipt={receipt} />
       <MediaProcessingSettings receipt={receipt} />
+      <TaskSpeedSettings receipt={receipt} />
     </div> },
-    { title: '来源与订阅', body: (panel) => <SourceSettings {...group} panel={panel} issues={issues(['entry_links'])} /> },
+    { id: 'sources', title: CONFIGURATION_SECTIONS.subscriptions, body: (panel) => <SourceSettings {...group} panel={panel} issues={issues(['entry_links'])} /> },
     ...(downloads || data.section_errors?.downloads ? [{
-      title: '下载渠道',
+      id: 'downloads', title: CONFIGURATION_SECTIONS.downloads,
       body: (panel: ConfigurationPanel) => <DownloadGroup initial={downloads} receipt={receipt} panel={panel} issues={issues(['downloads'])} />,
     }] : []),
-    ...(network ? [{ title: '网络与访问', body: (panel: ConfigurationPanel) => <NetworkSettings {...group} panel={panel} issues={issues(networkKeys)} /> }] : []),
+    ...(network ? [{ id: 'network', title: CONFIGURATION_SECTIONS.network, body: (panel: ConfigurationPanel) => <NetworkSettings {...group} panel={panel} issues={issues(networkKeys)} /> }] : []),
     {
-      title: '应用与维护',
+      id: 'maintenance', title: CONFIGURATION_SECTIONS.maintenance,
       body: (panel) => <div {...groupRoot(panel)}>
         {issues(['startup', 'uninstall', 'storage', 'remote_reporting', 'library_sharing', 'updates', 'update_job', 'automatic_updates', 'facts'])}
         <GeneralSettings {...group} />
@@ -136,38 +134,21 @@ function ConfigurationGroups(
         <MaintenanceSettings {...group} reopenTutorial={reopenTutorial} />
       </div>,
     },
-    { title: '系统诊断', body: panel => <div {...groupRoot(panel)}>{panel.active ? diagnostics : null}</div> },
+    { id: 'diagnostics', title: CONFIGURATION_SECTIONS.diagnostics, body: panel => <div {...groupRoot(panel)}>{panel.active ? diagnostics : null}</div> },
   ];
-  const at = Math.max(0, groups.findIndex((item) => item.title === chosen));
-  const move = (event: KeyboardEvent<HTMLButtonElement>, from: number) => {
-    const last = groups.length - 1;
-    let next: number;
-    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = from === last ? 0 : from + 1;
-    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = from === 0 ? last : from - 1;
-    else if (event.key === 'Home') next = 0;
-    else if (event.key === 'End') next = last;
-    else return;
-    event.preventDefault();
-    choose(groups[next].title);
-    buttons.current[next]?.focus();
-  };
+  const at = Math.max(0, groups.findIndex((item) => item.title === sectionTitle(chosen)));
   return (
     <div ref={workspace} className="ui-configpage">
-      <PillTabList className="ui-board-local-nav" role="tablist" aria-label={uiText("配置分区")} data-section-nav="" data-section-items="" data-pill-nav=""
-        aria-orientation={narrow ? 'horizontal' : 'vertical'}>
-        {groups.map(({ title }, i) => (
-          <button key={title} ref={(node) => { buttons.current[i] = node }} type="button" role="tab"
-            id={`${prefix}-tab-${i}`} aria-controls={`${prefix}-panel-${i}-0`} aria-selected={i === at}
-            data-pill-selected={i === at ? '' : undefined} data-pill-variant="gray"
-            tabIndex={i === at ? 0 : -1} onClick={() => choose(title)} onKeyDown={(event) => move(event, i)}>
-            {uiText(title)}
-          </button>
-        ))}
-      </PillTabList>
-      {groups.map(({ title, body }, i) => (
+      <div className="ui-board-local-nav" data-section-nav="">
+        <SortableBoardTabs group="configuration" label={t('settings:configurationPage.sectionsLabel')} value={groups[at].id}
+          tabs={groups.map(({ id, title }) => ({ value: id, label: title }))} sectionItems panelPrefix={prefix}
+          orientation={narrow ? 'horizontal' : 'vertical'} className=""
+          onChange={id => choose(groups.find(group => group.id === id)!.title)} />
+      </div>
+      {groups.map(({ id, title, body }, i) => (
         <Fragment key={title}>
-          <h2 className="ui-configgroup">{uiText(title)}</h2>
-          {body({ index: i, id: `${prefix}-panel-${i}-0`, labelledBy: `${prefix}-tab-${i}`, active: i === at })}
+          <h2 className="ui-configgroup">{title}</h2>
+          {body({ index: i, id: `${prefix}-panel-${id}`, labelledBy: `${prefix}-tab-${id}`, active: i === at })}
         </Fragment>
       ))}
     </div>

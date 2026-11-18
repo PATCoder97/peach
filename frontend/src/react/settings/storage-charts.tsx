@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 「存储空间」统计结果的两张图：数据目录里各类各占多少，以及 Peach 在整块磁盘里占多少。
  *
  * 两张图回答的是不同的整体，所以分开画、各有各的总数。各类占比用 EvilCharts 的环形图，
@@ -15,6 +14,7 @@ import type { ChartConfig } from '@/registry/ui/recharts-chart';
 import type { StorageCategory, StorageState } from '../bundle';
 import { tone } from '../charts/chart-card';
 import { ChartTip, TIP_SWATCH } from '../charts/chart-tip';
+import { t } from '../../i18n';
 
 /** 每一类固定一档图表色；不在表里的并进「其余」。 */
 const CATEGORY_COLORS: Record<string, string> = {
@@ -40,13 +40,12 @@ export function storageSlices(categories: StorageCategory[]) {
     .map((item) => ({ key: item.key, label: item.label, bytes: item.bytes, color: CATEGORY_COLORS[item.key]! }));
   const rest = categories.filter((item) => !CATEGORY_COLORS[item.key])
     .reduce((sum, item) => sum + item.bytes, 0);
-  return rest > 0 ? [...named, { key: 'rest', label: '其余', bytes: rest, color: REST_COLOR }] : named;
+  return rest > 0 ? [...named, { key: 'rest', label: t('settings:storageCharts.rest'), bytes: rest, color: REST_COLOR }] : named;
 }
 
 export function StorageOverview({ storage }: { storage: StorageState }) {
-  const uiText = useUiTranslation();
   const usage = storage.usage!;
-  const slices = storageSlices(usage.categories).map(slice => ({ ...slice, label: uiText(slice.label) }));
+  const slices = storageSlices(usage.categories);
   const config: ChartConfig = Object.fromEntries(slices.map((slice) =>
     [slice.key, { label: slice.label, colors: tone(slice.color) }]));
   const data = slices.map((slice) => ({ slice: slice.key, value: slice.bytes }));
@@ -54,7 +53,7 @@ export function StorageOverview({ storage }: { storage: StorageState }) {
     <div className="flex flex-col gap-5 md:flex-row md:items-center">
       {/* 环形图的总量写在圈里：图的容器自带 `flex-1`，在这一行 flex 里换成定宽。 */}
       <div className="relative mx-auto size-48 flex-none" role="img"
-        aria-label={uiText("数据目录共 {value0}，各类占比", { value0: String(size(usage.total_bytes)) })}>
+        aria-label={t('settings:storageCharts.categoryShare', { size: size(usage.total_bytes) })}>
         <EvilPieChart data={data} dataKey="value" nameKey="slice" config={config}
           className="aspect-square size-48 flex-none">
           <EvilPieChart.Pie innerRadius="68%" outerRadius="100%" paddingAngle={1} cornerRadius={3} />
@@ -63,11 +62,12 @@ export function StorageOverview({ storage }: { storage: StorageState }) {
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <b className="text-title-2-medium tabular-nums text-text-primary">{size(usage.total_bytes)}</b>
           <small className="text-caption-1-regular tabular-nums text-text-secondary">
-            {usage.total_files.toLocaleString()}{uiText(" 个文件")}</small>
+            {t('settings:storageCharts.fileCount', { count: usage.total_files })}
+          </small>
         </div>
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-4">
-        <ul className="flex flex-wrap gap-x-4 gap-y-1.5" aria-label={uiText("图例")}>
+        <ul className="flex flex-wrap gap-x-4 gap-y-1.5" aria-label={t('settings:storageCharts.legend')}>
           {slices.map((slice) => (
             <li key={slice.key} className="flex items-center gap-1.5 text-caption-1-regular text-text-secondary">
               <i aria-hidden className={`${TIP_SWATCH} ${CATEGORY_SWATCH[slice.key] || REST_SWATCH}`} />
@@ -84,26 +84,27 @@ export function StorageOverview({ storage }: { storage: StorageState }) {
 
 /** 整块磁盘：Peach 占的、别的文件占的、还剩的。读不到磁盘容量时整块不画。 */
 function DiskBar({ storage }: { storage: StorageState }) {
-  const uiText = useUiTranslation();
   if (storage.total_bytes === null || storage.free_bytes === null || !storage.usage) return null;
   const peach = Math.min(storage.usage.total_bytes, storage.total_bytes);
   const free = storage.free_bytes;
   const others = Math.max(0, storage.total_bytes - free - peach);
   const config = {
     /* 不用任何一类的图表色：这一段是整个数据目录，与上面某一类同色会读成「只有数据库」。 */
-    peach: { label: uiText('Peach 数据'), colors: tone('var(--color-border-focus-ring)') },
-    others: { label: uiText('其他文件'), colors: tone(REST_COLOR) },
-    free: { label: uiText('可用'), colors: tone('var(--color-background-tertiary-default)') },
+    peach: { label: t('settings:storageCharts.peachData'), colors: tone('var(--color-border-focus-ring)') },
+    others: { label: t('settings:storageCharts.otherFiles'), colors: tone(REST_COLOR) },
+    free: { label: t('settings:storageCharts.free'), colors: tone('var(--color-background-tertiary-default)') },
   } satisfies ChartConfig;
   const share = (part: number) => {
     const percent = (part / storage.total_bytes!) * 100;
-    return percent < 0.1 ? uiText('不到 0.1%') : `${percent.toFixed(percent < 10 ? 1 : 0)}%`;
+    return percent < 0.1 ? t('settings:storageCharts.underTenthPercent') : `${percent.toFixed(percent < 10 ? 1 : 0)}%`;
   };
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-caption-1-regular text-text-secondary">{uiText("所在磁盘共 ")}{size(storage.total_bytes)}{storage.system_drive ? uiText("（系统盘）") : ''}{uiText("，Peach 占 ")}{share(peach)}{uiText("， 可用 ")}{size(free)}
+      <p className="text-caption-1-regular text-text-secondary">
+        {t('settings:storageCharts.diskSummary', {
+          total: size(storage.total_bytes), systemDrive: storage.system_drive ? t('settings:storageCharts.systemDrive') : '', share: share(peach), free: size(free) })}
       </p>
-      <EvilBarChart data={[{ disk: uiText('磁盘'), peach, others, free }]} config={config}
+      <EvilBarChart data={[{ disk: t('settings:libraryIcons.hardDrive'), peach, others, free }]} config={config}
         layout="horizontal" stackType="percent" barRadius={4}
         chartProps={{ margin: { top: 0, right: 0, bottom: 0, left: 0 } }}
         className="aspect-auto h-6 flex-none">

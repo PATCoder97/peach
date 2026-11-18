@@ -1,6 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
-import { translate as t } from '../../i18n/index';
-import { useTranslation } from '../i18n';
 /* 侧栏光晕的详细设置，照 feralui.dev/gradients 的工作台面板来：参数行是「84px 标签 + 自绘拉条 +
  * 右侧等宽读数」，颜色行点开在自己下方弹一张色板。
  * 取证见 docs/reference-snapshots/feralui-studio-boardui-accent-measured.md。
@@ -24,18 +21,17 @@ import { useOverlayScrollbar } from '../components/overlay-scrollbar';
 import type { SettingsPanelHost } from './settings-panel-api';
 import { Icon } from './icon';
 import { DialRow } from './legacy-controls';
+import { t } from '../../i18n';
 
 type Field = 'strength' | 'noise' | 'speed' | 'soften' | 'size';
 type Spot = 'spot1' | 'spot2' | 'spot3';
 
 const FIELDS: readonly [Field, string, number][] = [
-  ['strength', '强度', 100], ['noise', '颗粒', 60], ['speed', '漂移速度', 300], ['soften', '柔化', 100], ['size', '大小', 100],
+  ['strength', t('settings:sidebarGlow.strength'), 100], ['noise', t('settings:sidebarGlow.grain'), 60], ['speed', t('settings:sidebarGlow.driftSpeed'), 300], ['soften', t('settings:sidebarGlow.softness'), 100], ['size', t('settings:sidebarGlow.size'), 100],
 ];
 
 
 function StopRow({ host, spot, index, glow }: { host: SettingsPanelHost; spot: Spot; index: number; glow: HomeGlow }) {
-  const uiText = useUiTranslation();
-  useTranslation();
   const label = GLOW_SPOT_LABELS[index];
   const row = useRef<HTMLDivElement | null>(null);
   const toggle = useRef<HTMLButtonElement | null>(null);
@@ -64,22 +60,22 @@ function StopRow({ host, spot, index, glow }: { host: SettingsPanelHost; spot: S
     <div data-glow-stop={spot} ref={row}>
       <button type="button" data-glow-stop-toggle="" aria-haspopup="dialog" aria-expanded="false" ref={toggle}>
         <span aria-hidden="true" data-glow-stop-dot="" style={{ '--glow-swatch': color } as CSSProperties} />
-        <span data-glow-stop-text=""><b>{t(label)}</b><small className="mono" data-glow-stop-hex="">{color}</small></span>
+        <span data-glow-stop-text=""><b>{label}</b><small className="mono" data-glow-stop-hex="">{color}</small></span>
         <Icon name="chevron-down" />
       </button>
       <div className="popmenu" data-glow-stop-pop="" popover="manual" hidden ref={pop}>
-        <div data-glow-pills="" role="group" aria-label={t("色系")}>
+        <div data-glow-pills="" role="group" aria-label={t('settings:sidebarGlow.colorFamilies')}>
           {GLOW_SWATCH_FAMILIES.map(([key, name]) => (
             <button type="button" key={key} data-glow-pill={key} aria-pressed={key === family}
-              onClick={() => setFamily(key)}>{t(name)}</button>
+              onClick={() => setFamily(key)}>{name}</button>
           ))}
         </div>
         <div data-glow-palette-frame="">
-        <div ref={palette} data-glow-palette="" role="radiogroup" aria-label={uiText("{value0}颜色", { value0: uiText(label) })}>
+        <div ref={palette} data-glow-palette="" role="radiogroup" aria-label={t('settings:sidebarGlow.spotColor', { label })}>
           {GLOW_SWATCHES.map(([swatchFamily, name, hex]) => (
             <button type="button" key={hex} role="radio" aria-checked={hex === color} data-glow-swatch={hex}
               data-glow-family={swatchFamily} style={{ '--glow-swatch': hex } as CSSProperties}
-              title={t(name)} aria-label={t(name)} hidden={family !== 'all' && swatchFamily !== family}
+              title={name} aria-label={name} hidden={family !== 'all' && swatchFamily !== family}
               onClick={() => pick(hex)} />
           ))}
         </div>
@@ -90,32 +86,31 @@ function StopRow({ host, spot, index, glow }: { host: SettingsPanelHost; spot: S
 }
 
 export function GlowSettings({ host }: { host: SettingsPanelHost }) {
-  useTranslation();
   const glow = host.store.value.homeGlow;
   const native = isNativeGlass(glow.preset);
   return (
-    <section data-glow-setting="" id="homeGlowControls" aria-label={t("侧栏光晕参数")} hidden={!glow.on}>
-      <section data-glow-group=""><h4 data-settings-subheading="">{t("光晕配色")}</h4>
+    <section data-glow-setting="" id="homeGlowControls" aria-label={t('settings:sidebarGlow.controlsLabel')} hidden={!glow.on}>
+      <section data-glow-group=""><h4 data-settings-subheading="">{t('settings:sidebarGlow.palette')}</h4>
         <div data-setting-card="" data-glow-card="">
-        <p data-glow-current="">{t("当前配色")}<b data-glow-preset-name="">{t(glowPresetName(glow.preset))}</b></p>
-        <GlowPresetGrid store={host.store} label={t("光晕配色")} />
-        <p data-glow-native-note="" hidden={!native}>{t("这一档用每块玻璃自带的反光，颜色跟着明暗主题走。")}</p>
+        <p data-glow-current="">{t('settings:sidebarGlow.currentPalette')}<b data-glow-preset-name="">{glowPresetName(glow.preset)}</b></p>
+        <GlowPresetGrid store={host.store} label={t('settings:sidebarGlow.palette')} />
+        <p data-glow-native-note="" hidden={!native}>{t('settings:sidebarGlow.nativeGlassNote')}</p>
         <div data-glow-fields="">
           {/* 拖动中只改参数、只排一帧重画；落盘留给松手那一下。其余玻璃面跟着走的只有速度，
               而它那两枚变量只能写在根上，所以拖动期间只有侧栏那一层在变，松手才铺到整页。 */}
           {FIELDS.map(([field, label, max]) => (
-            <DialRow key={field} field={field} label={t(label)} max={max} value={glow[field]} hidden={native && field !== 'speed'}
+            <DialRow key={field} field={field} label={label} max={max} value={glow[field]} hidden={native && field !== 'speed'}
               onStep={(value) => { host.store.value.homeGlow[field] = value; host.changed('glowFrame') }}
               onSettle={() => { host.store.save(); if (field === 'speed') host.changed('glow') }} />
           ))}
         </div>
         <div data-glow-actions="">
           <button type="button" className="geist-button" data-glow-reset=""
-            onClick={() => { host.store.value.homeGlow = normalizeHomeGlow(null); host.store.save(); host.changed('glow') }}>{t("恢复默认")}</button>
+            onClick={() => { host.store.value.homeGlow = normalizeHomeGlow(null); host.store.save(); host.changed('glow') }}>{t('settings:shared.reset')}</button>
         </div>
         </div>
       </section>
-      <section data-glow-group="" data-glow-colours="" hidden={native}><h4 data-settings-subheading="">{t("自定义颜色")}</h4>
+      <section data-glow-group="" data-glow-colours="" hidden={native}><h4 data-settings-subheading="">{t('settings:sidebarGlow.customColors')}</h4>
         <div data-setting-card="" data-glow-colour-card=""><div data-glow-stops="">
           {HOME_GLOW_SPOTS.map((spot, index) => <StopRow key={spot} host={host} spot={spot as Spot} index={index} glow={glow} />)}
         </div></div>

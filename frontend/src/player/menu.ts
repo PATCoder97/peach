@@ -3,14 +3,12 @@
  * 项目照 YouTube 播放器 f572e43c 的 .ytp-contextmenu 取舍：循环播放、迷你播放器（小窗里是展开）、
  * 画中画、复制视频网址、复制当前时间的视频网址、播放统计；嵌入代码、调试信息和排查播放问题
  * Peach 没有对应能力，不列。 */
-import { icon } from '@peach/legacy/core';
+import { esc, icon } from '@peach/legacy/core';
 import { dismissMenu, presentMenu, scrollMovesAnchor } from '@peach/legacy/ui';
 
 import { playerHost } from './host';
 import type { VjsPlayer } from './types';
-import { translate as t } from '../i18n';
-import { installShellLocale } from '../i18n/shell';
-import { uiTextHtml } from '../i18n/html';
+import { t } from '../i18n';
 
 /** 菜单里和小窗有关的那两项要问小窗的持有方。 */
 export interface PlayerMenuHooks {
@@ -37,7 +35,7 @@ function menuElement(): HTMLElement {
     menu.setAttribute('data-player-context-menu', '');
     menu.id = 'playerMenu';
     menu.setAttribute('role', 'menu');
-    menu.setAttribute('aria-label', t('播放器菜单'));
+    menu.setAttribute('aria-label', t('catalog:playerMenu.label'));
     menu.hidden = true;
     document.body.append(menu);
   }
@@ -87,28 +85,27 @@ function playerMenuItems(player: VjsPlayer): MenuItem[] {
   };
   const copy = (withTime: boolean, receipt: string) => {
     void copyTextToClipboard(url(withTime)).then((ok) =>
-      playerHost().toast(ok ? receipt : '复制失败，请手动复制地址栏', { timeout: 4000, warn: !ok }));
+      playerHost().toast(ok ? receipt : t('catalog:playerMenu.copyFailed'), { timeout: 4000, warn: !ok }));
   };
   const items: MenuItem[] = [
-    { icon: 'repeat', label: '循环播放', checked: !!player.loop(), run: () => player.loop(!player.loop()) },
-    mini ? { icon: 'maximize-2', label: '展开', run: () => hooks?.expand() }
-      : { icon: 'picture-in-picture-2', label: '迷你播放器', run: () => hooks?.toMiniplayer() },
+    { icon: 'repeat', label: t('catalog:playerMenu.loop'), checked: !!player.loop(), run: () => player.loop(!player.loop()) },
+    mini ? { icon: 'maximize-2', label: t('catalog:playerMenu.expand'), run: () => hooks?.expand() }
+      : { icon: 'picture-in-picture-2', label: t('catalog:playerMenu.miniplayer'), run: () => hooks?.toMiniplayer() },
   ];
   if (document.pictureInPictureEnabled) {
-    items.push({ icon: 'player-pip', fill: true, label: '画中画',
+    items.push({ icon: 'player-pip', fill: true, label: t('catalog:playerControls.pictureInPicture'),
       run: () => player.el().querySelector<HTMLElement>('.vjs-picture-in-picture-control')?.click() });
   }
-  items.push({ icon: 'link', label: '复制视频网址', run: () => copy(false, '已复制视频网址') });
-  items.push({ icon: 'link', label: '复制当前时间的视频网址', run: () => copy(true, '已复制当前时间的视频网址') });
+  items.push({ icon: 'link', label: t('catalog:playerMenu.copyUrl'), run: () => copy(false, t('catalog:playerMenu.urlCopied')) });
+  items.push({ icon: 'link', label: t('catalog:playerMenu.copyUrlAtTime'), run: () => copy(true, t('catalog:playerMenu.urlAtTimeCopied')) });
   const stats = document.getElementById('playerStatsBtn');
-  if (!mini && stats && !stats.hidden) items.push({ icon: 'chart', label: '播放统计', run: () => stats.click() });
+  if (!mini && stats && !stats.hidden) items.push({ icon: 'chart', label: t('catalog:playerMenu.stats'), run: () => stats.click() });
   return items;
 }
 
 export function openPlayerMenu(player: VjsPlayer, x: number, y: number): void {
   const menu = menuElement();
   closePlayerMenu();
-  menu.setAttribute('aria-label', t('播放器菜单'));
   /* 舞台是模态 dialog，在顶层：菜单要进它里面才盖得住，否则落在遮罩底下。 */
   const stage = playerHost().stage();
   if (stage instanceof HTMLDialogElement && stage.open) stage.append(menu);
@@ -117,7 +114,7 @@ export function openPlayerMenu(player: VjsPlayer, x: number, y: number): void {
   menu.innerHTML = items.map((item, index) => {
     const checkable = item.checked !== undefined;
     return `<button type="button" role="${checkable ? 'menuitemcheckbox' : 'menuitem'}"${checkable ? ` aria-checked="${item.checked}"` : ''} data-player-menu="${index}">${
-      mark(icon(item.icon), item.fill ? 'data-player-menu-fill' : '')}${uiTextHtml(item.label)}${checkable ? mark(icon('check'), 'data-player-menu-check') : ''}</button>`;
+      mark(icon(item.icon), item.fill ? 'data-player-menu-fill' : '')}<span>${esc(item.label)}</span>${checkable ? mark(icon('check'), 'data-player-menu-check') : ''}</button>`;
   }).join('');
   presentMenu(menu); menu.showPopover();
   // 量 offsetWidth／offsetHeight：进场动画起手是 scale(.95)，getBoundingClientRect 量到的是缩过的框。
@@ -144,10 +141,7 @@ export function openPlayerMenu(player: VjsPlayer, x: number, y: number): void {
     document.addEventListener('keydown', onKey, true);
     window.addEventListener('scroll', onScroll, { capture: true, passive: true });
   }, 0);
-  menu.dataset.i18nAriaLabel = '播放器菜单';
-  const stopLocale = installShellLocale(menu);
   cleanup = () => {
-    stopLocale();
     document.removeEventListener('pointerdown', onDown, true);
     document.removeEventListener('keydown', onKey, true);
     window.removeEventListener('scroll', onScroll, true);

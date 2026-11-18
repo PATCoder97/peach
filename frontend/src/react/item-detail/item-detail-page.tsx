@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 作品详情（ADR-0031）：舞台里那一整块——播放区、右侧队列、侧栏与下方的「接着看」。
  *
  * 舞台（`<dialog id="stage">`）、它的进出场、小窗与 Video.js 都归舞台岛（`../stage/`），关注详情
@@ -11,18 +10,22 @@ import { useTranslation as useUiTranslation } from "../i18n";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { fmtDur, fmtSize, icon, requestErrorMessage } from '@peach/legacy/core';
+import { appSettingsStore } from '@peach/appearance';
 import {
   coverUrl, mixLabel, performerLabel, queueAvatarHtml, queueThumbHtml,
 } from '@peach/card-art';
 import { confirmModal, spinnerHtml } from '@peach/legacy/ui';
 
 import { apiGet, apiSend } from '../../api';
+import { codedText } from '../../core/server-text';
+import { EDITION_TONE } from '../../core/jav-title';
 import { Button } from '@/components/base/buttons/button';
 import { RiArrowDownSLine } from '@remixicon/react';
 import { CatalogGridPage } from '../catalog-grid/catalog-grid-page';
 import { patchCatalogItems, replaceCatalogItem } from '../catalog-grid/catalog-grid';
 import type { MediaItem } from '../catalog-grid/types';
-import { RetryNote } from '../components/grid-reveal';
+import { DetailFailure } from '../components/detail-failure';
+import { PendingWork, pendingRefetch, usePendingWorkRefetch } from '../components/pending-work';
 import { MixQueue, MixQueueRow } from '../components/mix-queue';
 import { RelatedSection } from '../components/related-section';
 import { DetailContinuation } from '../components/detail-continuation';
@@ -35,19 +38,23 @@ import { MediaCarousel } from '../components/media-carousel';
 import { CatalogPicture } from './catalog-picture';
 import { fetchJavDetail, javDetailKey } from '../jav-detail/jav-detail';
 import { busyProps } from '../settings/use-action';
+import { LIBRARY_PROCESSING_URL } from '../library-processing/library-processing';
 import { ExternalPlayback } from './external-playback';
+import { isPlayerGuidePreview } from '../../player/guide-preview';
 import { CoverCrop } from '../cover-crop/cover-crop-page';
 import { queryClient } from '../query';
 import { LibraryCompletionPrompt, missingPreviewIds } from '../library-processing/library-completion';
 import {
-  CAST_SHOWN, EDITION_TONE, FEEDBACK_URL, ITEM_TAG_URL, PLAYLIST_URL, PREFERENCE_URL, QUALITY_GOAL_URL,
+  CAST_SHOWN, FEEDBACK_URL, PLAYLIST_URL, PREFERENCE_URL, QUALITY_GOAL_URL,
   RELATED_URL, WATCH_LATER_URL, chooseItem, clampRating, detailTags, feedbackReceipt, fetchItem, fetchQueue,
-  hasTag, identityGroups, isVanished, itemKey, mediaGate, movedOrder, nextPart, nextRating, partLabel, partLabelHtml, playlistQueue,
-  queueCopy, queueKey, ratingStars, realWatched, relatedKey, rememberTag, sameOrder,
-  withPartLabel, withTag, withoutTag,
-  type DetailEntityRef, type DetailItem, type DetailQueue, type DetailTag, type ItemDetailActions,
+  identityGroups, isVanished, itemKey, mediaGate, movedOrder, nextRating, editionLabel, partLabel, partLabelHtml, playlistQueue,
+  queueCopy, queueKey, queueNext, ratingStars, ratingText, realWatched, relatedKey, sameOrder,
+  withPartLabel,
+  type DetailEntityRef, type DetailItem, type DetailQueue, type ItemDetailActions,
   type ItemDetailHelpers, type ItemDetailProps, type MediaGate, type PlaylistPayload,
 } from './item-detail';
+import { ItemEditButton, applySavedItem } from './item-edit';
+import { t } from '../../i18n';
 
 /** 字形原样取壳那一份 `icon()`：骨架与遗留详情画的就是它，换成别的字形接管那一拍会跳。 */
 const Glyph = ({ name }: { name: string }) => (
@@ -56,7 +63,7 @@ const Glyph = ({ name }: { name: string }) => (
 const Html = ({ html }: { html: string }) => <span className="contents" dangerouslySetInnerHTML={{ __html: html }} />;
 
 /** 文件大小：没记下或记成 0 的写「大小未知」，同卡片上那一格。 */
-const sizeText = (size: unknown) => (Number(size) > 0 ? fmtSize(Number(size)) : '大小未知');
+const sizeText = (size: unknown) => (Number(size) > 0 ? fmtSize(Number(size)) : t('catalog:shared.unknownSize'));
 
 export function ItemDetailPage(props: ItemDetailProps) {
   const { queue: ref, actions } = props;
@@ -71,17 +78,26 @@ export function ItemDetailPage(props: ItemDetailProps) {
     queryKey: itemKey(id ?? 0),
     queryFn: ({ signal }) => fetchItem(id!, signal),
     enabled: id != null,
+    refetchInterval: pendingRefetch,
   });
+  usePendingWorkRefetch(result.data?.pending_work, itemKey(id ?? 0));
   if (!result.data || (ref && !queue)) {
     const error = result.error || queueResult.error;
+    // 整页没取到：不在黑色舞台里画红色横条，弹层正中一句说明加重试（与番号、关注详情同一个）。
+    if (error) return (
+      <div data-stage-grid="" data-item-detail="">
+        <div data-detail-failure="">
+          <CloseStage onClose={actions.close} />
+          <DetailFailure detail={requestErrorMessage(error)} busy={result.isFetching || queueResult.isFetching}
+            onRetry={() => { if (queueResult.error) void queueResult.refetch(); if (result.error) void result.refetch() }} />
+        </div>
+      </div>
+    );
     return (
       <div data-stage-grid="" data-item-detail="">
         <div data-stage-media="" data-item-media="none">
           <CloseStage onClose={actions.close} />
-          <div data-item-placeholder="">
-            {error ? <RetryNote message={requestErrorMessage(error)}
-              onRetry={() => { if (queueResult.error) void queueResult.refetch(); if (result.error) void result.refetch() }} /> : null}
-          </div>
+          <div data-item-placeholder="" />
         </div>
       </div>
     );
@@ -90,14 +106,14 @@ export function ItemDetailPage(props: ItemDetailProps) {
 }
 
 /** 关闭键。`id` 留着：Escape、点浮窗外面与壳的兜底都按 `#closeStage` 找它再点一下。 */
-const CloseStage = ({ onClose }: { onClose(): void }) => { const uiText = useUiTranslation(); return ((
-  <button type="button" data-stage-close="" id="closeStage" title={uiText("关闭")} aria-label={uiText("关闭")} onClick={onClose}
+const CloseStage = ({ onClose }: { onClose(): void }) => (
+  <button type="button" data-stage-close="" id="closeStage" title={t('catalog:shared.close')} aria-label={t('catalog:shared.close')} onClick={onClose}
     dangerouslySetInnerHTML={{ __html: icon('x') }} />
-)); };
+);
 
 function Detail(props: ItemDetailProps & { item: DetailItem; queue: DetailQueue | null }) {
   const { item, queue, actions, helpers } = props;
-  const write = useDetailWrite(item, actions, helpers.tagLabel);
+  const write = useDetailWrite(item, actions);
 
   /* 画出来的是哪一条只报一次：写完换进来的是同一条的新对象，不能因此重推地址、重画顶栏。 */
   const presented = useRef(item);
@@ -108,16 +124,22 @@ function Detail(props: ItemDetailProps & { item: DetailItem; queue: DetailQueue 
     apiSend(PLAYLIST_URL, { action: 'progress', id: queue.playlistId, asset_id: item.id }).catch(() => {});
   }, []);
 
-  const gate = mediaGate(item, helpers.sourceOffline(String(item.root_id || item.location || '')));
-  const next = nextPart(queue, item.id);
-  const continuePart = () => {
-    if (next && queue) actions.openQueueItem({ kind: queue.kind, seedId: queue.seedId, autoplay: true }, next.id);
+  const gate = isPlayerGuidePreview() ? '' : mediaGate(item, helpers.sourceOffline(String(item.root_id || item.location || '')));
+  /* 播完按「播完之后」接：下一卷、队列下一条，或同一条从头再播。 */
+  const continueQueue = (video: HTMLVideoElement | null) => {
+    const next = queueNext(queue, item.id, appSettingsStore().value.afterPlayback);
+    if (!next || !queue) return;
+    if (next.id === item.id) {
+      if (video) { video.currentTime = 0; void video.play()?.catch(() => {}) }
+      return;
+    }
+    actions.openQueueItem({ kind: queue.kind, seedId: queue.seedId, playlistId: queue.playlistId, autoplay: true }, next.id);
   };
   return (
     <>
       <div data-stage-grid="" data-with-queue={queue ? '' : undefined} data-item-detail="">
         <MediaFrame item={item} gate={gate} helpers={helpers} actions={actions}
-          autoplay={props.queue?.autoplay} onEnded={continuePart} />
+          autoplay={props.queue?.autoplay} onEnded={continueQueue} />
         <Side item={item} queue={queue} write={write} helpers={helpers} actions={actions} />
       </div>
       <DetailContinuation queueCards={queue?.kind === 'parts' || queue?.kind === 'editions' ? queue.items.length : undefined}
@@ -133,9 +155,8 @@ function Detail(props: ItemDetailProps & { item: DetailItem; queue: DetailQueue 
 
 function MediaFrame({ item, gate, helpers, actions, autoplay, onEnded }: {
   item: DetailItem; gate: MediaGate; helpers: ItemDetailHelpers; actions: ItemDetailActions;
-  autoplay?: boolean; onEnded(): void;
+  autoplay?: boolean; onEnded(video: HTMLVideoElement | null): void;
 }) {
-  const uiText = useUiTranslation();
   /* 计费来源先挡一层说明，点了才拉流；没挂载与在线拦截的那两种不挂播放器。 */
   const [started, setStarted] = useState<'auto' | 'clicked' | ''>(gate ? '' : 'auto');
   /* 播放器挂在这块框里，`<video>` 由舞台建：Video.js 会把它包进自己的 div，从小窗展开回来时
@@ -152,9 +173,9 @@ function MediaFrame({ item, gate, helpers, actions, autoplay, onEnded }: {
     enabled: !!item.is_jav && !!item.code && !item.sample_images?.length });
   const samples = item.sample_images?.length ? item.sample_images.map(sample => ({ index: sample.n, source: false }))
     : Array.from({ length: Math.min(30, Math.max(0, source.data?.preview_count || 0)) }, (_, index) => ({ index: index + 1, source: true }));
-  const media = item.is_jav && item.code ? [...(item.has_cover ? [{ index: -1, label: '封面' }] : []),
-    ...samples.map((sample, index) => ({ ...sample, label: `预览 ${index + 1}` })),
-    { index: -2, label: '正片', video: true }] : [];
+  const media = item.is_jav && item.code ? [...(item.has_cover ? [{ index: -1, label: t('catalog:shared.cover') }] : []),
+    ...samples.map((sample, index) => ({ ...sample, label: t('catalog:detailMedia.sampleNumber', { number: index + 1 }) })),
+    { index: -2, label: t('catalog:detailMedia.fullVideo'), video: true }] : [];
   const hasPictures = media.length > 1;
   const selectImage = (index: number) => {
     if (index !== -2) frameRef.current?.querySelector('video')?.pause();
@@ -166,11 +187,17 @@ function MediaFrame({ item, gate, helpers, actions, autoplay, onEnded }: {
   useLayoutEffect(() => {
     const node = frameRef.current;
     if (!node || !started) return;
-    const complete = () => ended.current();
+    const complete = (event: Event) =>
+      ended.current(event.target instanceof HTMLVideoElement ? event.target : node.querySelector('video'));
+    /* 单片循环交给 `<video loop>`：播放器菜单里的「循环播放」读写的是同一个属性，两处对得上。 */
+    const loop = (event: Event) => {
+      if (event.target instanceof HTMLVideoElement && appSettingsStore().value.afterPlayback === 'repeat-one') event.target.loop = true;
+    };
     node.addEventListener('ended', complete, true);
+    node.addEventListener('loadedmetadata', loop, true);
     const unmount = actions.mountPlayer(node, mounting.current, null,
       started === 'clicked' || autoplay ? { autoplay: true } : undefined);
-    return () => { node.removeEventListener('ended', complete, true); unmount() };
+    return () => { node.removeEventListener('ended', complete, true); node.removeEventListener('loadedmetadata', loop, true); unmount() };
   }, [actions, started]);
   const badge = helpers.badgeHtml(item.location || '', item.cost || '', 'srcbig');
   return (
@@ -180,7 +207,7 @@ function MediaFrame({ item, gate, helpers, actions, autoplay, onEnded }: {
       <div data-player-toolbar="">
         <span data-player-stats-slot="" />
         {hasPictures ? <button type="button" data-jav-preview-toggle="" aria-pressed={image !== -2}
-          onClick={() => selectImage(image === -2 ? media[0]!.index : -2)}><Glyph name={image === -2 ? 'image' : 'play'} />{image === -2 ? uiText("查看图片") : uiText("播放正片")}</button>
+          onClick={() => selectImage(image === -2 ? media[0]!.index : -2)}><Glyph name={image === -2 ? 'image' : 'play'} />{image === -2 ? t('catalog:detailMedia.viewImages') : t('catalog:detailMedia.playFullVideo')}</button>
           : null}
         <span data-player-net-slot="" />
       </div>
@@ -191,27 +218,27 @@ function MediaFrame({ item, gate, helpers, actions, autoplay, onEnded }: {
             source={samples.find(sample => sample.index === (entry.index === -2 ? media[0]!.index : entry.index))?.source} thumbnail />} />
       </> : null}
       {image !== -2 && item.is_jav && item.code && !item.sample_images?.length && (source.isPending || source.error || source.data?.state === 'partial') ?
-        <div data-item-samples-state="">{source.isPending ? <span data-skeleton="samples" role="status" aria-label={uiText("正在读取样图")} className="relative block h-12 w-20 skeleton-sheen" />
+        <div data-item-samples-state="">{source.isPending ? <span data-skeleton="samples" role="status" aria-label={t('catalog:detailMedia.loadingSamples')} className="relative block h-12 w-20 skeleton-sheen" />
           : <Button variant="secondary" {...busyProps(source.isFetching)} title={source.data?.message || requestErrorMessage(source.error)}
-            aria-label={uiText("立即重试样图")} onClick={() => { refreshSamples.current = true; void source.refetch() }}>{uiText("立即重试")}</Button>}</div> : null}
+            aria-label={t('catalog:detailMedia.retrySamples')} onClick={() => { refreshSamples.current = true; void source.refetch() }}>{t('catalog:shared.retryNow')}</Button>}</div> : null}
       {gate === 'offline' ? <OfflineGate item={item} badge={badge} helpers={helpers} actions={actions} />
         : gate === 'disc' ? (
           <div role="status" data-item-gate="disc">
-            <b>{uiText("ISO 原盘")}</b>
-            <span>{uiText("请使用支持原盘的外部播放器打开。")}</span>
-            <ExternalPlayback key={item.id} id={item.id} onOpened={() => actions.toast('已请求打开本地播放器')} />
+            <b>{t('catalog:detailGate.isoDisc')}</b>
+            <span>{t('catalog:detailGate.isoHint')}</span>
+            <ExternalPlayback key={item.id} id={item.id} onOpened={() => actions.toast(t('catalog:detailGate.externalPlayerRequested'))} />
           </div>
         ) : gate === 'online' ? (
           <div id="onlineGate" role="status" data-item-gate="online">
             <Html html={badge} />
-            <b>{uiText("在线作品")}</b>
-            <span>{uiText("这条没有对应的关注条目，媒体地址无从解析。")}</span>
-            <button className="chip" id="openSavedFollow" type="button" onClick={actions.openSavedFollow}>{uiText("打开已保存关注")}</button>
+            <b>{t('catalog:shared.onlineVideo')}</b>
+            <span>{t('catalog:detailGate.onlineUnresolved')}</span>
+            <button className="chip" id="openSavedFollow" type="button" onClick={actions.openSavedFollow}>{t('catalog:detailGate.openSavedFollow')}</button>
           </div>
         ) : gate === 'metered' && !started ? (
           <div id="gate" data-item-gate="metered" onClick={() => setStarted('clicked')}>
             <Html html={badge} />
-            <span>{uiText("点此开始拉流 · ")}{sizeText(item.size)}</span>
+            <span>{t('catalog:detailGate.startStreaming', { size: sizeText(item.size) })}</span>
           </div>
         ) : null}
     </div>
@@ -221,7 +248,6 @@ function MediaFrame({ item, gate, helpers, actions, autoplay, onEnded }: {
 function OfflineGate({ item, badge, helpers, actions }: {
   item: DetailItem; badge: string; helpers: ItemDetailHelpers; actions: ItemDetailActions;
 }) {
-  const uiText = useUiTranslation();
   const [checking, setChecking] = useState(false);
   const [still, setStill] = useState(false);
   const retry = async () => {
@@ -234,10 +260,10 @@ function OfflineGate({ item, badge, helpers, actions }: {
   return (
     <div id="offlineGate" role="status" data-item-gate="offline">
       <Html html={badge} />
-      <b>{uiText("媒体目录无法访问")}</b>
+      <b>{t('catalog:detailGate.directoryUnavailable')}</b>
       <span>{helpers.offlineReason(String(item.root_id || item.location || ''))}</span>
       <button className="chip" id="offlineRetry" type="button" disabled={checking} onClick={() => void retry()}>
-        {still ? uiText("仍无法读取 · 刷新") : uiText("刷新状态")}
+        {still ? t('catalog:detailGate.stillUnavailable') : t('catalog:detailGate.refreshStatus')}
       </button>
     </div>
   );
@@ -248,7 +274,6 @@ function OfflineGate({ item, badge, helpers, actions }: {
 function Queue({ queue, itemId, helpers, actions }: {
   queue: DetailQueue; itemId: number; helpers: ItemDetailHelpers; actions: ItemDetailActions;
 }) {
-  const uiText = useUiTranslation();
   const copy = queueCopy(queue);
   const list = useRef<HTMLDivElement | null>(null);
   const reorder = usePlaylistReorder(queue, itemId, actions);
@@ -269,10 +294,10 @@ function Queue({ queue, itemId, helpers, actions }: {
   }, [helpers, queue.kind]);
   const saveMix = useSaveMix(queue, actions);
   const head = queue.kind === 'mix'
-    ? <button type="button" data-save-mix="" title={uiText("保存为播放列表")} aria-label={uiText("保存为播放列表")} onClick={saveMix}
+    ? <button type="button" data-save-mix="" title={t('catalog:detailQueue.saveAsPlaylist')} aria-label={t('catalog:detailQueue.saveAsPlaylist')} onClick={saveMix}
       dangerouslySetInnerHTML={{ __html: icon('playlist') }} />
     : queue.kind === 'playlist'
-      ? <button type="button" data-edit-playlist="" title={uiText("编辑播放列表")} aria-label={uiText("编辑播放列表")} onClick={actions.editPlaylist}
+      ? <button type="button" data-edit-playlist="" title={t('catalog:detailQueue.editPlaylist')} aria-label={t('catalog:detailQueue.editPlaylist')} onClick={actions.editPlaylist}
         dangerouslySetInnerHTML={{ __html: icon('playlist') }} />
       : null;
   const ref = { kind: queue.kind, seedId: queue.seedId, playlistId: queue.playlistId };
@@ -280,12 +305,12 @@ function Queue({ queue, itemId, helpers, actions }: {
     <MixQueue kind={queue.kind} title={copy.title} summary={copy.summary} onClose={actions.close} actions={head} listRef={listRef}>
       {queue.items.map((row) => {
         const edition = queue.kind === 'editions' && row.edition_label
-          ? <i className={`javedition ${EDITION_TONE[row.edition_label] || 'censored'}`} data-queue-edition="">{row.edition_label}</i> : null;
+          ? <i className={`javedition ${EDITION_TONE[row.edition ?? ''] || 'censored'}`} data-queue-edition="">{editionLabel(row)}</i> : null;
         // 已消失的条目照旧列在播放列表里、能移出，但文件不在盘上，这一行不能点开去播放。
         const gone = queue.kind === 'playlist' && isVanished(row);
         return (
           <MixQueueRow key={row.id} current={row.id === itemId} data-queue-item={row.id} row={{ 'data-queue-row': row.id }}
-            disabled={gone} title={gone ? uiText("文件已不在盘上，不能播放") : undefined}
+            disabled={gone} title={gone ? t('catalog:detailQueue.fileGone') : undefined}
             {...(gone ? { 'data-queue-vanished': '' } : {})}
             onClick={() => { if (!gone) actions.openQueueItem(ref, row.id) }}
             pic={<><Html html={queueThumbHtml(row, helpers.javImage())} /><i className="mono" data-mix-item-duration="">{fmtDur(row.duration)}</i></>}
@@ -293,14 +318,14 @@ function Queue({ queue, itemId, helpers, actions }: {
             after={queue.kind === 'playlist' ? (
               <span data-queue-edit="">
                 <i data-queue-grip="" aria-hidden="true"><Glyph name="grip-vertical" /></i>
-                <button type="button" data-queue-remove={row.id} title={uiText("移出播放列表")} aria-label={uiText("移出播放列表")}
+                <button type="button" data-queue-remove={row.id} title={t('catalog:detailQueue.removeFromPlaylist')} aria-label={t('catalog:detailQueue.removeFromPlaylist')}
                   onClick={() => reorder.remove(row.id)}><Glyph name="x" /></button>
               </span>
             ) : null}>
             <span data-queue-head="">{edition}<b data-middle-truncate="">{helpers.displayName(row)}</b></span>
-            <span data-truncate-end="">{gone ? uiText("已消失 · 文件已不在盘上")
+            <span data-truncate-end="">{gone ? t('catalog:detailQueue.gone')
               : queue.kind === 'parts' || (queue.kind === 'editions' && row.part_label)
-                ? partLabel(row.part_label) : mixLabel(row, helpers.tagLabel)}</span>
+                ? partLabel(row) : mixLabel(row, helpers.tagLabel)}</span>
           </MixQueueRow>
         );
       })}
@@ -332,7 +357,7 @@ function usePlaylistReorder(queue: DetailQueue, itemId: number, actions: ItemDet
   const reorder = useMutation({
     mutationFn: (ids: number[]) => write({ action: 'reorder', asset_ids: ids }),
     onSuccess: (playlist, _ids) => { apply(playlist) },
-    onError: (error) => actions.failure('调整播放顺序', error),
+    onError: (error) => actions.failure(t('catalog:playlistOrder.reorder'), error),
   });
   const ids = queue.items.map((row) => row.id);
   return {
@@ -342,17 +367,17 @@ function usePlaylistReorder(queue: DetailQueue, itemId: number, actions: ItemDet
       if (sameOrder(next, ids)) return;
       const before = ids;
       await reorder.mutateAsync(next);
-      actions.toast('已调整播放顺序', { undo: async () => { apply(await write({ action: 'reorder', asset_ids: before })) } });
+      actions.toast(t('catalog:playlistOrder.reordered'), { undo: async () => { apply(await write({ action: 'reorder', asset_ids: before })) } });
     },
     remove: (assetId: number) => {
       const before = ids;
       void confirmModal({
-        title: '移出播放列表', body: '这个视频将从播放列表移除，视频文件保留。', confirmLabel: '移出播放列表',
+        title: t('catalog:detailQueue.removeFromPlaylist'), body: t('catalog:detailQueue.removeConfirmBody'), confirmLabel: t('catalog:detailQueue.removeFromPlaylist'),
         onConfirm: async () => {
           const playlist = await write({ action: 'remove', asset_id: assetId });
           /* 撤销要把它放回它那一位：`add` 只会补在末尾，所以补完再按移出之前那份顺序排一次。
              列表被这一下清空时它已经不在页面上，撤销后带回列表页而不是空队列。 */
-          actions.toast('已移出播放列表', {
+          actions.toast(t('catalog:detailQueue.removedFromPlaylist'), {
             undo: async () => {
               await write({ action: 'add', asset_ids: [assetId] });
               const restored = apply(await write({ action: 'reorder', asset_ids: before }));
@@ -377,7 +402,6 @@ function usePlaylistReorder(queue: DetailQueue, itemId: number, actions: ItemDet
 function Side({ item, queue, write, helpers, actions }: {
   item: DetailItem; queue: DetailQueue | null; write: DetailWrite; helpers: ItemDetailHelpers; actions: ItemDetailActions;
 }) {
-  const uiText = useUiTranslation();
   const online = item.location === 'online';
   const busy = write.busyAttrs;
   const [reasonOpen, setReasonOpen] = useState(false);
@@ -386,6 +410,7 @@ function Side({ item, queue, write, helpers, actions }: {
       <div data-stage-side-content="">
         <DetailTitle item={item} queue={queue} helpers={helpers} actions={actions} onStatus={write.setSourceState} />
         {online ? null : <span data-title-state="" aria-live="polite">{write.sourceState}</span>}
+        <PendingWork work={item.pending_work} />
         <Rating item={item} write={write} />
         <div className="mono" data-stage-meta="" data-reveal-line="">
           {item.width && item.height
@@ -395,42 +420,42 @@ function Side({ item, queue, write, helpers, actions }: {
           {item.release_date ? <span data-spec-item=""><Glyph name="calendar" /><span>{item.release_date}</span></span> : null}
           {item.region_label ? (
             <button type="button" data-spec-item="" data-open-region={item.region || ''}
-              title={item.region_settled ? uiText("已判定的产地；打开同产地的作品") : uiText("按番号或厂牌推断的产地，批量判定后不再变；打开同产地的作品")}
+              title={t('catalog:detailSpecs.openRegion')}
               onClick={() => actions.openRegion(item.region || '')}>
-              <Glyph name="globe" /><span>{item.region_label}{item.region_settled ? '' : uiText("（推断）")}</span>
+              <Glyph name="globe" /><span>{item.region_settled ? codedText(item, 'region_label') : t('catalog:detailSpecs.regionInferred', { region: codedText(item, 'region_label') })}</span>
             </button>
           ) : null}
         </div>
         {(item.medium || 'video') === 'video' && !online && !String(item.name || '').toLowerCase().endsWith('.iso')
-          ? <ExternalPlayback key={item.id} id={item.id} onOpened={() => actions.toast('已请求打开本地播放器')} /> : null}
+          ? <ExternalPlayback key={item.id} id={item.id} onOpened={() => actions.toast(t('catalog:detailGate.externalPlayerRequested'))} /> : null}
         <Identity item={item} helpers={helpers} actions={actions} />
-        <Tags item={item} write={write} helpers={helpers} actions={actions} />
+        <Tags item={item} helpers={helpers} actions={actions} />
         <LibraryCompletionPrompt assetIds={missingPreviewIds([item], helpers.javImage())}
           onComplete={() => { void queryClient.invalidateQueries({ queryKey: itemKey(item.id) }) }} />
         <Trace item={item} />
         <div data-stage-actions="" data-item-feedback="">
-          <button type="button" id="likeBtn" data-fb="like" aria-label={item.liked ? uiText("取消喜欢") : uiText("喜欢")} title={uiText("喜欢 · 记录口味偏好")}
+          <button type="button" id="likeBtn" data-fb="like" aria-label={item.liked ? t('catalog:detailFeedback.removeLike') : t('catalog:catalogList.flagLiked')} title={t('catalog:detailFeedback.likeTip')}
             aria-pressed={!!item.liked} {...busy('like')} onClick={() => write.preference({ liked: !item.liked })}><Glyph name="thumbs-up" /></button>
-          <button type="button" id="preferenceToggle" data-fb="reason" aria-label={uiText("喜爱理由")} title={uiText("喜爱理由")} aria-expanded={reasonOpen}
+          <button type="button" id="preferenceToggle" data-fb="reason" aria-label={t('catalog:detailFeedback.likeReason')} title={t('catalog:detailFeedback.likeReason')} aria-expanded={reasonOpen}
             aria-controls="preferencePanel" data-has-reason={String(!!item.like_reason)}
             onClick={() => setReasonOpen((open) => !open)}><Glyph name="notebook-pen" /></button>
-          <button type="button" data-stage-action="dislike" data-kind="dislike" aria-label={uiText("不合口味")} title={uiText("不合口味 · 降低推荐权重")}
+          <button type="button" data-stage-action="dislike" data-kind="dislike" aria-label={t('catalog:detailFeedback.dislike')} title={t('catalog:detailFeedback.dislikeTip')}
             aria-pressed={item.feedback === 'dislike'} {...busy('dislike')} onClick={() => write.feedback('dislike')}><Glyph name="thumbs-down" /></button>
-          <button type="button" data-stage-action="seen" data-kind="seen" aria-label={uiText("看过了")} title={uiText("看过了 · 只降低近期推荐")}
+          <button type="button" data-stage-action="seen" data-kind="seen" aria-label={t('catalog:detailFeedback.seen')} title={t('catalog:detailFeedback.seenTip')}
             aria-pressed={item.feedback === 'seen'} {...busy('seen')} onClick={() => write.feedback('seen')}><Glyph name="eye" /></button>
-          <button type="button" data-stage-action="later" id="stageLater" aria-label={uiText("稍后看")} title={uiText("稍后看 · 加入或移出队列")}
+          <button type="button" data-stage-action="later" id="stageLater" aria-label={t('catalog:shared.watchLater')} title={t('catalog:detailFeedback.watchLaterTip')}
             aria-pressed={!!item.watch_later} {...busy('later')} onClick={write.later}><Glyph name={item.watch_later ? 'check' : 'bookmark-plus'} /></button>
-          <button type="button" id="addPlaylist" data-fb="playlist" aria-label={uiText("加入播放列表")} title={uiText("加入播放列表")}
+          <button type="button" id="addPlaylist" data-fb="playlist" aria-label={t('catalog:detailFeedback.addToPlaylist')} title={t('catalog:detailFeedback.addToPlaylist')}
             onClick={() => actions.addToPlaylist(item)}><Glyph name="playlist" /></button>
-          <button type="button" id="betterVersion" data-fb="quality" aria-label={uiText("寻找更好版本")}
-            title={item.better_version ? (item.better_version_reason || '已标记寻找更好版本') : uiText("寻找高清、无水印或完整版")}
+          <button type="button" id="betterVersion" data-fb="quality" aria-label={t('catalog:detailFeedback.betterVersion')}
+            title={item.better_version ? (item.better_version_reason || t('catalog:detailFeedback.betterVersionMarked')) : t('catalog:detailFeedback.betterVersionTip')}
             aria-pressed={!!item.better_version} {...busy('quality')} onClick={write.quality}><Glyph name="sparkles" /></button>
-          <button type="button" data-kind="dispose" data-fb="dispose" aria-label={uiText("移入回收站")} title={uiText("移入回收站 · 文件仍保留，可从回收站永久清除")}
+          <button type="button" data-kind="dispose" data-fb="dispose" aria-label={t('catalog:shared.moveToTrash')} title={t('catalog:detailFeedback.trashTip')}
             aria-pressed={item.disposal === 'trash'} {...busy('dispose')} onClick={() => write.feedback('dispose')}><Glyph name="trash" /></button>
         </div>
         <Preference item={item} open={reasonOpen} write={write} />
         <button type="button" data-kind="o" {...busy('o')} onClick={() => write.feedback('o')}>
-          <Glyph name="sperm" /><span>{uiText("记一次高潮")}</span><b className="mono" id="oCount">{item.o_count || 0}</b>
+          <Glyph name="sperm" /><span>{t('catalog:immerse.logClimax')}</span><b className="mono" id="oCount">{item.o_count || 0}</b>
         </button>
       </div>
     </div>
@@ -445,7 +470,6 @@ function DetailTitle({ item, queue, helpers, actions, onStatus }: {
   item: DetailItem; queue: DetailQueue | null; helpers: ItemDetailHelpers; actions: ItemDetailActions;
   onStatus(text: string): void;
 }) {
-  const uiText = useUiTranslation();
   const { text, expanded, foldable, toggle } = useFoldedTitle(String(item.title || item.name || ''));
   const html = helpers.badgeHtml(item.location || '', item.cost || '', 'srcbig') + helpers.titleHtml(item) + partLabelHtml(item, queue);
   return (
@@ -457,7 +481,7 @@ function DetailTitle({ item, queue, helpers, actions, onStatus }: {
           dangerouslySetInnerHTML={{ __html: html }} />
         <span data-title-tools="">
           <button type="button" data-title-fold="" hidden={!foldable} aria-expanded={expanded}
-            aria-label={expanded ? uiText("收起标题") : uiText("展开标题")} title={expanded ? uiText("收起标题") : uiText("展开完整标题")} onClick={toggle}>
+            aria-label={expanded ? t('catalog:titleFold.collapse') : t('catalog:titleFold.expand')} title={expanded ? t('catalog:titleFold.collapse') : t('catalog:titleFold.expandFull')} onClick={toggle}>
             <CollapseChevron />
           </button>
           {/* 取景框存的是坐标不是图片：存完重取这一条，封面地址没变，变的是接口给的 `poster_box`。
@@ -471,7 +495,11 @@ function DetailTitle({ item, queue, helpers, actions, onStatus }: {
                 }} />
             </span>
           ) : null}
-          {item.location === 'online' ? null : <SourceTools id={item.id} actions={actions} onStatus={onStatus} />}
+          {item.location === 'online' ? null : <SourceTools id={item.id} code={item.code || ''} actions={actions} onStatus={onStatus} />}
+          <ItemEditButton item={item} helpers={helpers} onSaved={(saved) => {
+            applySavedItem(saved);
+            actions.toast(t('catalog:itemEdit.saved'));
+          }} />
         </span>
       </div>
     </div>
@@ -479,9 +507,25 @@ function DetailTitle({ item, queue, helpers, actions, onStatus }: {
 }
 
 /** 定位源文件与核对目录。对账删掉的可能就是这一条，删了就没什么可停留的，直接退回列表。 */
-function SourceTools({ id, actions, onStatus }: { id: number; actions: ItemDetailActions; onStatus(text: string): void }) {
-  const uiText = useUiTranslation();
+function SourceTools({ id, code, actions, onStatus }: {
+  id: number; code: string; actions: ItemDetailActions; onStatus(text: string): void;
+}) {
   const [busy, setBusy] = useState('');
+  /* 这一部重新采集资料（#208）：不复用来源快照，已有字段也再核一遍；你改过、批准过的字段不被覆盖。
+     另一趟处理在跑时接口原样交回那一趟的状态，这里据 `recheck` 认出没排上。 */
+  const recollect = async () => {
+    if (busy) return;
+    setBusy('recollect');
+    onStatus('');
+    try {
+      const state = await apiSend<{ recheck?: boolean }>(LIBRARY_PROCESSING_URL,
+        { stage: 'metadata', asset_ids: [id], recheck: true });
+      onStatus(t(state.recheck ? 'catalog:detailSource.recollectStarted' : 'catalog:detailSource.recollectBusy'));
+    } catch (error) {
+      onStatus(requestErrorMessage(error));
+    }
+    setBusy('');
+  };
   const reveal = async () => {
     if (busy) return;
     setBusy('reveal');
@@ -492,7 +536,7 @@ function SourceTools({ id, actions, onStatus }: { id: number; actions: ItemDetai
   const sync = async () => {
     if (busy) return;
     setBusy('sync');
-    onStatus('正在核对目录…');
+    onStatus(t('catalog:detailSource.checkingDirectory'));
     const result = await actions.sync(id);
     onStatus(result.text);
     setBusy('');
@@ -500,27 +544,33 @@ function SourceTools({ id, actions, onStatus }: { id: number; actions: ItemDetai
   };
   return (
     <>
-      <button type="button" data-reveal={id} title={uiText("在文件管理器里打开源文件所在目录")} aria-label={uiText("定位源文件")}
+      <button type="button" data-reveal={id} title={t('catalog:detailSource.revealTip')} aria-label={t('catalog:detailSource.reveal')}
         {...(busy === 'reveal' ? { 'aria-busy': true, 'aria-disabled': true } : {})} onClick={() => void reveal()}
-        dangerouslySetInnerHTML={{ __html: busy === 'reveal' ? spinnerHtml('正在定位') : icon('folder-open') }} />
-      <button type="button" data-sync={id} title={uiText("核对该目录：磁盘上已删除的移入 Peach 回收站，带个人记录的标为已消失")} aria-label={uiText("同步删除")}
+        dangerouslySetInnerHTML={{ __html: busy === 'reveal' ? spinnerHtml(t('catalog:detailSource.locating')) : icon('folder-open') }} />
+      <button type="button" data-sync={id} title={t('catalog:detailSource.syncDeletionsTip')} aria-label={t('catalog:detailSource.syncDeletions')}
         {...(busy === 'sync' ? { 'aria-busy': true, 'aria-disabled': true } : {})} onClick={() => void sync()}>
         <Glyph name="folder-sync" />
       </button>
+      {code ? (
+        <button type="button" data-recollect={id} title={t('catalog:detailSource.recollectTip')}
+          aria-label={t('catalog:detailSource.recollect')}
+          {...(busy === 'recollect' ? { 'aria-busy': true, 'aria-disabled': true } : {})} onClick={() => void recollect()}>
+          <Glyph name="refresh-cw" />
+        </button>
+      ) : null}
     </>
   );
 }
 
 /* 五颗星站在标题和那行规格之间：评分是对这一条作品的判断，属于身份的一部分。 */
 function Rating({ item, write }: { item: DetailItem; write: DetailWrite }) {
-  const uiText = useUiTranslation();
   const on = ratingStars(item.rating);
   return (
-    <div id="detailRating" role="group" data-item-rating="" aria-label={uiText("评分")} data-value={clampRating(item.rating)}>
+    <div id="detailRating" role="group" data-item-rating="" aria-label={t('catalog:shared.rating')} data-value={clampRating(item.rating)}>
       <RatingStars value={on} onRate={star => write.rate(star)}
         busyStar={[1, 2, 3, 4, 5].find(star => write.busy.has(`rate:${star}`))}
         busyAttrs={star => write.busyAttrs(`rate:${star}`)} />
-      <span data-rating-value="" aria-live="polite">{on ? uiText('{value0} 星',{value0:on}) : uiText('未评分')}</span>
+      <span data-rating-value="" aria-live="polite">{ratingText(item.rating)}</span>
     </div>
   );
 }
@@ -528,7 +578,6 @@ function Rating({ item, write }: { item: DetailItem; write: DetailWrite }) {
 /* 身份按类别分组：标签作为组标题写在上方，同类横向排开。逐行一个名字在共演作品上会把整个侧栏
    撑满。一个都没有时，「未归属」就是这条作品所属的那一类，和女优、厂牌并列：点进去看得到全部。 */
 function Identity({ item, actions }: { item: DetailItem; helpers: ItemDetailHelpers; actions: ItemDetailActions }) {
-  const uiText = useUiTranslation();
   const groups = useMemo(() => identityGroups(item), [item]);
   const [castOpen, setCastOpen] = useState(false);
   const overflow = Math.max(0, groups.cast.length - CAST_SHOWN);
@@ -546,21 +595,21 @@ function Identity({ item, actions }: { item: DetailItem; helpers: ItemDetailHelp
   const primary = [
     groups.unowned ? (
       <section key="unowned" data-id-group="unowned">
-        <h5 data-id-label="">{uiText("归属")}</h5>
+        <h5 data-id-label="">{t('catalog:detailCredit.title')}</h5>
         <div data-id-row="">
-          <button type="button" data-id-cell="unowned" data-open-unowned="" title={uiText("打开未归属：馆藏里没有署名人的作品")}
+          <button type="button" data-id-cell="unowned" data-open-unowned="" title={t('catalog:detailCredit.openUncredited')}
             onClick={actions.openUnowned}>
-            <span data-id-face=""><Glyph name="user-round" /></span><span data-id-name="">{uiText("未归属")}</span>
+            <span data-id-face=""><Glyph name="user-round" /></span><span data-id-name="">{t('catalog:shared.uncredited')}</span>
           </button>
         </div>
       </section>
     ) : group(performerLabel(item), 'performer', groups.cast, overflow && !castOpen
       ? <Button variant="secondary" size="small" id="castMore" data-cast-more="" trailingIcon={RiArrowDownSLine}
-        aria-expanded={false} onClick={() => setCastOpen(true)}>{uiText("还有 ")}{overflow}{uiText(" 位")}</Button> : null),
-    group('厂牌', 'studio', groups.studios),
-    group('片商', 'studio', groups.makers),
-    group('卖家', 'creator', groups.creators.filter(ref => ref.identity_categories?.includes('seller'))),
-    group('创作者', 'creator', groups.creators.filter(ref => !ref.identity_categories?.includes('seller'))),
+        aria-expanded={false} onClick={() => setCastOpen(true)}>{t('catalog:detailCredit.showMore', { count: overflow })}</Button> : null),
+    group(t('catalog:shared.label'), 'studio', groups.studios),
+    group(t('catalog:entityHero.studio'), 'studio', groups.makers),
+    group(t('catalog:shared.sellers'), 'creator', groups.creators.filter(ref => ref.identity_categories?.includes('seller'))),
+    group(t('catalog:tagCategories.onlineCreators'), 'creator', groups.creators.filter(ref => !ref.identity_categories?.includes('seller'))),
   ].filter(Boolean);
   return (
     <div data-item-identity="">
@@ -572,13 +621,11 @@ function Identity({ item, actions }: { item: DetailItem; helpers: ItemDetailHelp
 
 /* ── 标签 ── */
 
-function Tags({ item, write, helpers, actions }: {
-  item: DetailItem; write: DetailWrite; helpers: ItemDetailHelpers; actions: ItemDetailActions;
-}) {
+/* 侧栏只读：点开标签看同标签的片；增删在标题旁的「编辑资料」里做。 */
+function Tags({ item, helpers, actions }: { item: DetailItem; helpers: ItemDetailHelpers; actions: ItemDetailActions }) {
   return <div data-item-tags="">
-    <DetailTags id="detailTags" tags={detailTags(item, helpers)} candidates={helpers.tagCandidates()} label={helpers.tagLabel}
-      adding={[...write.busy].some(key => key.startsWith('add:'))}
-      onOpen={actions.openTag} onAdd={write.addTag} onRemove={write.removeTag} busyAttrs={tag => write.busyAttrs(`tag:${tag}`)} />
+    <DetailTags key={item.id} id="detailTags" tags={detailTags(item, helpers)} candidates={helpers.tagCandidates()} label={helpers.tagLabel}
+      onOpen={actions.openTag} />
   </div>;
 }
 
@@ -586,16 +633,15 @@ function Tags({ item, write, helpers, actions }: {
    两条读数的 id 留给壳：Video.js 挂上之后，离开位置由 `wireTelemetry` 随播放写，真实观看在每次
    上报之后回填。这里只画初值，之后不再改它们。 */
 function Trace({ item }: { item: DetailItem }) {
-  const uiText = useUiTranslation();
   const real = realWatched(item);
   return (
     <div data-item-trace="">
       <div data-trace-metric="">
-        <div data-trace-label=""><span>{uiText("离开位置")}</span><span id="ratioTxt">0%</span></div>
+        <div data-trace-label=""><span>{t('catalog:detailTrace.leftOffAt')}</span><span id="ratioTxt">0%</span></div>
         <div data-trace-bar=""><u id="watched" /><b id="mark" /></div>
       </div>
       <div data-trace-metric="">
-        <div data-trace-label=""><span>{uiText("真实观看")}</span><span id="realTxt">{real == null ? '0%' : `${real.toFixed(0)}%`}</span></div>
+        <div data-trace-label=""><span>{t('catalog:detailTrace.actuallyWatched')}</span><span id="realTxt">{real == null ? '0%' : `${real.toFixed(0)}%`}</span></div>
         {/* oxlint-disable-next-line shadcn/no-inline-styles -- 宽度是这一条看过的比例，之后由壳的遥测随上报改写 */}
         <div data-trace-bar=""><u id="realBar" data-trace-real="" style={real == null ? undefined : { width: `${real.toFixed(1)}%` }} /></div>
       </div>
@@ -604,7 +650,6 @@ function Trace({ item }: { item: DetailItem }) {
 }
 
 function Preference({ item, open, write }: { item: DetailItem; open: boolean; write: DetailWrite }) {
-  const uiText = useUiTranslation();
   const [reason, setReason] = useState(item.like_reason || '');
   const field = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { if (open) field.current?.focus() }, [open]);
@@ -613,15 +658,13 @@ function Preference({ item, open, write }: { item: DetailItem; open: boolean; wr
   const saving = write.busy.has('preference');
   return (
     <div id="preferencePanel" data-item-preference="" hidden={!open}>
-      <textarea ref={field} id="likeReason" maxLength={2000} placeholder={uiText("为什么喜欢？")} value={reason}
+      <textarea ref={field} id="likeReason" maxLength={2000} placeholder={t('catalog:detailFeedback.likeReasonPlaceholder')} value={reason}
         onChange={(event) => setReason(event.target.value)} />
       <div data-preference-foot="">
-        <span id="preferenceState" aria-live="polite">{uiText(write.preferenceState)}</span>
-        <button type="button" className="geist-button primary" id="savePreference" data-save-preference="" title={uiText("提交喜爱理由")} aria-label={uiText("提交喜爱理由")}
-          {...write.busyAttrs('preference')} onClick={() => write.preference({ reason })}>
-          {saving ? <span dangerouslySetInnerHTML={{ __html: spinnerHtml('正在提交喜爱理由') }} /> : null}
-          <span>{uiText(saving ? '提交中' : '提交')}</span>
-        </button>
+        <span id="preferenceState" aria-live="polite">{write.preferenceState}</span>
+        <button type="button" className="geist-button primary" id="savePreference" data-save-preference="" title={t('catalog:detailFeedback.submitReason')} aria-label={t('catalog:detailFeedback.submitReason')}
+          {...write.busyAttrs('preference')} onClick={() => write.preference({ reason })}
+          dangerouslySetInnerHTML={{ __html: saving ? `${spinnerHtml(t('catalog:detailFeedback.submittingReason'))}<span>${t('catalog:detailFeedback.submitting')}</span>` : `<span>${t('catalog:detailFeedback.submit')}</span>` }} />
       </div>
     </div>
   );
@@ -631,7 +674,6 @@ function Preference({ item, open, write }: { item: DetailItem; open: boolean; wr
    这一排的卡是目录网格的 items 模式：取数在这里，卡只画。空结果与失败留在推荐区，
    拖动与滚轮都靠壳的 `wireDrag`。 */
 function Related(props: ItemDetailProps & { item: DetailItem }) {
-  const uiText = useUiTranslation();
   const { item, relatedLimit, helpers, grid } = props;
   const result = useQuery({
     queryKey: relatedKey(item.id, relatedLimit),
@@ -643,7 +685,7 @@ function Related(props: ItemDetailProps & { item: DetailItem }) {
   const [skeleton] = useState(() => helpers.relatedSkeletonHtml());
   return (
     <RelatedSection wireDrag={helpers.wireDrag} busy={result.isPending} empty={result.data?.length === 0}
-      error={result.isError ? uiText('读取接着看失败：{error}',{error:requestErrorMessage(result.error)}) : undefined}
+      error={result.isError ? t('catalog:detailRelated.upNextFailed', { error: requestErrorMessage(result.error) }) : undefined}
       onRetry={() => { void result.refetch() }}>
         {result.data ? (
           <CatalogGridPage mode="items" variant="next" items={result.data} helpers={grid.helpers} actions={grid.actions}
@@ -661,7 +703,7 @@ function Related(props: ItemDetailProps & { item: DetailItem }) {
 type DetailWrite = ReturnType<typeof useDetailWrite>;
 type Patch = Partial<DetailItem>;
 
-function useDetailWrite(item: DetailItem, actions: ItemDetailActions, label: (tag: string) => string) {
+function useDetailWrite(item: DetailItem, actions: ItemDetailActions) {
   const id = item.id;
   const key = itemKey(id);
   const [busy, setBusy] = useState<ReadonlySet<string>>(() => new Set());
@@ -706,14 +748,14 @@ function useDetailWrite(item: DetailItem, actions: ItemDetailActions, label: (ta
     busy, sourceState, setSourceState, preferenceState,
     busyAttrs: (name: string) => (busy.has(name) ? { 'aria-busy': true, 'aria-disabled': true } as const : {}),
 
-    rate: (star: number) => start(`rate:${star}`, '评分', async () => {
+    rate: (star: number) => start(`rate:${star}`, t('catalog:shared.rating'), async () => {
       const before = current().rating || 0;
       const value = nextRating(before, star);
       await sendFeedback('rate', value);
-      actions.toast(value ? `已评 ${ratingStars(value)} 星` : '已取消评分', { undo: async () => { await sendFeedback('rate', before) } });
+      actions.toast(value ? t('catalog:detailFeedback.rated', { count: ratingStars(value) }) : t('catalog:detailFeedback.ratingRemoved'), { undo: async () => { await sendFeedback('rate', before) } });
     }),
 
-    feedback: (kind: string) => start(kind, '操作', async () => {
+    feedback: (kind: string) => start(kind, t('catalog:detailFeedback.genericAction'), async () => {
       const before = { feedback: current().feedback || null };
       const result = await sendFeedback(kind);
       actions.toast(feedbackReceipt(kind, result), {
@@ -730,21 +772,21 @@ function useDetailWrite(item: DetailItem, actions: ItemDetailActions, label: (ta
       if (kind === 'dispose') await actions.trashChanged(result.disposal || null, false);
     }),
 
-    later: () => start('later', '更新稍后看', async () => {
+    later: () => start('later', t('catalog:detailFeedback.updateWatchLater'), async () => {
       const result = await post<{ watch_later: boolean }>(WATCH_LATER_URL, {});
       apply({ watch_later: result.watch_later });
-      actions.toast(result.watch_later ? '已加入稍后看' : '已移出稍后看', {
+      actions.toast(result.watch_later ? t('catalog:detailFeedback.addedToWatchLater') : t('catalog:detailFeedback.removedFromWatchLater'), {
         undo: async () => { apply({ watch_later: (await post<{ watch_later: boolean }>(WATCH_LATER_URL, {})).watch_later }) },
       });
     }),
 
-    quality: () => start('quality', '更新版本需求', async () => {
+    quality: () => start('quality', t('catalog:detailFeedback.updateBetterVersion'), async () => {
       const before = { wanted: !!current().better_version, reason: current().better_version_reason || '' };
       type Goal = { better_version: boolean; better_version_reason?: string };
       const paint = (goal: Goal) => apply({ better_version: goal.better_version, better_version_reason: goal.better_version_reason || '' });
       const result = await post<Goal>(QUALITY_GOAL_URL, { wanted: !before.wanted });
       paint(result);
-      actions.toast(result.better_version ? '已标记寻找更好版本' : '已取消寻找更好版本', {
+      actions.toast(result.better_version ? t('catalog:detailFeedback.betterVersionMarked') : t('catalog:detailFeedback.betterVersionCleared'), {
         undo: async () => { paint(await post<Goal>(QUALITY_GOAL_URL, before)) },
       });
     }),
@@ -752,58 +794,25 @@ function useDetailWrite(item: DetailItem, actions: ItemDetailActions, label: (ta
     /* 喜欢与理由是同一条偏好：点喜欢键只改 `liked`，提交理由时有字就算喜欢。 */
     preference: ({ liked, reason }: { liked?: boolean; reason?: string }) => {
       const name = liked === undefined ? 'preference' : 'like';
-      start(name, '保存喜欢偏好', async () => {
+      start(name, t('catalog:detailFeedback.saveLike'), async () => {
         const before = { liked: !!current().liked, reason: current().like_reason || '' };
         const text = reason ?? before.reason;
         const wanted = liked ?? (before.liked || text.trim().length > 0);
         type Preference = { liked: boolean; like_reason?: string };
         const paint = (result: Preference) => apply({ liked: result.liked, like_reason: result.like_reason || '' });
-        setPreferenceState('保存中…');
+        setPreferenceState(t('catalog:shared.saving'));
         try {
           paint(await post<Preference>(PREFERENCE_URL, { liked: wanted, reason: text }));
         } catch (error) {
-          setPreferenceState('保存失败 · 请重试');
+          setPreferenceState(t('catalog:detailFeedback.saveFailed'));
           throw error;
         }
-        setPreferenceState('已保存');
-        setTimeout(() => setPreferenceState((now) => (now === '已保存' ? '' : now)), 1400);
+        const savedText = t('catalog:shared.saved');
+        setPreferenceState(savedText);
+        setTimeout(() => setPreferenceState((now) => (now === savedText ? '' : now)), 1400);
         const saved = current();
-        actions.toast(saved.liked ? '已保存喜欢偏好' : '已取消喜欢', {
+        actions.toast(saved.liked ? t('catalog:detailFeedback.likeSaved') : t('catalog:detailFeedback.likeRemoved'), {
           undo: async () => { paint(await post<Preference>(PREFERENCE_URL, before)) },
-        });
-      });
-    },
-
-    removeTag: (tag: DetailTag) => start(`tag:${tag.k}`, '删除标签', async () => {
-      const result = await post<{ ok?: boolean }>(ITEM_TAG_URL, { operation: 'remove', tag: tag.k });
-      if (!result.ok) throw new Error('标签未删除');
-      apply((now) => withoutTag(now, tag.k));
-      actions.toast(`已删除标签「${label(tag.k)}」`, {
-        undo: async () => {
-          await post(ITEM_TAG_URL, { operation: 'add', tag: tag.k });
-          apply((now) => withTag(now, tag));
-        },
-      });
-    }),
-
-    addTag: (raw: string) => {
-      const tag = raw.trim();
-      if (!tag) return;
-      start(`add:${tag}`, '添加标签', async () => {
-        const result = await post<{ ok?: boolean; tag?: string }>(ITEM_TAG_URL, { operation: 'add', tag });
-        if (!result.ok) return;
-        const canonical = result.tag || tag;
-        if (hasTag(current(), canonical)) {
-          actions.toast(`标签「${label(canonical)}」已存在`);
-          return;
-        }
-        apply((now) => withTag(now, { k: canonical, cat: 'general' }));
-        rememberTag(canonical);
-        actions.toast(`已添加标签「${label(canonical)}」`, {
-          undo: async () => {
-            await post(ITEM_TAG_URL, { operation: 'remove', tag: canonical });
-            apply((now) => withoutTag(now, canonical));
-          },
         });
       });
     },

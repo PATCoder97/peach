@@ -1,7 +1,11 @@
-name: Phát hành
+name: Release
 
-# 手动选择 master 演练桌面制品，再选择同提交的版本标签晋级已验收制品。
+# 版本提交 `chore(release): 版本 X` 推上 master 时演练整条发布链（只构建、验收，不发布）；
+# `release_tag.py --ship` 等这次演练通过才打标签，标签上才发布（ADR-0121）。
 on:
+  push:
+    branches: [master]
+    tags: ["v*.*.*"]
   workflow_dispatch:
 
 permissions:
@@ -20,7 +24,9 @@ env:
 
 jobs:
   validate:
-    name: Kiểm tra commit phát hành và phiên bản
+    name: 核对发布提交与版本
+    # 其余作业都依赖它：普通的 master 推送在这里就结束，只有版本提交、标签与手动运行往下走。
+    if: "${{ github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'chore(release): 版本 ') }}"
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -28,42 +34,36 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
-      - name: Kiểm tra CI nhánh chính của commit gắn tag
+      - name: 核对标签提交的主线 CI
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python scripts/release_tag.py --repo "$GITHUB_REPOSITORY" --verify-sha "$GITHUB_SHA"
-          python -c 'import os; from pathlib import Path; from scripts.version_bump import read_version; assert os.environ["GITHUB_REF_NAME"] == "v" + read_version(Path.cwd()), "Tag không khớp với phiên bản"'
+          python -c 'import os; from pathlib import Path; from scripts.version_bump import read_version; assert os.environ["GITHUB_REF_NAME"] == "v" + read_version(Path.cwd()), "Tag 与版本不一致"'
           python scripts/changelog.py --notes "${GITHUB_REF_NAME#v}" --to "$RUNNER_TEMP/release-notes.md"
 
-  desktop-checks:
-    name: Kiểm thử hồi quy đầy đủ cho ứng dụng desktop
-    needs: validate
-    if: github.ref_type != 'tag'
-    uses: ./.github/workflows/desktop.yml
-
   ffmpeg:
-    name: FFmpeg cho Windows và mã nguồn tương ứng
+    name: Windows FFmpeg 与对应源码
     runs-on: ubuntu-latest
     needs: validate
     if: github.ref_type != 'tag'
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
-      - name: Cài đặt công cụ biên dịch chéo
+      - name: 安装交叉编译工具
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential gcc-mingw-w64-x86-64-posix g++-mingw-w64-x86-64-posix mingw-w64-x86-64-dev nasm pkg-config python3 clang meson ninja-build cmake ca-certificates curl xz-utils
-      - name: Kiểm tra định danh bản dựng media
+      - name: 核对媒体构建身份
         id: media-identity
         run: echo "key=$(python3 scripts/media_build_cache.py windows --github-key)" >> "$GITHUB_OUTPUT"
-      - name: Dùng lại công cụ media và gói mã nguồn đã xác minh
+      - name: 复用固定源码的媒体工具与对应源码包
         uses: actions/cache@v6.1.0
         with:
           key: ${{ steps.media-identity.outputs.key }}
           path: build/media-cache/windows-x86_64
-      - name: Kiểm tra hoặc xây dựng công cụ media và gói mã nguồn
+      - name: 校验或构建媒体工具与对应源码包
         run: python3 scripts/media_build_cache.py windows
       - uses: actions/upload-artifact@v7
         with:
@@ -83,9 +83,9 @@ jobs:
             build/untrunc-windows/untrunc-corresponding-source.zip
 
   windows:
-    name: Gói kiểm thử độc lập cho Windows x64
+    name: Windows x64 独立测试包
     runs-on: windows-latest
-    needs: [ffmpeg, desktop-checks]
+    needs: ffmpeg
     if: github.ref_type != 'tag'
     timeout-minutes: 40
     outputs:
@@ -100,27 +100,27 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Kiểm tra phiên bản phát hành
+      - name: 核对发布版本
         id: version
         shell: pwsh
         run: |
           $ReleaseVersion = (Select-String -Path src/peach/__init__.py -Pattern '__version__ = "(.*)"').Matches.Groups[1].Value
-          if (-not $ReleaseVersion) { throw 'Không đọc được phiên bản' }
-          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v${ReleaseVersion}") { throw 'Tag không khớp với phiên bản' }
+          if (-not $ReleaseVersion) { throw '无法读取版本' }
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v${ReleaseVersion}") { throw 'Tag 与版本不一致' }
           "version=${ReleaseVersion}" >> $env:GITHUB_OUTPUT
-      - name: Cài đặt phụ thuộc xây dựng
-        uses: astral-sh/setup-uv@v10.3.2
+      - name: 安装构建依赖
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: uv.lock
-      - name: Tạo môi trường xây dựng
+      - name: 创建构建环境
         shell: pwsh
         run: |
           uv sync --locked --all-extras --python python
-          if ($LASTEXITCODE -ne 0) { throw 'Cài đặt phụ thuộc bằng uv thất bại' }
+          if ($LASTEXITCODE -ne 0) { throw 'uv 安装依赖失败' }
           uv pip check --python .venv/Scripts/python.exe
-          if ($LASTEXITCODE -ne 0) { throw 'Kiểm tra phụ thuộc uv thất bại' }
-      - name: Tải và xác minh tệp cloudflared đi kèm
+          if ($LASTEXITCODE -ne 0) { throw 'uv 依赖检查失败' }
+      - name: 获取并校验 cloudflared 旁路文件
         shell: pwsh
         run: '& ./scripts/fetch_cloudflared.ps1 -OutputPath "$env:RUNNER_TEMP/cloudflared.exe"'
       - uses: actions/download-artifact@v8
@@ -131,20 +131,20 @@ jobs:
         with:
           name: untrunc-windows
           path: ${{ runner.temp }}/untrunc-build
-      - name: Chuẩn bị Inno Setup
+      - name: 准备 Inno Setup
         shell: pwsh
         run: |
           if (-not (Test-Path -LiteralPath "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
             choco install innosetup --version 6.7.3 --yes --no-progress
-            if ($LASTEXITCODE -ne 0) { throw 'Cài đặt Inno Setup thất bại' }
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup 安装失败' }
           }
-      - name: Kiểm tra lựa chọn và bảo vệ thư mục cài đặt
+      - name: 验证安装目录选择与保护
         shell: pwsh
         run: '& ./scripts/test.ps1 -Scope packaging -Focus test_desktop_installer'
-      - name: Xây dựng gói thư mục độc lập và bộ cài đặt
+      - name: 构建独立目录包与安装包
         shell: pwsh
         run: '& ./scripts/build_windows.ps1 -Installer -CloudflaredPath "$env:RUNNER_TEMP/cloudflared.exe" -FFmpegPath "$env:RUNNER_TEMP/ffmpeg-build/ffmpeg" -UntruncPath "$env:RUNNER_TEMP/untrunc-build/untrunc"'
-      - name: Tải lên source map trình duyệt của bản dựng Windows
+      - name: 上传 Windows 构建的浏览器 source maps
         shell: pwsh
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -152,17 +152,17 @@ jobs:
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
         run: |
           if (-not $env:SENTRY_AUTH_TOKEN -or -not $env:SENTRY_ORG -or -not $env:SENTRY_PROJECT) {
-            Write-Host 'Chưa cấu hình môi trường tải source map Sentry; bỏ qua bước tải lên.'
+            Write-Host '未配置 Sentry source map 上传环境，跳过上传。'
             exit 0
           }
           npm --prefix frontend run sentry:upload
-          if ($LASTEXITCODE -ne 0) { throw 'Tải lên source map trình duyệt thất bại' }
-      - name: Tạo gói đầy đủ, gói cập nhật ứng dụng và gói công cụ
+          if ($LASTEXITCODE -ne 0) { throw '浏览器 source map 上传失败' }
+      - name: 生成完整包、应用更新包与工具包
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path release | Out-Null
           & ./.venv/Scripts/python.exe scripts/package_windows_release.py --source dist/Peach --output release --version '${{ steps.version.outputs.version }}' --lite-installer
-          if ($LASTEXITCODE -ne 0) { throw 'Tách gói phát hành thất bại' }
+          if ($LASTEXITCODE -ne 0) { throw '发行包拆分失败' }
           Copy-Item 'dist/Peach-${{ steps.version.outputs.version }}-windows-x64-setup.exe' release/
           Copy-Item dist/ffmpeg-corresponding-source.zip release/
           Copy-Item dist/untrunc-corresponding-source.zip release/
@@ -170,8 +170,7 @@ jobs:
           Copy-Item scripts/smoke_update_tasks.py release/smoke_update_tasks.py
           Copy-Item scripts/smoke_split_update.py release/smoke_split_update.py
           python scripts/changelog.py --notes '${{ steps.version.outputs.version }}' --to release/RELEASE_NOTES.md
-          if ($LASTEXITCODE -ne 0) { throw 'CHANGELOG.md thiếu mục cho phiên bản này; cần có ghi chú trước khi phát hành' }
-          Add-Content -LiteralPath release/RELEASE_NOTES.md -Value (Get-Content -Raw -Encoding utf8 release/DOWNLOADS.md) -Encoding utf8
+          if ($LASTEXITCODE -ne 0) { throw 'CHANGELOG.md 缺这一版的一节，不发没有说明的版本' }
       - uses: actions/upload-artifact@v7
         with:
           name: desktop-candidate
@@ -180,7 +179,7 @@ jobs:
           retention-days: 7
 
   desktop-smoke:
-    name: Kiểm tra chỉ từ gói đã tải xuống
+    name: 仅下载制品验收
     needs: windows
     runs-on: windows-latest
     timeout-minutes: 25
@@ -194,6 +193,7 @@ jobs:
           path: source
           sparse-checkout: |
             scripts
+            src/peach
             tools/amane-bridge
       - uses: actions/download-artifact@v8
         with:
@@ -201,56 +201,56 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
-      - name: Kiểm tra cấu hình ban đầu và ứng dụng bên ngoài cây mã nguồn
+      - name: 在源码树外验证开箱配置与应用
         shell: pwsh
         run: |
           Expand-Archive -Path 'Peach-${{ needs.windows.outputs.version }}-windows-x64.zip' -DestinationPath candidate
           python smoke_desktop.py candidate/Peach/Peach.exe
-          if ($LASTEXITCODE -ne 0) { throw 'Kiểm tra gói xây dựng thất bại' }
-      - name: Khôi phục từ gói cập nhật và công cụ độc lập, rồi kiểm tra hoạt động
+          if ($LASTEXITCODE -ne 0) { throw '制品验收失败' }
+      - name: 从应用更新包与独立工具包重建并验证运行
         shell: pwsh
         run: |
           python smoke_split_update.py --version '${{ needs.windows.outputs.version }}' --destination split-candidate --prepare-with-app
-          if ($LASTEXITCODE -ne 0) { throw 'Các gói tách không khớp với gói đầy đủ' }
+          if ($LASTEXITCODE -ne 0) { throw '拆分制品与完整包不一致' }
           python smoke_desktop.py split-candidate/Peach/Peach.exe
-          if ($LASTEXITCODE -ne 0) { throw 'Kiểm tra hoạt động của các gói tách thất bại' }
-      - name: Cài đặt im lặng, kiểm tra và gỡ bộ cài đặt
+          if ($LASTEXITCODE -ne 0) { throw '拆分制品运行验收失败' }
+      - name: 静默安装、验收并卸载安装包
         shell: pwsh
         run: |
           $Installed = Join-Path $env:RUNNER_TEMP 'Peach 安装验收\自定义目录'
           $Setup = Start-Process -FilePath './Peach-${{ needs.windows.outputs.version }}-windows-x64-setup.exe' `
             -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$Installed`"" -Wait -PassThru
-          if ($Setup.ExitCode -ne 0) { throw "Mã thoát của bộ cài đặt: $($Setup.ExitCode)" }
+          if ($Setup.ExitCode -ne 0) { throw "安装包退出码 $($Setup.ExitCode)" }
           $Key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{02D9748A-78F6-4866-AC75-918177194DAB}_is1'
           $Menu = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Peach.lnk'
-          if (-not (Test-Path -LiteralPath $Key) -or -not (Test-Path -LiteralPath $Menu)) { throw 'Bộ cài đặt chưa đăng ký mục gỡ cài đặt hoặc mục Start Menu' }
+          if (-not (Test-Path -LiteralPath $Key) -or -not (Test-Path -LiteralPath $Menu)) { throw '安装包没有登记卸载项或开始菜单项' }
           python smoke_desktop.py (Join-Path $Installed 'Peach.exe')
-          if ($LASTEXITCODE -ne 0) { throw 'Kiểm tra bộ cài đặt thất bại' }
+          if ($LASTEXITCODE -ne 0) { throw '安装包验收失败' }
           # 卸载程序会把自己复制到临时目录再运行，原进程立即返回，按目录消失判断完成。
           Start-Process -FilePath (Join-Path $Installed 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
           $Deadline = (Get-Date).AddSeconds(120)
           while ((Test-Path -LiteralPath $Installed) -and (Get-Date) -lt $Deadline) { Start-Sleep -Seconds 1 }
-          if (Test-Path -LiteralPath $Installed) { throw 'Thư mục ứng dụng vẫn còn sau khi gỡ cài đặt' }
-          if ((Test-Path -LiteralPath $Key) -or (Test-Path -LiteralPath $Menu)) { throw 'Mục đăng ký hoặc Start Menu vẫn còn sau khi gỡ cài đặt' }
-      - name: Cài đặt và kiểm tra bộ cài đặt nhẹ
+          if (Test-Path -LiteralPath $Installed) { throw '卸载后程序目录仍在' }
+          if ((Test-Path -LiteralPath $Key) -or (Test-Path -LiteralPath $Menu)) { throw '卸载后仍留有登记项或开始菜单项' }
+      - name: 安装并验收轻量安装包
         shell: pwsh
         run: |
           $Installed = Join-Path $env:RUNNER_TEMP 'Peach 轻量安装验收\自定义目录'
           $Setup = Start-Process -FilePath './Peach-${{ needs.windows.outputs.version }}-windows-x64-lite-setup.exe' `
             -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$Installed`"" -WindowStyle Hidden -Wait -PassThru
-          if ($Setup.ExitCode -ne 0) { throw "Mã thoát của bộ cài đặt nhẹ: $($Setup.ExitCode)" }
+          if ($Setup.ExitCode -ne 0) { throw "轻量安装包退出码 $($Setup.ExitCode)" }
           python smoke_desktop.py (Join-Path $Installed 'Peach.exe')
-          if ($LASTEXITCODE -ne 0) { throw 'Kiểm tra hoạt động của bộ cài đặt nhẹ thất bại' }
+          if ($LASTEXITCODE -ne 0) { throw '轻量安装包运行验收失败' }
           Start-Process -FilePath (Join-Path $Installed 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -WindowStyle Hidden -Wait
           $Deadline = (Get-Date).AddSeconds(120)
           while ((Test-Path -LiteralPath $Installed) -and (Get-Date) -lt $Deadline) { Start-Sleep -Seconds 1 }
-          if (Test-Path -LiteralPath $Installed) { throw 'Thư mục ứng dụng vẫn còn sau khi gỡ bộ cài đặt nhẹ' }
-      - name: Kiểm tra bảo vệ tác vụ đang chạy và khôi phục sau khi nâng cấp tại chỗ
+          if (Test-Path -LiteralPath $Installed) { throw '轻量安装包卸载后程序目录仍在' }
+      - name: 验证在途任务保护与覆盖安装后的恢复
         shell: pwsh
         run: |
           python smoke_update_tasks.py candidate/Peach/Peach.exe --installer './Peach-${{ needs.windows.outputs.version }}-windows-x64-setup.exe' --apply
-          if ($LASTEXITCODE -ne 0) { throw 'Kiểm tra bảo vệ và khôi phục tác vụ thất bại' }
-      - name: Lưu log lỗi kiểm tra gói xây dựng
+          if ($LASTEXITCODE -ne 0) { throw '任务保护与恢复验收失败' }
+      - name: 保留制品验收失败日志
         if: failure()
         uses: actions/upload-artifact@v7
         with:
@@ -260,8 +260,8 @@ jobs:
           retention-days: 14
 
   macos:
-    name: macOS ${{ matrix.arch }} gói kiểm thử độc lập
-    needs: [validate, desktop-checks]
+    name: macOS ${{ matrix.arch }} 独立测试包
+    needs: validate
     if: github.ref_type != 'tag'
     strategy:
       fail-fast: false
@@ -287,43 +287,44 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - uses: astral-sh/setup-uv@v10.3.2
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: uv.lock
-      - name: Tạo môi trường xây dựng cho kiến trúc gốc
+      - name: 创建原生架构构建环境
         run: |
           uv sync --locked --all-extras --python python
           uv pip check --python .venv/bin/python
           npm ci --prefix frontend
-      - name: Cài đặt công cụ biên dịch media theo phiên bản cố định
+      - name: 安装固定版本的媒体编译工具
         run: |
           .venv/bin/python scripts/setup_macos_media_tools.py --root build/macos-media-toolchain
           echo "$PWD/build/macos-media-toolchain/env/bin" >> "$GITHUB_PATH"
-      - name: Kiểm tra định danh bản dựng media
+      - name: 核对媒体构建身份
         id: media-identity
         run: echo "key=$(.venv/bin/python scripts/media_build_cache.py macos --arch '${{ matrix.arch }}' --github-key)" >> "$GITHUB_OUTPUT"
-      - name: Dùng lại công cụ media macOS và gói mã nguồn đã xác minh
+      - name: 复用固定源码的 macOS 媒体工具与对应源码包
         uses: actions/cache@v6.1.0
         with:
           key: ${{ steps.media-identity.outputs.key }}
           path: build/media-cache/macos-${{ matrix.arch }}
-      - name: Chuẩn bị công cụ media và cloudflared
+      - name: 构建或复用媒体工具并取得 cloudflared 与 Sparkle
         run: |
           for tool in ffmpeg untrunc; do
             .venv/bin/python scripts/media_build_cache.py macos --tool "$tool" --arch '${{ matrix.arch }}'
           done
           .venv/bin/python scripts/fetch_cloudflared_macos.py --arch '${{ matrix.arch }}' --destination "build/media-macos/${{ matrix.arch }}/cloudflared"
-      - name: Xây dựng ứng dụng độc lập và ảnh cài đặt kéo thả
+          .venv/bin/python scripts/fetch_sparkle_macos.py --destination "build/media-macos/${{ matrix.arch }}/sparkle"
+      - name: 构建独立应用与拖放安装镜像
         run: .venv/bin/python scripts/build_macos_standalone.py --target-arch '${{ matrix.arch }}' --destination release
-      - name: Tải lên source map trình duyệt của bản dựng macOS
+      - name: 上传 macOS 构建的浏览器 source maps
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ vars.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
         run: |
           if [ -z "$SENTRY_AUTH_TOKEN" ] || [ -z "$SENTRY_ORG" ] || [ -z "$SENTRY_PROJECT" ]; then
-            echo 'Chưa cấu hình môi trường tải source map Sentry; bỏ qua bước tải lên.'
+            echo '未配置 Sentry source map 上传环境，跳过上传。'
             exit 0
           fi
           npm --prefix frontend run sentry:upload
@@ -336,10 +337,9 @@ jobs:
             release/*.dmg
             scripts/smoke_macos.py
             scripts/smoke_desktop.py
-            scripts/MACOS_DOWNLOADS.md
 
   macos-smoke:
-    name: macOS ${{ matrix.arch }} Kiểm tra chỉ từ gói đã tải xuống
+    name: macOS ${{ matrix.arch }} 仅下载制品验收
     needs: macos
     strategy:
       fail-fast: false
@@ -361,6 +361,7 @@ jobs:
           path: source
           sparse-checkout: |
             scripts
+            src/peach
             tools/amane-bridge
       - uses: actions/download-artifact@v8
         with:
@@ -368,7 +369,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
-      - name: Gắn ảnh cài đặt và kiểm tra ứng dụng bên ngoài cây mã nguồn
+      - name: 挂载镜像并在源码树外验证应用
         shell: bash
         run: |
           set -euo pipefail
@@ -382,15 +383,19 @@ jobs:
           test "$(readlink "$mount/Applications")" = /Applications
           test -s "$mount/Peach.app/Contents/Resources/LICENSE"
           codesign --verify --deep --strict "$mount/Peach.app"
+          test -f "$mount/Peach.app/Contents/Frameworks/Sparkle.framework/Versions/B/Sparkle"
+          test ! -e "$mount/Peach.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices"
           lipo "$mount/Peach.app/Contents/MacOS/Peach" -verify_arch '${{ matrix.arch }}'
           python scripts/smoke_macos.py "$mount/Peach.app"
 
   release:
-    name: Bản phát hành thử nghiệm trên GitHub
+    name: GitHub 预发布
     if: github.ref_type == 'tag'
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # 发布签名私钥放在这个只允许 `v*` 标签部署的 environment 里（ADR-0137）。
+    environment: release
     permissions:
       contents: write
       actions: read
@@ -399,26 +404,253 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
-      - name: Kiểm tra và lấy gói diễn tập từ cùng commit
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: 核对并取得同提交演练产物
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python scripts/github_release_candidate.py desktop --destination release
           python scripts/github_release_candidate.py macos --destination macos-candidates
-      - name: Tạo bản phát hành thử nghiệm
+      - name: 生成并签名发布摘要
+        env:
+          PEACH_RELEASE_SIGNING_KEY: ${{ secrets.PEACH_RELEASE_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          uv sync --locked --python python
+          cp macos-candidates/release/*.dmg release/
+          (cd release && sha256sum ./*.zip ./*-setup.exe ./*.dmg > SHA256SUMS.txt)
+          # 源码没有发布公钥且没配私钥时跳过；公钥已随源码发出却缺私钥时失败，不发布未签名的版本。
+          printf '%s' "$PEACH_RELEASE_SIGNING_KEY" | .venv/bin/python scripts/sign_release.py --sums release/SHA256SUMS.txt
+      - name: 创建预发布
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          VERSION: ${{ github.ref_name }}
         run: |
           cd release
-          cp ../macos-candidates/release/*.dmg .
-          tail -n +4 ../macos-candidates/scripts/MACOS_DOWNLOADS.md >> RELEASE_NOTES.md
-          sha256sum ./*.zip ./*-setup.exe ./*.dmg > SHA256SUMS.txt
-          gh release create "$GITHUB_REF_NAME" ./*.zip ./*-setup.exe ./*.dmg SHA256SUMS.txt --verify-tag --prerelease --title "Peach ${VERSION#v} · Bản thử nghiệm Windows / macOS" --notes-file RELEASE_NOTES.md
+          files=(./*.zip ./*-setup.exe ./*.dmg SHA256SUMS.txt)
+          if [ -f SHA256SUMS.txt.sig ]; then files+=(SHA256SUMS.txt.sig); fi
+          gh release create "$GITHUB_REF_NAME" "${files[@]}" --verify-tag --prerelease --title "$GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md
+
+  # Sparkle 更新源（ADR-0130）：Release 公开之后才写 appcast，下载地址指向同一 Release 的 DMG。
+  # 私钥只在这一个仅标签运行的作业里经标准输入交给官方工具；仓库变量未开启时整个作业跳过。
+  sparkle-appcast:
+    name: macOS 更新源（Sparkle appcast）
+    if: github.ref_type == 'tag' && vars.SPARKLE_APPCAST_ENABLED == 'true'
+    needs: release
+    runs-on: macos-15
+    timeout-minutes: 20
+    environment: release
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+      PEACH_R2_ACCESS_KEY_ID: ${{ secrets.PEACH_R2_ACCESS_KEY_ID }}
+      PEACH_R2_SECRET_ACCESS_KEY: ${{ secrets.PEACH_R2_SECRET_ACCESS_KEY }}
+      PEACH_R2_ENDPOINT: ${{ secrets.PEACH_R2_ENDPOINT }}
+      PEACH_R2_BUCKET: ${{ vars.PEACH_R2_BUCKET }}
+      PEACH_R2_PUBLIC_BASE: https://downloads.peach.video
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: 取得官方 Sparkle 工具与 rclone
+        run: |
+          uv sync --locked --python python
+          .venv/bin/python scripts/fetch_sparkle_macos.py --destination build/sparkle --tools
+          .venv/bin/python scripts/fetch_release_tools.py --rclone-only
+          echo "PEACH_RCLONE=$PWD/build/release-tools/rclone" >> "$GITHUB_ENV"
+      - name: 生成、核对并发布两个架构的 appcast
+        run: |
+          set -euo pipefail
+          test -n "$SPARKLE_ED_PRIVATE_KEY"
+          version="${GITHUB_REF_NAME#v}"
+          prefix="https://github.com/$GH_REPO/releases/download/$GITHUB_REF_NAME/"
+          feeds=()
+          for arch in arm64 x86_64; do
+            folder="build/feed/$arch"
+            feed="$folder/macos-$arch.xml"
+            mkdir -p "$folder"
+            gh release download "$GITHUB_REF_NAME" --pattern "Peach-$version-macos-$arch.dmg" --dir "$folder"
+            # 带上本次运行号绕过公开入口的缓存：取到最新一份，首发时的 404 也不会缓存在裸地址上。
+            status="$(curl -sS -o "$feed" -w '%{http_code}' "$PEACH_R2_PUBLIC_BASE/sparkle/macos-$arch.xml?run=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT")"
+            case "$status" in
+              200) ;;
+              404) rm -f "$feed" ;;
+              *) echo "现有 appcast 未取得：HTTP $status"; exit 1 ;;
+            esac
+            printf '%s' "$SPARKLE_ED_PRIVATE_KEY" | build/sparkle/bin/generate_appcast --ed-key-file - \
+              --download-url-prefix "$prefix" --maximum-versions 5 -o "$feed" "$folder"
+            .venv/bin/python scripts/sparkle_appcast.py annotate --appcast "$feed" --version "$version"
+            signature="$(.venv/bin/python scripts/sparkle_appcast.py verify --appcast "$feed" --version "$version" \
+              --dmg "$folder/Peach-$version-macos-$arch.dmg" --url-prefix "$prefix" | .venv/bin/python -c 'import json,sys; print(json.load(sys.stdin)["signature"])')"
+            printf '%s' "$SPARKLE_ED_PRIVATE_KEY" | build/sparkle/bin/sign_update --ed-key-file - \
+              --verify "$folder/Peach-$version-macos-$arch.dmg" "$signature"
+            feeds+=("$feed")
+          done
+          .venv/bin/python scripts/sparkle_appcast.py publish "${feeds[@]}"
+
+  # 下载镜像：连不上 GitHub 的客户端从 `downloads.peach.video/releases.json` 取更新（`release_updates`）。
+  # 转存的是已公开 Release 的同一份制品与签过名的摘要；镜像只留最新三个版本，更老的目录由脚本删除。
+  r2-mirror:
+    name: 下载镜像与版本索引（R2）
+    if: github.ref_type == 'tag'
+    needs: release
+    runs-on: ubuntu-latest
+    # 上传后要从公开入口把每个文件完整下载回来核对，一个版本约 1.4 GB。
+    timeout-minutes: 60
+    environment: release
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PEACH_R2_ACCESS_KEY_ID: ${{ secrets.PEACH_R2_ACCESS_KEY_ID }}
+      PEACH_R2_SECRET_ACCESS_KEY: ${{ secrets.PEACH_R2_SECRET_ACCESS_KEY }}
+      PEACH_R2_ENDPOINT: ${{ secrets.PEACH_R2_ENDPOINT }}
+      PEACH_R2_BUCKET: ${{ vars.PEACH_R2_BUCKET }}
+      PEACH_R2_PUBLIC_BASE: https://downloads.peach.video
+      CI_COMMIT_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: 取得 rclone
+        run: |
+          uv sync --locked --python python
+          .venv/bin/python scripts/fetch_release_tools.py --rclone-only
+          echo "PEACH_RCLONE=$PWD/build/release-tools/rclone" >> "$GITHUB_ENV"
+      - name: 转存 Release 制品并登记版本索引
+        run: |
+          set -euo pipefail
+          gh release download "$GITHUB_REF_NAME" --dir build/mirror \
+            --pattern '*.zip' --pattern '*.exe' --pattern '*.dmg' --pattern 'SHA256SUMS.txt*'
+          # 发布时间取提交时间、更新说明取标签提交上的 CHANGELOG：release.json 不可覆盖上传，重跑作业必须写出同样的字节。
+          .venv/bin/python scripts/changelog.py --notes "${GITHUB_REF_NAME#v}" --to build/release-notes.md
+          CI_COMMIT_TIMESTAMP="$(git show -s --format=%cI "$GITHUB_SHA")" \
+            .venv/bin/python scripts/release_r2.py --root build/mirror --version "${GITHUB_REF_NAME#v}" --apply \
+            --notes build/release-notes.md
+
+  # 镜像在演练中按架构各自构建和验收，标签核对相同 image ID 后发布；发布排在 GitHub Release 成功之后：
+  # 桌面包任何一步没发出去，Docker Hub 的版本号、edge 与 latest 都不动（ADR-0121）。
+  docker:
+    name: Linux ${{ matrix.arch }} 镜像构建与验收
+    needs: validate
+    if: github.ref_type != 'tag'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 两个架构都在原生 runner 上构建与冒烟，不经 QEMU 模拟。
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+      - uses: docker/setup-buildx-action@v4
+      - name: 读取镜像版本
+        id: version
+        run: echo "version=$(PYTHONPATH=src python -c 'from peach import __version__; print(__version__)')" >> "$GITHUB_OUTPUT"
+      - name: 构建候选镜像
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: longmeidao/peach:candidate-${{ matrix.arch }}
+          # ghcr 包页显示 description；带上这一版的发行说明链接，镜像页能直接点到更新内容。
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.description=Local-first video metadata scraper and media manager for VPS and NAS. Release notes: https://github.com/peach-mitao/peach/releases/tag/v${{ steps.version.outputs.version }}
+            org.opencontainers.image.url=https://github.com/peach-mitao/peach/releases/tag/v${{ steps.version.outputs.version }}
+          cache-from: type=gha,scope=docker-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=docker-${{ matrix.arch }}
+      - name: 验收临时容器
+        run: python3 scripts/smoke_docker.py longmeidao/peach:candidate-${{ matrix.arch }}
+      - name: 保存已验收镜像与摘要
+        run: |
+          python scripts/github_release_candidate.py image-record --version '${{ steps.version.outputs.version }}' --arch ${{ matrix.arch }} --destination docker-image-${{ matrix.arch }}.json
+          docker image save longmeidao/peach:candidate-${{ matrix.arch }} | gzip > docker-image-${{ matrix.arch }}.tar.gz
+      - uses: actions/upload-artifact@v7
+        with:
+          name: docker-candidate-${{ matrix.arch }}
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+          path: |
+            docker-image-${{ matrix.arch }}.json
+            docker-image-${{ matrix.arch }}.tar.gz
+
+  docker-publish:
+    name: 发布已验收镜像
+    if: github.ref_type == 'tag' && vars.DOCKERHUB_USERNAME != ''
+    needs: [release, validate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+      - name: 取得并核对已验收镜像
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/github_release_candidate.py docker --destination docker-candidate
+          for arch in amd64 arm64; do
+            docker image load --input "docker-candidate/docker-image-$arch.tar.gz"
+            python scripts/github_release_candidate.py image-verify --version "${GITHUB_REF_NAME#v}" --arch "$arch" --destination "docker-candidate/docker-image-$arch.json"
+          done
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      # Docker Hub 是应用内更新与 Watchtower 认的来源，先推；ghcr 推同一镜像，挂到仓库侧栏的 Packages（ADR-0147）。
+      # 每个架构先推 `<版本>-<架构>`，再合成一个多架构 index，版本号、edge 与 latest 指向同一个 index；
+      # NAS 容器面板与不写标签的 `docker pull` 只认 latest（ADR-0121）。
+      - name: 推送版本号、edge 与 latest
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          for image in longmeidao/peach ghcr.io/peach-mitao/peach; do
+            for arch in amd64 arm64; do
+              docker tag "longmeidao/peach:candidate-$arch" "$image:$version-$arch"
+              docker push "$image:$version-$arch"
+            done
+            docker buildx imagetools create --tag "$image:$version" --tag "$image:edge" --tag "$image:latest"               "$image:$version-amd64" "$image:$version-arm64"
+            docker buildx imagetools inspect "$image:$version"
+          done
 
   project-board:
-    name: Đồng bộ phiên bản đã phát hành lên bảng dự án
+    name: 同步已发布版本到看板
     if: github.ref_type == 'tag'
     needs: release
     runs-on: ubuntu-latest
@@ -426,8 +658,23 @@ jobs:
     permissions:
       actions: write
     steps:
-      - name: Yêu cầu đồng bộ bảng dự án
+      - name: 请求项目看板同步
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: gh workflow run project-board.yml --ref master
+
+  gitgud-backup:
+    name: 备份制品到 GitGud
+    if: github.ref_type == 'tag'
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: 请求 GitGud 备份
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run gitgud-mirror.yml --ref master -f "tag=$GITHUB_REF_NAME"

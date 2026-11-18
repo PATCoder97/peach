@@ -58,15 +58,38 @@ class TestEnvironmentTests(unittest.TestCase):
     def test_outdated_main_environment_stops_before_any_sync(self):
         run = mock.Mock(return_value=subprocess.CompletedProcess(
             [], 1, "The environment is outdated", ""))
-        with self.assertRaisesRegex(RuntimeError, "Luồng khởi động lại"):
+        with self.assertRaisesRegex(RuntimeError, "重启流程"):
             self.prepare(self.main, run)
         self.assertEqual(run.call_count, 1)
         self.assertIn("--check", run.call_args.args[0])
 
     def test_failed_sync_does_not_report_ready(self):
         run = mock.Mock(return_value=subprocess.CompletedProcess([], 2))
-        with self.assertRaisesRegex(RuntimeError, "Đồng bộ phụ thuộc kiểm thử thất bại"):
+        with self.assertRaisesRegex(RuntimeError, "依赖同步失败"):
             self.prepare(self.worker, run)
+
+    def test_frontend_dependencies_out_of_step_with_the_lock_stop_before_starting_tests(self):
+        """前端依赖没装或与锁文件对不上时开跑前就拦下，并给出该执行的 npm ci。"""
+        frontend = self.worker / "frontend"
+        frontend.mkdir()
+        lock = {"packages": {"": {"name": "peach"},
+                             "node_modules/vite": {"version": "8.0.0"},
+                             "node_modules/@esbuild/linux-x64": {"version": "0.25.0", "optional": True}}}
+        (frontend / "package-lock.json").write_text(json.dumps(lock), encoding="utf-8")
+        run = mock.Mock(return_value=subprocess.CompletedProcess([], 0))
+        with self.assertRaisesRegex(RuntimeError, "npm ci") as raised:
+            self.prepare(self.worker, run)
+        self.assertIn(str(frontend), str(raised.exception))
+        installed = frontend / "node_modules" / ".package-lock.json"
+        installed.parent.mkdir()
+        installed.write_text(json.dumps({"packages": {"node_modules/vite": {"version": "7.3.0"}}}),
+                             encoding="utf-8")
+        with self.assertRaisesRegex(RuntimeError, "node_modules/vite"):
+            self.prepare(self.worker, run)
+        # 别的平台的可选原生绑定没装不算对不上。
+        installed.write_text(json.dumps({"packages": {"node_modules/vite": {"version": "8.0.0"}}}),
+                             encoding="utf-8")
+        self.prepare(self.worker, run)
 
     def test_missing_lock_or_uv_stops_before_starting_tests(self):
         run = mock.Mock()
@@ -134,6 +157,6 @@ class TestEnvironmentTests(unittest.TestCase):
             return shared if path == self.worker / ".venv" else resolve(path, *args, **kwargs)
         run = mock.Mock()
         with mock.patch.object(Path, "resolve", resolved):
-            with self.assertRaisesRegex(RuntimeError, "checkout chính"):
+            with self.assertRaisesRegex(RuntimeError, "主检出"):
                 self.prepare(self.worker, run)
         run.assert_not_called()

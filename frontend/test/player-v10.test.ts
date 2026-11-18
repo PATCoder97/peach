@@ -1,7 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createV10Player } from '../src/player/v10-player';
-import { mountPlayerTransport } from '../src/player/transport-controls';
-import { LOCALE_KEY, setLocale } from '../src/i18n';
 
 const engine = () => ({ bandwidthEstimate: 8000000, currentLevel: -1,
   levels: [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }], on: vi.fn() });
@@ -15,145 +13,16 @@ beforeAll(() => {
   if (!customElements.get('hlsjs-video')) customElements.define('hlsjs-video', TestMedia);
   if (!customElements.get('dash-video')) customElements.define('dash-video', class extends TestMedia {});
 });
-afterEach(() => { setLocale('zh-CN'); localStorage.removeItem(LOCALE_KEY); document.body.replaceChildren(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals() });
+afterEach(() => { document.body.replaceChildren(); vi.restoreAllMocks(); vi.unstubAllGlobals() });
 
-function mounted(controls = false) {
+function mounted() {
   const video = document.createElement('video'); document.body.append(video);
-  const player = createV10Player(video, { controls });
+  const player = createV10Player(video, { controls: false });
   const media = player.el().querySelector('hlsjs-video') as TestMedia;
   return { video, player, media };
 }
 
 describe('Video.js 10 播放会话', () => {
-  it('连续触屏点击保持画面显隐手势，鼠标双击进入全屏', () => {
-    const { video, player } = mounted(true);
-    const fullscreen = vi.spyOn(player.el().querySelector<HTMLElement>('media-fullscreen-button')!, 'click');
-    video.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
-    video.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    expect(fullscreen).not.toHaveBeenCalled();
-    video.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'mouse', bubbles: true }));
-    video.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    expect(fullscreen).toHaveBeenCalledOnce();
-    player.dispose();
-  });
-
-  it.each([true, false])('触屏点击空白交替隐藏与显示控件，保持 paused=%s', paused => {
-    vi.useFakeTimers();
-    const { video, player } = mounted(true);
-    Object.defineProperty(video, 'paused', { configurable: true, value: paused });
-    const pause = vi.spyOn(video, 'pause').mockImplementation(() => {});
-    const play = vi.spyOn(video, 'play').mockResolvedValue(undefined);
-    const tap = (target: Element) => target.dispatchEvent(new PointerEvent('click', { pointerType: 'touch', bubbles: true }));
-    tap(video);
-    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
-    vi.advanceTimersByTime(3000);
-    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
-    video.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }));
-    video.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
-    tap(video);
-    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
-    tap(player.el().querySelector('media-play-button')!);
-    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
-    tap(video);
-    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
-    expect(play).not.toHaveBeenCalled();
-    expect(pause).not.toHaveBeenCalled();
-    player.dispose();
-  });
-
-  it('中央控件间隙切换显隐，跳转按钮保持控件显示', () => {
-    const { video, player } = mounted(true);
-    mountPlayerTransport(player, video, player.el().querySelector<HTMLElement>('.vjs-control-bar')!);
-    Object.defineProperty(video, 'duration', { configurable: true, value: 100 });
-    video.dispatchEvent(new Event('loadedmetadata'));
-    const group = player.el().querySelector<HTMLElement>('.vjs-peach-transport')!;
-    const tap = (target: Element) => target.dispatchEvent(new PointerEvent('click', { pointerType: 'touch', bubbles: true }));
-    tap(group.querySelector('[data-player-transport-gap]')!);
-    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
-    tap(group);
-    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
-    tap(group.querySelector('[data-player-skip="30"]')!);
-    expect(video.currentTime).toBe(30);
-    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
-    player.dispose();
-  });
-
-  it.each([true, false])('点击画面显示控件并保持 paused=%s，触屏移动不抢先唤起控件', paused => {
-    const { video, player } = mounted(true);
-    Object.defineProperty(video, 'paused', { configurable: true, value: paused });
-    const pause = vi.spyOn(video, 'pause').mockImplementation(() => {});
-    const play = vi.spyOn(video, 'play').mockResolvedValue(undefined);
-    player.el().classList.replace('vjs-user-active', 'vjs-user-inactive');
-    player.el().dispatchEvent(new PointerEvent('pointermove', { pointerType: 'touch' }));
-    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
-    video.click();
-    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
-    expect(play).not.toHaveBeenCalled();
-    expect(pause).not.toHaveBeenCalled();
-    player.dispose();
-  });
-
-  it('播放时控件自动隐藏，点击画面唤回并重新开始隐藏计时', () => {
-    vi.useFakeTimers();
-    const { video, player } = mounted(true);
-    Object.defineProperty(video, 'paused', { configurable: true, value: false });
-    video.dispatchEvent(new Event('play'));
-    vi.advanceTimersByTime(2500);
-    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
-    video.click();
-    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
-    vi.advanceTimersByTime(2499);
-    expect(player.el().classList.contains('vjs-user-active')).toBe(true);
-    vi.advanceTimersByTime(1);
-    expect(player.el().classList.contains('vjs-user-inactive')).toBe(true);
-    player.dispose();
-    vi.useRealTimers();
-  });
-
-  it('前后 30 秒连续跳转限制在片长内，未知片长时禁用跳转', () => {
-    const { video, player } = mounted(true);
-    mountPlayerTransport(player, video, player.el().querySelector<HTMLElement>('.vjs-control-bar')!);
-    const back = player.el().querySelector<HTMLButtonElement>('[data-player-skip="-30"]')!;
-    const ahead = player.el().querySelector<HTMLButtonElement>('[data-player-skip="30"]')!;
-    expect(back.disabled).toBe(true);
-    Object.defineProperty(video, 'duration', { configurable: true, value: 100 });
-    video.dispatchEvent(new Event('loadedmetadata'));
-    expect(back.disabled).toBe(false);
-    video.currentTime = 40;
-    ahead.click(); expect(video.currentTime).toBe(70);
-    ahead.click(); ahead.click(); expect(video.currentTime).toBe(100);
-    back.click(); expect(video.currentTime).toBe(70);
-    video.currentTime = 10;
-    back.click(); expect(video.currentTime).toBe(0);
-    Object.defineProperty(video, 'duration', { configurable: true, value: NaN });
-    video.dispatchEvent(new Event('emptied'));
-    expect(ahead.disabled).toBe(true);
-    player.dispose();
-  });
-
-  it('中央按钮通过播放会话切换状态，名称随语言与播放状态更新，销毁后解除订阅', () => {
-    const { video, player } = mounted(true);
-    let paused = true;
-    Object.defineProperty(video, 'paused', { get: () => paused });
-    const play = vi.spyOn(player, 'play').mockImplementation(async () => { paused = false; video.dispatchEvent(new Event('play')) });
-    const pause = vi.spyOn(player, 'pause').mockImplementation(() => { paused = true; video.dispatchEvent(new Event('pause')) });
-    mountPlayerTransport(player, video, player.el().querySelector<HTMLElement>('.vjs-control-bar')!);
-    const group = player.el().querySelector<HTMLElement>('.vjs-peach-transport')!;
-    const button = group.querySelector<HTMLButtonElement>('[data-player-transport-play]')!;
-    setLocale('vi');
-    expect(button.getAttribute('aria-label')).toBe('Phát');
-    expect(group.querySelector('[data-player-skip="-30"]')?.getAttribute('aria-label')).toBe('Lùi 30 giây');
-    button.click(); expect(play).toHaveBeenCalledOnce();
-    expect(button.getAttribute('aria-label')).toBe('Tạm dừng');
-    button.click(); expect(pause).toHaveBeenCalledOnce();
-    setLocale('en');
-    expect(button.getAttribute('aria-label')).toBe('Playback');
-    player.dispose();
-    setLocale('vi');
-    expect(button.getAttribute('aria-label')).toBe('Playback');
-    expect(group.isConnected).toBe(false);
-  });
-
   it('普通 HTTP 的随机源为无 ID 的视频创建独立播放器', () => {
     vi.stubGlobal('crypto', { getRandomValues: crypto.getRandomValues.bind(crypto) });
     const first = mounted().player;
@@ -175,6 +44,15 @@ describe('Video.js 10 播放会话', () => {
     await expect(player.play()).resolves.toBeUndefined();
     expect(play).toHaveBeenCalledOnce();
     expect(video.src).toContain('/example.mp4');
+    player.dispose();
+  });
+
+  it('回退片源只由 Peach 管理，不传给媒体适配器', () => {
+    const { player, media } = mounted();
+    player.src({ src: '/example.mp4', type: 'video/mp4', fallback: {
+      src: '/fallback.m3u8', type: 'application/vnd.apple.mpegurl',
+    } });
+    expect(media.source).toEqual({ src: new URL('/example.mp4', location.href).href, type: 'video/mp4' });
     player.dispose();
   });
 
@@ -243,6 +121,167 @@ describe('Video.js 10 播放会话', () => {
     video.dispatchEvent(new Event('play')); expect(played).toHaveBeenCalledOnce();
     expect(document.querySelector('.video-js')).toBeNull();
   });
+
+  it('等待后播放时间往前走就收起转圈，缓冲还够时的 stalled 不显示转圈', () => {
+    const { video, player } = mounted(), root = player.el();
+    let time = 10, ready = 4;
+    Object.defineProperty(video, 'currentTime', { get: () => time, configurable: true });
+    Object.defineProperty(video, 'readyState', { get: () => ready, configurable: true });
+    video.dispatchEvent(new Event('stalled'));
+    expect(root.classList.contains('vjs-waiting')).toBe(false);
+    ready = 2; video.dispatchEvent(new Event('waiting'));
+    expect(root.classList.contains('vjs-waiting')).toBe(true);
+    video.dispatchEvent(new Event('timeupdate'));
+    expect(root.classList.contains('vjs-waiting')).toBe(true);
+    time = 10.25; ready = 4; video.dispatchEvent(new Event('timeupdate'));
+    expect(root.classList.contains('vjs-waiting')).toBe(false);
+    player.dispose();
+  });
 });
 
 function videoMetadata(root: HTMLElement) { root.querySelector('video')!.dispatchEvent(new Event('loadedmetadata')) }
+
+describe('移动设备全屏方向', () => {
+  afterEach(() => { Reflect.deleteProperty(document, 'fullscreenElement'); Reflect.deleteProperty(document, 'webkitFullscreenElement') });
+  function environment(userAgent = 'Android', coarse = true, platform = 'Linux', touches = 5) {
+    const lock = vi.fn<(value: string) => Promise<void>>().mockResolvedValue(undefined);
+    const unlock = vi.fn();
+    vi.stubGlobal('screen', { orientation: { lock, unlock } });
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(userAgent);
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue(platform);
+    vi.spyOn(navigator, 'maxTouchPoints', 'get').mockReturnValue(touches);
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: coarse })));
+    let fullscreen: Element | null = null;
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => fullscreen });
+    const enter = (element: Element | null) => {
+      fullscreen = element;
+      document.dispatchEvent(new Event('fullscreenchange'));
+    };
+    return { lock, unlock, enter };
+  }
+
+  it.each([
+    ['Android phone', true, 'Linux'],
+    ['Android tablet', false, 'Linux'],
+    ['iPhone', true, 'iPhone'],
+    ['Macintosh', false, 'MacIntel'],
+  ] as const)('%s 进入自己的全屏后请求横屏，重复事件不重复锁定，退出时释放', async (ua, coarse, platform) => {
+    const { lock, unlock, enter } = environment(ua, coarse, platform);
+    const { player } = mounted();
+    const changed = vi.fn(); player.on('fullscreenchange', changed);
+    try {
+      expect(lock).not.toHaveBeenCalled();
+      enter(document.body);
+      expect(player.isFullscreen()).toBe(false);
+      expect(lock).not.toHaveBeenCalled();
+      enter(player.el().querySelector('media-container'));
+      expect(player.isFullscreen()).toBe(true);
+      expect(player.el().classList.contains('vjs-fullscreen')).toBe(true);
+      expect(lock).toHaveBeenCalledWith('landscape');
+      document.dispatchEvent(new Event('fullscreenchange'));
+      expect(lock).toHaveBeenCalledOnce();
+      await Promise.resolve();
+      enter(null);
+      expect(player.isFullscreen()).toBe(false);
+      expect(player.el().classList.contains('vjs-fullscreen')).toBe(false);
+      expect(unlock).toHaveBeenCalledOnce();
+      expect(changed).toHaveBeenCalledTimes(4);
+    } finally { player.dispose() }
+  });
+
+  it('桌面浏览器全屏同步状态但不改变方向', () => {
+    const { lock, enter } = environment('Windows', false, 'Win32', 0);
+    const { player } = mounted();
+    try {
+      enter(player.el());
+      expect(player.isFullscreen()).toBe(true);
+      expect(lock).not.toHaveBeenCalled();
+    } finally { player.dispose() }
+  });
+
+  it.each(['missing', 'rejected', 'throws'] as const)('方向 API %s 时保持全屏且正常退出', async mode => {
+    const { lock, unlock, enter } = environment();
+    if (mode === 'missing') vi.stubGlobal('screen', {});
+    else if (mode === 'rejected') lock.mockRejectedValue(new DOMException('', 'NotSupportedError'));
+    else lock.mockImplementation(() => { throw new DOMException('', 'SecurityError') });
+    const { player } = mounted();
+    try {
+      enter(player.el()); await Promise.resolve();
+      expect(player.isFullscreen()).toBe(true);
+      enter(null);
+      expect(player.isFullscreen()).toBe(false);
+      expect(unlock).not.toHaveBeenCalled();
+    } finally { player.dispose() }
+  });
+
+  it.each(['exit', 'dispose'] as const)('锁定尚未完成时 %s 释放方向并清理迟到的成功回执', async action => {
+    const { lock, unlock, enter } = environment();
+    let resolve!: () => void;
+    lock.mockReturnValue(new Promise<void>(done => { resolve = done }));
+    const { player } = mounted();
+    try {
+      enter(player.el());
+      if (action === 'exit') enter(null); else player.dispose();
+      expect(unlock).toHaveBeenCalledOnce();
+      resolve(); await Promise.resolve();
+      expect(unlock).toHaveBeenCalledTimes(2);
+      expect(player.isFullscreen()).toBe(false);
+    } finally { player.dispose() }
+  });
+
+  it('快速切换播放器时旧请求的回执不释放新播放器的方向锁', async () => {
+    const { lock, unlock, enter } = environment();
+    let resolve!: () => void;
+    lock.mockReturnValueOnce(new Promise<void>(done => { resolve = done }));
+    const first = mounted().player, second = mounted().player;
+    try {
+      enter(first.el()); enter(second.el());
+      expect(unlock).toHaveBeenCalledOnce();
+      resolve(); await Promise.resolve();
+      expect(unlock).toHaveBeenCalledOnce();
+      expect(second.isFullscreen()).toBe(true);
+      enter(null);
+      expect(unlock).toHaveBeenCalledTimes(2);
+    } finally { first.dispose(); second.dispose() }
+  });
+
+  it('Safari 原生全屏进入和退出与 Peach 状态一致，销毁后不再处理事件', async () => {
+    const { lock, unlock } = environment('iPad');
+    const { video, player } = mounted();
+    video.dispatchEvent(new Event('webkitbeginfullscreen'));
+    expect(player.isFullscreen()).toBe(true);
+    expect(player.el().classList.contains('vjs-fullscreen')).toBe(true);
+    expect(lock).toHaveBeenCalledWith('landscape');
+    await Promise.resolve();
+    video.dispatchEvent(new Event('webkitendfullscreen'));
+    expect(player.isFullscreen()).toBe(false);
+    expect(unlock).toHaveBeenCalledOnce();
+    player.dispose();
+    video.dispatchEvent(new Event('webkitbeginfullscreen'));
+    expect(lock).toHaveBeenCalledOnce();
+  });
+
+  it('Safari 前缀全屏和 presentation mode 事件都同步状态', async () => {
+    const { lock, unlock } = environment('iPad');
+    const { video, player } = mounted();
+    try {
+      Object.defineProperty(document, 'webkitFullscreenElement', { configurable: true, value: player.el() });
+      document.dispatchEvent(new Event('webkitfullscreenchange'));
+      expect(player.isFullscreen()).toBe(true);
+      await Promise.resolve();
+      Reflect.deleteProperty(document, 'webkitFullscreenElement');
+      document.dispatchEvent(new Event('webkitfullscreenchange'));
+      expect(unlock).toHaveBeenCalledOnce();
+      Object.assign(video, { webkitPresentationMode: 'fullscreen' });
+      video.dispatchEvent(new Event('webkitbeginfullscreen'));
+      video.dispatchEvent(new Event('webkitpresentationmodechanged'));
+      expect(player.isFullscreen()).toBe(true);
+      expect(lock).toHaveBeenCalledTimes(2);
+      await Promise.resolve();
+      Object.assign(video, { webkitPresentationMode: 'inline' });
+      video.dispatchEvent(new Event('webkitpresentationmodechanged'));
+      expect(player.isFullscreen()).toBe(false);
+      expect(unlock).toHaveBeenCalledTimes(2);
+    } finally { player.dispose() }
+  });
+});

@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 数据管理页上的「资源同步」：按馆藏记录逐条查找本地磁盘与网盘上的文件，列出文件已不在的
  * 记录、空文件夹和不再被引用的缓存，确认后一起清掉（ADR-0080）。失效记录分两档：带个人记录的
  * 标为已消失、记录留着（ADR-0087），其余永久删除、不进回收站，所以执行键是危险档，确认框写明
@@ -13,12 +12,14 @@ import { fmtSize } from '@peach/legacy/core';
 import { Button } from '@/components/base/buttons/button';
 
 import { errorMessage } from '../../api';
+import { RESOURCE_SYNC_TEXT } from '../../cleanup-tool-skeletons';
 import { useBackgroundJob } from '../background-job';
 import { Fieldset, FieldsetTitle } from '../components/fieldset';
 import { Note } from '../components/note';
 import { ConnectionStatus } from '../components/connection-status';
 import { StatusLabel } from '../components/status-label';
 import { TaskProgress } from '../components/task-progress';
+import { activityKind } from '../../activity-kinds';
 import { spriteGlyph } from '../components/sprite-glyph';
 import { PlainStat, plainStatClass } from '../components/stat-card';
 import { queryClient } from '../query';
@@ -30,11 +31,13 @@ import {
   purgeCount, RESOURCE_APPLY_KEY, RESOURCE_SCAN_KEY, scanLine, SOURCE_LABELS, sourceMeta, startResourceApply, startResourceScan,
   type ResourceApplyState, type ResourceScanState,
 } from './resource-sync';
+import { jobText } from '../../core/server-text';
+import { t } from '../../i18n';
 
 const COMPARE = spriteGlyph('git-compare');
 const AGAIN = spriteGlyph('rotate-cw');
-const DISCONNECTED = '暂时无法读取进度，正在重新连接…';
-const APPLY_LABEL = '清理失效条目';
+const DISCONNECTED = t('cleanup:shared.reconnecting');
+const APPLY_LABEL = t('cleanup:resourceSync.cleanUpDead');
 
 /* 结果读数两行各自按卡数等分：来源几个都不折出半行。窄了照顶上那排读数折两列、一列。 */
 const RESULT_ROW = 'inline-grid w-full grid-flow-col auto-cols-fr gap-4 max-plain-stat-pair:grid-flow-row'
@@ -44,35 +47,34 @@ const count = (value: number | undefined) => Number(value || 0).toLocaleString()
 
 /** 一趟扫描的结论：来源一行，每个来源一张读数卡；要清的三样一行。 */
 function ScanResult({ scan, partial = false }: { scan: ResourceScanState; partial?: boolean }) {
-  const uiText = useUiTranslation();
   const cache = scan.cache ?? { files: 0, bytes: 0 };
   return (
     <>
       <div className={RESULT_ROW}>
         {(scan.sources ?? []).map((source) => (
           <article key={source.location} className={plainStatClass()}>
-            <PlainStat label={SOURCE_LABELS[source.location] || uiText("媒体来源")}
+            <PlainStat label={SOURCE_LABELS[source.location] || t('cleanup:resourceSync.storageFallback')}
               mark={<SourceMark mark={MEDIA_SOURCE_ICONS[source.location] ?? 'database'} />}
-              aside={<ConnectionStatus online={source.online}>{source.online ? uiText("可访问") : uiText("离线")}</ConnectionStatus>}
-              figure={source.online ? `${count(source.missing)} 项` : '—'}
-              meta={source.online ? sourceMeta(source) : uiText("{value0} · 本次已跳过", { value0: String(sourceMeta(source)) })} wrapMeta />
+              aside={<ConnectionStatus online={source.online}>{source.online ? t('cleanup:resourceSync.online') : t('cleanup:resourceSync.offline')}</ConnectionStatus>}
+              figure={source.online ? t('cleanup:resourceSync.missingCount', { count: Number(source.missing || 0) }) : '—'}
+              meta={source.online ? sourceMeta(source) : t('cleanup:resourceSync.skipped', { summary: sourceMeta(source) })} wrapMeta />
             {source.online && source.unreadable > 0
-              ? <span className="self-start"><StatusLabel tone="warning">{count(source.unreadable)}{uiText(" 个目录未读取")}</StatusLabel></span> : null}
+              ? <span className="self-start"><StatusLabel tone="warning">{count(source.unreadable)} {t('cleanup:resourceSync.unreadableDirs')}</StatusLabel></span> : null}
           </article>
         ))}
       </div>
       {!partial && <div className={RESULT_ROW}>
         <article className={plainStatClass()}>
-          <PlainStat label={uiText("待永久删除")} figure={`${count(purgeCount(scan))} 项`} meta={uiText("文件已不在盘上，含回收站")} />
+          <PlainStat label={t('cleanup:resourceSync.toPurge')} figure={t('cleanup:resourceSync.purgeCount', { count: Number(purgeCount(scan) || 0) })} meta={t('cleanup:resourceSync.purgeHint')} />
         </article>
         <article className={plainStatClass()}>
-          <PlainStat label={uiText("将标为已消失")} figure={`${count(scan.vanish)} 项`} meta={uiText("带个人记录，记录留着")} />
+          <PlainStat label={t('cleanup:resourceSync.toVanish')} figure={t('cleanup:resourceSync.vanishCount', { count: Number(scan.vanish || 0) })} meta={t('cleanup:resourceSync.vanishHint')} />
         </article>
         <article className={plainStatClass()}>
-          <PlainStat label={uiText("空文件夹")} figure={`${count(scan.empty)} 个`} meta={uiText("保留来源根目录")} />
+          <PlainStat label={t('cleanup:resourceSync.emptyDirs')} figure={t('cleanup:resourceSync.emptyDirCount', { count: Number(scan.empty || 0) })} meta={t('cleanup:resourceSync.emptyDirsHint')} />
         </article>
         <article className={plainStatClass()}>
-          <PlainStat label={uiText("可清理的缓存")} figure={`${count(cache.files)} 个`}
+          <PlainStat label={t('cleanup:resourceSync.cache')} figure={t('cleanup:resourceSync.cacheCount', { count: Number(cache.files || 0) })}
             meta={cache.files ? fmtSize(cache.bytes) : ''} />
         </article>
       </div>}
@@ -83,7 +85,6 @@ function ScanResult({ scan, partial = false }: { scan: ResourceScanState; partia
 export function ResourceSyncCard(
   { toast }: { toast(message: string, options?: { warning?: boolean }): void },
 ) {
-  const uiText = useUiTranslation();
   const apply = useBackgroundJob<ResourceApplyState, string>({
     queryKey: RESOURCE_APPLY_KEY,
     queryFn: ({ signal }) => fetchResourceApply(signal),
@@ -95,8 +96,8 @@ export function ResourceSyncCard(
       if (out.status !== 'complete') return;
       /* 没删的几样是这一轮留下的，能删的已经删了：报警告档、写完成与没处理的数目，不说失败。 */
       const { done, left } = applyLeftovers(out);
-      if (left) toast(`已完成 ${count(done)} 项，${count(left)} 项没有处理`, { warning: true });
-      else toast('已清理失效条目');
+      if (left) toast(t('cleanup:resourceSync.applyLeftovers', { done: count(done), count: Number(left || 0) }), { warning: true });
+      else toast(t('cleanup:resourceSync.cleaned'));
     },
   });
   const scan = useBackgroundJob<ResourceScanState>({
@@ -110,11 +111,13 @@ export function ResourceSyncCard(
   const state = scan.job;
   const scanning = scan.running || scan.start.isPending;
   const cleaning = apply.running || apply.start.isPending;
+  const actionsReady = !!scan.job && !!apply.job;
   const scanned = state?.status === 'complete' || state?.status === 'failed';
-  const label = scanning ? '扫描中' : scanned ? '重新扫描' : '检查文件';
+  const label = scanning ? t('cleanup:resourceSync.scanning') : scanned ? t('cleanup:resourceSync.scanAgain') : t('cleanup:resourceSync.checkFiles');
 
   /* 执行那一步只认这次检查的候选，逐条复核后再删；删了就没有撤销。 */
   const runApply = (payload: ResourceScanState) => void confirmModal({
+    holdToConfirm: true,
     title: APPLY_LABEL,
     body: applyConfirmText(payload),
     confirmLabel: APPLY_LABEL,
@@ -126,7 +129,7 @@ export function ResourceSyncCard(
   const receipt = (out: ResourceApplyState) => {
     const partial = applyLeftovers(out).left > 0;
     return (
-      <Note tone={partial ? 'warning' : 'success'} title={partial ? uiText("部分完成") : uiText("清理结果")}>
+      <Note tone={partial ? 'warning' : 'success'} title={partial ? t('cleanup:shared.partiallyCompleted') : t('cleanup:resourceSync.cleanupResult')}>
         {applyText(out, fmtSize)}
       </Note>
     );
@@ -134,57 +137,64 @@ export function ResourceSyncCard(
   let progress = null;
   let result = null;
   if (done?.status === 'failed') {
-    result = <Note tone="error" title={uiText("资源清理未完成")}>{done.error || uiText("请查看任务记录，核对已处理的文件。")}</Note>;
+    result = <Note tone="error" title={t('cleanup:resourceSync.cleanupIncomplete')}>{jobText(done, 'error') || t('cleanup:shared.checkTaskLogFiles')}</Note>;
   } else if (done) {
     result = receipt(done);
   } else if (apply.running) {
-    progress = <TaskProgress embedded label={apply.job?.message || uiText("正在复核并清理失效条目")} />;
+    progress = <TaskProgress embedded kind={activityKind('resource-apply')} label={jobText(apply.job) || t('cleanup:resourceSync.applying')} />;
   } else if (scan.start.isError) {
-    result = <Note tone="error" title={uiText("扫描失败")}>{errorMessage(scan.start.error)}</Note>;
+    result = <Note tone="error" title={t('cleanup:resourceSync.scanFailed')}>{errorMessage(scan.start.error)}</Note>;
   } else if (scan.query.isError && state) {
-    result = <Note tone="neutral" title={uiText("任务状态")}>{DISCONNECTED}</Note>;
+    result = <Note tone="neutral" title={t('cleanup:shared.taskStatus')}>{DISCONNECTED}</Note>;
   } else if (state?.status === 'running') {
     const line = scanLine(state);
     progress = (
-      <TaskProgress embedded label={line} value={state.completed_sources} total={state.total_sources} />
+      <TaskProgress embedded kind={activityKind('resource-scan')} label={line} value={state.completed_sources} total={state.total_sources} />
     );
     if (state.sources?.length) result = <ScanResult scan={state} partial />;
   } else if (state?.status === 'failed') {
     result = <>
       {state.sources?.length ? <ScanResult scan={state} partial /> : null}
-      <Note tone="error" title={uiText("扫描失败")}>{state.error || uiText("后台扫描失败")}</Note>
+      <Note tone="error" title={t('cleanup:resourceSync.scanFailed')}>{jobText(state, 'error') || t('cleanup:resourceSync.backgroundScanFailed')}</Note>
     </>;
   } else if (state?.status === 'complete' && state.applied) {
     result = apply.job?.status === 'complete'
       ? receipt(apply.job)
-      : <Note tone="neutral" title={uiText("清理结果")}>{uiText("这次检查的结果已经清理，重新扫描可再核对。")}</Note>;
+      : <Note tone="neutral" title={t('cleanup:resourceSync.cleanupResult')}>{t('cleanup:resourceSync.alreadyCleaned')}</Note>;
   } else if (state?.status === 'complete') {
     const changes = hasChanges(state);
     result = (
       <>
         <ScanResult scan={state} />
         {changes
-          ? <Note tone="neutral" title={uiText("清理内容")} action={
-              <Button variant="danger" {...busyProps(cleaning)} onClick={() => runApply(state)}>
-                {cleaning ? uiText("正在复核并清理…") : APPLY_LABEL}
+          ? <Note tone="neutral" title={t('cleanup:resourceSync.toClean')} action={
+              <Button variant="danger" disabled={!actionsReady} {...busyProps(cleaning)} onClick={() => { if (actionsReady) runApply(state) }}>
+                {cleaning ? t('cleanup:resourceSync.applyingButton') : APPLY_LABEL}
               </Button>
             }>{applyPlanText(state)}</Note>
-          : <p className="mr-auto text-body-regular text-notification-success-foreground">{uiText("已检查可访问的来源，没有待清理的记录、空文件夹或缓存。")}</p>}
+          : <p className="mr-auto text-body-regular text-notification-success-foreground">
+              {t('cleanup:resourceSync.nothingToClean')}
+            </p>}
       </>
     );
   }
   if (apply.start.isError && !done) {
-    result = <>{result}<Note tone="error" title={uiText("清理失败")}>{errorMessage(apply.start.error)}</Note></>;
+    result = <>{result}<Note tone="error" title={t('cleanup:resourceSync.cleanupFailed')}>{errorMessage(apply.start.error)}</Note></>;
   }
 
   return (
     <section id="resource-sync" aria-labelledby="resource-sync-title" className="flex scroll-mt-20 flex-col gap-4">
       <Fieldset layout="split" labelledBy="resource-sync-title" footer={
-        <Button data-resource-scan leadingIcon={scanned && !scanning ? AGAIN : COMPARE} {...busyProps(scanning)}
-          onClick={() => { if (!scanning) scan.start.mutate() }}>{uiText(label)}</Button>
+        <Button data-resource-scan leadingIcon={scanned && !scanning ? AGAIN : COMPARE} disabled={!actionsReady} {...busyProps(scanning)}
+          onClick={() => { if (actionsReady && !scanning) scan.start.mutate() }}>{label}</Button>
       }>
-        <FieldsetTitle id="resource-sync-title" gap="small">{uiText("资源同步")}</FieldsetTitle>
-        <p className="max-w-190 text-body-2-regular leading-5 text-text-secondary">{uiText("按馆藏记录逐条查找本地磁盘与网盘上的文件，列出文件已不存在的记录、空文件夹，以及不再被引用的缓存。")}</p>
+        <FieldsetTitle id="resource-sync-title" gap="small">{t('cleanup:tools.resourceSync')}</FieldsetTitle>
+        {scan.query.isPending || apply.query.isPending ? <div role="status" aria-label={t('cleanup:resourceSync.statusLoading')} data-skeleton="" className="skeleton-sheen h-6 rounded-md" /> : null}
+        {!scan.job && scan.query.isError ? <Note tone="error">{t('cleanup:resourceSync.scanStatusUnavailable')}</Note> : null}
+        {!apply.job && apply.query.isError ? <Note tone="error">{t('cleanup:resourceSync.applyStatusUnavailable')}</Note> : null}
+        <p className="max-w-190 text-body-2-regular leading-5 text-text-secondary">
+          {RESOURCE_SYNC_TEXT}
+        </p>
         <div aria-live="polite" className="mt-4 empty:hidden">{progress}</div>
       </Fieldset>
       <div aria-live="polite" className="flex flex-col gap-4 empty:hidden">{result}</div>

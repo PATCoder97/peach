@@ -19,12 +19,6 @@ Peach 使用 [seiso](https://github.com/scarletkc/seiso) 检查 Markdown 的职�
 
 README 保留开始使用所需的信息。字段定义放参考文档，操作步骤放 howto，设计理由放 ADR。保留现有章节锚点；移动内容时同步修复引用。
 
-## Git 与自动化输出
-
-提交主题和正文、PR 标题和正文，以及 GitHub Actions 的 workflow、job、step 显示名称、项目自有进度与结果摘要使用越南语。技术标识保留英文，包括 Conventional Commits 的 type、scope、Git trailer 键、工作流文件名、job ID、环境变量与 API 字段。例如 `fix(player): Bật hoặc ẩn nút điều khiển khi chạm vùng trống`。
-
-工具和测试的原始诊断保留原文；需要解释时补充越南语说明，保留可定位的错误证据。仓库文档与技能正文仍按各自语言约定维护。
-
 ## 公开与私有记录
 
 - 项目介绍使用「影片刮削与媒体管理」定位，说明实际功能、访问条件与限制。来源名称、协议标识、依赖署名与许可证保持准确；通用介绍不以内容题材宣传产品。
@@ -70,7 +64,9 @@ uv run --locked --extra dev seiso policy
 
 最终状态检查共用 `scripts/copy-rules.json`。明确叙述实现变更、测试名称描述变更过程时拒绝通过；可能属于条件说明的词语只提示人工核对。合法条件说明不需要添加豁免标记。明确需要保留的事故原文仍用 `copy-lint-disable-line` 逐行说明例外。
 
-Python 检查读取 AST 字符串、f-string 静态片段及注释；HTML 读取正文、注释和可见属性。JS/TS 由 `frontend/scripts/copy-check.mjs` 使用 Oxc 解析注释、字符串、模板及 JSX，忽略变量名、静态属性键和模块路径。前端文案检查随正式入口的前端 lint 用例执行，CI 由 `web-bundle` 执行；纯 Python 文档检查不要求安装 Node。
+Markdown 里的「兜底」「落盘」「闭环」「链路」意思含糊，检查拒绝通过，改写成具体机制，如后备来源、写入磁盘、下载流程；「链路本地」是网络地址类别，保留。`对齐`、`复盘` 是项目术语与技能触发词，`DOM/CSS/JS` 是证据三元组的固定写法，均保留。 <!-- copy-lint-disable-line -->
+
+Python 检查读取 AST 字符串、f-string 静态片段及注释；HTML 读取正文、注释和可见属性。JS/TS 由 `frontend/scripts/copy-check.ts` 使用 Oxc 解析注释、字符串、模板及 JSX，忽略变量名、静态属性键和模块路径。前端文案检查随正式入口的前端 lint 用例执行，CI 由 `web-bundle` 执行；纯 Python 文档检查不要求安装 Node。
 
 提交模板不是成稿；`docs/reference-snapshots/upstream/` 保存第三方原文，相对链接属于上游仓库。这两类在配置中排除。Peach 自己撰写的取证摘要、ADR、技能和依赖来源说明仍接受检查；构建目录、依赖安装目录不属于项目文档。
 

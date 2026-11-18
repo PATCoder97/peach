@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 小窗：舞台这一面里、`<dialog>` 之外的那块浮层。播放器实例由 `stage-player.ts` 搬进搬出，
  * 播放态、时间与比例也由它随播放器事件直接写在节点上；这里只画一次骨架结构、接按键与拖动。
  * 组件不随舞台重画（`memo` 且没有 props）：`hidden`、`data-corner` 与 `transform` 都是命令式改的，
@@ -8,6 +7,7 @@ import { memo, useEffect, useLayoutEffect, useRef, type MouseEvent } from 'react
 import {
   expandMiniplayer, closeMiniplayer, playMiniplayer, registerMiniplayer, seekMiniplayer,
 } from './stage-player';
+import { t } from '../../i18n';
 
 const Glyph = ({ name }: { name: string }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true"><use href={`#i-${name}`} /></svg>
@@ -19,7 +19,6 @@ const PLAY_GLYPH = { __html: '<svg viewBox="0 0 24 24" aria-hidden="true"><use h
 const pressed = (run: () => void) => (event: MouseEvent) => { event.stopPropagation(); run() };
 
 export const Miniplayer = memo(function Miniplayer() {
-  const uiText = useUiTranslation();
   const root = useRef<HTMLElement>(null);
   const card = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLDivElement>(null);
@@ -40,26 +39,27 @@ export const Miniplayer = memo(function Miniplayer() {
   }, []);
 
   useEffect(() => wireDrag(root.current!, card.current!), []);
+  useEffect(() => publishBottomSpace(root.current!), []);
 
   return (
-    <aside ref={root} data-miniplayer="" id="miniplayer" data-corner="br" aria-label={uiText("小窗播放")} hidden>
+    <aside ref={root} data-miniplayer="" id="miniplayer" data-corner="br" aria-label={t('catalog:miniplayer.label')} hidden>
       <div ref={card} data-miniplayer-card="" id="miniplayerCard">
         <div ref={frame} data-miniplayer-frame="" id="miniplayerFrame">
           <div data-miniplayer-scrim="">
-            <button type="button" data-miniplayer-button="expand" id="miniplayerExpand" aria-label={uiText("展开到详情")}
+            <button type="button" data-miniplayer-button="expand" id="miniplayerExpand" aria-label={t('catalog:miniplayer.expand')}
               aria-keyshortcuts="i" onClick={pressed(expandMiniplayer)}><Glyph name="maximize-2" /></button>
-            <button type="button" data-miniplayer-button="close" id="miniplayerClose" aria-label={uiText("关闭小窗")}
+            <button type="button" data-miniplayer-button="close" id="miniplayerClose" aria-label={t('catalog:miniplayer.close')}
               onClick={pressed(closeMiniplayer)}><Glyph name="x" /></button>
             <button ref={back} type="button" data-miniplayer-seek="" id="miniplayerBack"
               onClick={pressed(() => seekMiniplayer(-1))}><Glyph name="rotate-ccw" /></button>
-            <button ref={play} type="button" data-miniplayer-play="" id="miniplayerPlay" aria-label={uiText("暂停")} aria-keyshortcuts="k"
+            <button ref={play} type="button" data-miniplayer-play="" id="miniplayerPlay" aria-label={t('catalog:shared.pause')} aria-keyshortcuts="k"
               onClick={pressed(playMiniplayer)} dangerouslySetInnerHTML={PLAY_GLYPH} />
             <button ref={ahead} type="button" data-miniplayer-seek="" id="miniplayerAhead"
               onClick={pressed(() => seekMiniplayer(1))}><Glyph name="rotate-cw" /></button>
             <span ref={time} className="mono" data-miniplayer-time="" id="miniplayerTime">0:00 / 0:00</span>
           </div>
         </div>
-        <button ref={info} type="button" data-miniplayer-info="" id="miniplayerInfo" aria-label={uiText("展开到详情")}
+        <button ref={info} type="button" data-miniplayer-info="" id="miniplayerInfo" aria-label={t('catalog:miniplayer.expand')}
           onClick={() => expandMiniplayer()}>
           <span ref={title} data-miniplayer-title="" id="miniplayerTitle" />
           <span ref={sub} data-miniplayer-sub="" id="miniplayerSub" />
@@ -68,6 +68,29 @@ export const Miniplayer = memo(function Miniplayer() {
     </aside>
   );
 });
+
+/* 小窗停在下面两角、又和右下角的通知栈同在一侧时，把自己占的高度写成 `--miniplayer-space`，
+   通知栈（`../toaster.tsx`）落在它上沿之上，不盖住画面。手机上通知栈占满整行，下面两角都算。
+   `hidden` 与 `data-corner` 是命令式改的，所以盯属性变化，不靠重画。 */
+function publishBottomSpace(root: HTMLElement): () => void {
+  const measure = () => {
+    const corner = root.dataset.corner || '';
+    const below = !root.hidden && corner.startsWith('b') && (corner === 'br' || innerWidth <= 600);
+    if (below) document.documentElement.style.setProperty('--miniplayer-space', `${Math.ceil(root.offsetHeight + 16 + 12)}px`);
+    else document.documentElement.style.removeProperty('--miniplayer-space');
+  };
+  const attributes = new MutationObserver(measure);
+  attributes.observe(root, { attributes: true, attributeFilter: ['hidden', 'data-corner'] });
+  const size = new ResizeObserver(measure);
+  size.observe(root);
+  window.addEventListener('resize', measure);
+  measure();
+  return () => {
+    attributes.disconnect(); size.disconnect();
+    window.removeEventListener('resize', measure);
+    document.documentElement.style.removeProperty('--miniplayer-space');
+  };
+}
 
 /* 拖动只改 transform，松手按小窗中心落在哪个象限选角，再用 .5s 的 transform 过渡吸过去，过渡完把
    data-corner 换成新角、清掉 transform——上游 AnimatingSnap 就是这么落回锚点的。 */

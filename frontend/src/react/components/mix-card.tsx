@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 一叠视频的卡片：播放列表页的每一份列表，和首页那张 Mix 卡是同一件东西。
  *
  * 封面后面压着两层纸边，说明它是一叠；悬停时逐张翻过这一叠里的画面（`use-stack-flip.ts`）。
@@ -15,6 +14,7 @@ import { firstGrapheme } from '@peach/legacy/core';
 import { ArtSlot } from './art-slot';
 import { spriteGlyph } from './sprite-glyph';
 import { useStackFlip } from './use-stack-flip';
+import { t } from '../../i18n';
 
 export { MIX_FLIP_FACES, MIX_FLIP_LEAD_MS, MIX_FLIP_MS } from './use-stack-flip';
 
@@ -84,22 +84,21 @@ function Poster({ src }: { src: string }) {
 
 /** 圆框共用的那一副：38px 正圆，图铺满，首字母居中。 */
 const RING = 'relative inline-grid size-9.5 flex-none place-items-center overflow-hidden rounded-full'
-  + ' bg-background-secondary-default text-body-2-regular text-text-secondary'
+  + ' bg-media-placeholder text-body-2-regular text-text-secondary'
   + ' [&_img]:absolute [&_img]:inset-0 [&_img]:block [&_img]:size-full [&_img]:object-cover';
 
 /** 圆框里那段 HTML 由 `avatarInner` 拼：有图走图，没图退首字母，代表作头像查同一张代表作表。 */
 function Avatars({ faces, fallback, onOpenEntity }: {
   faces: readonly MixCardFace[]; fallback: string; onOpenEntity: MixCardProps['onOpenEntity'];
 }) {
-  const uiText = useUiTranslation();
   if (!faces.length) {
     return <span data-mix-initial="" aria-hidden className={`${RING} mt-0.5`}>{fallback}</span>;
   }
   return (
     <div data-mix-avatars="">
       {faces.slice(0, 5).map((face) => (
-        <button key={`${face.kind}:${face.id}`} type="button" title={uiText("打开资料页：{value0}", { value0: String(face.name) })}
-          aria-label={uiText("打开资料页：{value0}", { value0: String(face.name) })} onClick={() => onOpenEntity(face.kind, face.name)}
+        <button key={`${face.kind}:${face.id}`} type="button" title={t('shell:mixCard.openProfile', { name: face.name })}
+          aria-label={t('shell:mixCard.openProfile', { name: face.name })} onClick={() => onOpenEntity(face.kind, face.name)}
           className={`${RING} cursor-pointer outline-none`}
           dangerouslySetInnerHTML={{ __html: avatarInner(face.name, face, representativeOf(face.name), face.kind) }} />
       ))}
@@ -112,7 +111,6 @@ export function MixCard({
   ratio, artwork, artworkIdentity, relayoutArt, faceHtml, badge, glyph, wholeCard,
   ...data
 }: MixCardProps & Record<`data-${string}`, string>) {
-  const uiText = useUiTranslation();
   const flip = useStackFlip({ load: flipImages, canFlip });
   /* 壳在滚动、换页和开多选时按 `_stopHover` 收掉一切悬停动效，这张卡的翻页也在其中。 */
   const stop = useRef(flip.onPointerLeave);
@@ -136,7 +134,7 @@ export function MixCard({
             ? <ArtSlot artwork={artwork} identity={artworkIdentity} relayout={relayoutArt} />
             : poster
               ? <Poster key={poster} src={poster} />
-              : <span className="text-caption-1-regular tracking-caps text-text-secondary uppercase">{uiText("无预览")}</span>}
+              : <span className="text-caption-1-regular tracking-caps text-text-secondary uppercase">{t('shell:artworkGap.noPreview')}</span>}
           <div data-mix-faces="" hidden={!flip.faces.length}>
             {flip.faces.map((src, index) => (
               <div key={src} data-mix-face={index === flip.current ? 'on' : index === flip.leaving ? 'off' : ''}>
@@ -151,7 +149,7 @@ export function MixCard({
           <span data-mix-badge=""
             className="absolute right-2.25 bottom-2.25 z-6 flex min-h-7 items-center gap-1.5 rounded-2lg px-2.25 py-1 text-caption-1-semibold text-text-white">
             <PLAY aria-hidden className="size-(--icon-inline)" />
-            {badge ?? uiText("{value0} 个视频", { value0: String(count.toLocaleString()) })}
+            {badge ?? t('shell:mixCard.videoCount', { count: count })}
           </span>
         </div>
       </div>

@@ -1,6 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
-import { translate as t } from '../../i18n/index';
-import { useTranslation } from '../i18n';
 /* 媒体目录的行：配置页「这台电脑」与首启页共用。
  *
  * 一行是一块描边卡：路径框、「选择文件夹」、多行时的移除键，下面按含义分两排、每格上方一行标签：
@@ -11,8 +8,8 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { RiDeleteBinLine } from '@remixicon/react';
 import { MEDIA_SOURCE_ICONS } from '@peach/legacy/ui';
 
-import { IconButton } from '@/components/base/buttons/icon-button';
 import { Button } from '@/components/base/buttons/button';
+import { IconButton } from '@/components/base/buttons/icon-button';
 import { Input } from '@/components/base/input/input';
 import { Label } from '@/components/base/input/label';
 import { Select, SelectItem } from '@/components/base/select/select';
@@ -21,6 +18,7 @@ import { cx } from '@/utils/cx';
 import { ErrorText, Help, SourceMark } from './section';
 import { busyProps } from './busy-props';
 import { CLOUD_LOCATIONS, MEDIA_SOURCE_OPTIONS, type SourceCost } from '../../core/media-sources';
+import { t } from '../../i18n';
 
 /** 「选择文件夹」弹系统对话框去挑，全站用雪碧图的 `folder-search`；`folder-open` 归「打开位置」，
  * Remix Icon 里没有这一枚。 */
@@ -59,23 +57,20 @@ export function FolderFieldLine({ children }: { children: ReactNode }) {
 export function MediaReadPolicy({ index, cost, error, onChange }: {
   index: number; cost: SourceCost | ''; error?: string; onChange(cost: SourceCost): void;
 }) {
-  const uiText = useUiTranslation();
-  useTranslation();
   return <div data-media-read-policy={index} className="flex w-full flex-col gap-1 @lg:w-32">
-    <Label elementType="span" aria-hidden>{t("读取策略")}</Label>
-    <Select aria-label={uiText("媒体读取策略 {value0}", { value0: String(index + 1) })} placeholder={t("选择读取策略")} isRequired
+    <Label elementType="span" aria-hidden>{t('settings:folderRow.readPolicy')}</Label>
+    <Select aria-label={t('settings:folderRow.readPolicyNumbered', { index: index + 1 })} placeholder={t('settings:folderRow.chooseReadPolicy')} isRequired
       validationBehavior="aria" isInvalid={Boolean(error)} selectedKey={cost || null}
       onSelectionChange={(key) => { if (key === 'free' || key === 'metered') onChange(key); }}>
-      <SelectItem id="free">{t("正常读取")}</SelectItem>
-      <SelectItem id="metered">{t("代理保护")}</SelectItem>
+      <SelectItem id="free">{t('settings:folderRow.readNormal')}</SelectItem>
+      <SelectItem id="metered">{t('settings:folderRow.readDataSaver')}</SelectItem>
     </Select>
     {error ? <ErrorText>{error}</ErrorText> : null}
   </div>;
 }
 
 export function MediaReadPolicyHelp() {
-  useTranslation();
-  return <Help>{t("读取策略选「代理保护」时，会限制自动读取视频。")}</Help>;
+  return <Help>{t('settings:folderRow.readPolicyHelp')}</Help>;
 }
 
 export interface FolderRowValue { path: string; location: string }
@@ -160,7 +155,6 @@ export function FolderRow({ label, path, onPath, error, inputRef, picking, onPic
   status?: ReactNode;
   children: ReactNode;
 }) {
-  const uiText = useTranslation();
   /* 一组文件夹常共用很长的前缀，窄框里露开头的话每行都是同一段；不在编辑时露末段，
      分得出是哪一个文件夹。全文在 title 里。 */
   const box = useRef<HTMLInputElement | null>(null);
@@ -179,13 +173,13 @@ export function FolderRow({ label, path, onPath, error, inputRef, picking, onPic
   return (
     <div data-folder-row className="@container flex flex-col gap-2 rounded-2lg border border-separator-border bg-background-primary-default p-3">
       <div className="flex items-start gap-2">
-        <Input className="min-w-0 flex-1" aria-label={label} placeholder={t("媒体目录路径")}
+        <Input className="min-w-0 flex-1" aria-label={label} placeholder={t('settings:folderRow.pathPlaceholder')}
           value={path} onChange={onPath} ref={attach}
           onBlur={() => requestAnimationFrame(showTail)}
-          validationBehavior="aria" isInvalid={Boolean(error)} hint={typeof error === 'string' ? uiText(error) : error} />
+          validationBehavior="aria" isInvalid={Boolean(error)} hint={error || undefined} />
         {status ? <div className="flex h-9 shrink-0 items-center">{status}</div> : null}
-        <IconButton icon={FolderSearchIcon} aria-label={t("选择文件夹")} onClick={onPick} {...busyProps(picking)} />
-        {onRemove ? <Button variant="danger" iconOnly leadingIcon={RiDeleteBinLine} aria-label={t("移除这个文件夹")} onClick={onRemove} /> : null}
+        <IconButton icon={FolderSearchIcon} aria-label={t('settings:folderRow.pickDirectory')} onClick={onPick} {...busyProps(picking)} />
+        {onRemove ? <Button variant="danger" iconOnly leadingIcon={RiDeleteBinLine} aria-label={t('settings:folderRow.removeDirectory')} onClick={onRemove} /> : null}
       </div>
       <div className="flex flex-wrap items-end gap-2">
         {children}
@@ -202,14 +196,12 @@ export function SourceSelect({ index, value, onChange, options = MEDIA_SOURCES }
   onChange: (location: string) => void;
   options?: readonly SourceOption[];
 }) {
-  const uiText = useUiTranslation();
-  useTranslation();
   return (
-    <FolderField label={t("来源")} className="w-full @lg:w-60">
-      <Select className="w-full" aria-label={uiText("媒体来源 {value0}", { value0: String(index + 1) })} selectedKey={value}
+    <FolderField label={t('settings:folderRow.storage')} className="w-full @lg:w-60">
+      <Select className="w-full" aria-label={t('settings:folderRow.storageNumbered', { index: index + 1 })} selectedKey={value}
         onSelectionChange={(key) => { if (key !== null) onChange(String(key)); }}>
         {options.map(([kind, name]) => (
-          <SelectItem key={kind} id={kind} textValue={t(name)}><SourceMark mark={sourceMark(kind)} />{t(name)}</SelectItem>
+          <SelectItem key={kind} id={kind} textValue={name}><SourceMark mark={sourceMark(kind)} />{name}</SelectItem>
         ))}
       </Select>
     </FolderField>

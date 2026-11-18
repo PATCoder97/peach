@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 元数据字段那一类卡片的正文：一组互斥的来源值，加上还没收录的 genre。
  *
  * 一张候选卡上下两段读的是两件事：上段是这个来源给的那个值，也就是选中它就会写进数据库
@@ -13,15 +12,18 @@ import { Button } from '@/components/base/buttons/button';
 import { InputBase, TextField } from '@/components/base/input/input';
 import { CollapseChevron, CollapseRegion } from '../components/collapse-region';
 import { errorMessage } from '../../api';
+import { codedText, serverLabelList } from '../../core/server-text';
 import type { ReviewCandidate, ReviewRow } from './review';
 import { pendingGenres, recordGenre, reloadReview } from './review';
 import { ComparisonText } from './comparison-text';
+import { composingKey } from '../components/ime';
+import { t } from '../../i18n';
 
 /** 候选顺带交回来的那些字段在界面上叫什么。表里没有的按原名显示。 */
 const EVIDENCE_LABELS: Record<string, string> = {
-  title: '标题', original_title: '原标题', runtime: '来源时长', director: '导演',
-  label: 'Label', poster_url: '海报', cover_url: '封面', screenshot_urls: '截图',
-  trailer_url: '预告片',
+  title: t('manage:shared.title'), original_title: t('manage:reviewCandidate.originalTitle'), runtime: t('manage:reviewCandidate.sourceRuntime'), director: t('manage:reviewCandidate.director'),
+  label: 'Label', poster_url: t('manage:reviewCandidate.poster'), cover_url: t('manage:shared.cover'), screenshot_urls: t('manage:reviewCandidate.screenshots'),
+  trailer_url: t('manage:reviewCandidate.trailer'),
 };
 
 /** 收录 genre 时的候选词表，一份挂在整页上：每张卡各写一遍的话，同一百来个 option 会在
@@ -39,7 +41,6 @@ export function GenreTagList({ tags }: { tags: string[] }) {
 
 /** 来源依据独立展开，点击说明不会同时选中另一个来源。 */
 function CandidateEvidence({ candidate, row }: { candidate: ReviewCandidate; row: ReviewRow }) {
-  const uiText = useUiTranslation();
   const [open, setOpen] = useState(false);
   const panel = useId();
   const evidence = Object.entries(candidate.catalog_evidence || {})
@@ -49,25 +50,25 @@ function CandidateEvidence({ candidate, row }: { candidate: ReviewCandidate; row
     <div className="min-w-0">
       <Button variant="secondary" size="small" leadingIcon={CollapseChevron}
         aria-expanded={open} aria-controls={panel}
-        aria-label={uiText(open ? '收起 {source} 的来源依据' : '展开 {source} 的来源依据', { source: candidate.source || uiText('该来源') })}
+        aria-label={t(open ? 'manage:reviewCandidate.collapseEvidence' : 'manage:reviewCandidate.expandEvidence', { source: candidate.source || t('manage:reviewCandidate.thisSource') })}
         onClick={() => setOpen(!open)}>
-        <span data-copy-key="review.card.source_evidence">{uiText("来源依据")}</span>{` · ${evidence.length}`}
+        <span data-copy-key="review.card.source_evidence">{t('manage:reviewCandidate.sourceEvidence')}</span>{` · ${evidence.length}`}
       </Button>
       <CollapseRegion id={panel} open={open}>
         <dl className="flex min-w-0 flex-col gap-2 px-3 pt-2 pb-1">
           {evidence.map(([field, item]) => (
             <div key={field} className="flex min-w-0 flex-wrap gap-x-2">
               <dt className="text-caption-1-regular text-text-tertiary">
-                {uiText(EVIDENCE_LABELS[field] || field)}
+                {EVIDENCE_LABELS[field] || field}
               </dt>
               <dd className="min-w-0 text-body-2-regular break-words text-text-primary">
-                <ComparisonText value={item.display_value || ''}
+                <ComparisonText value={codedText(item, 'display_value')}
                   reference={field === row.field && row.current_value
                     ? row.current_value
-                    : row.candidates?.find(peer => peer.candidate_key !== candidate.candidate_key
-                        && peer.catalog_evidence?.[field]?.display_value)?.catalog_evidence?.[field]?.display_value} />
+                    : codedText(row.candidates?.find(peer => peer.candidate_key !== candidate.candidate_key
+                        && peer.catalog_evidence?.[field]?.display_value)?.catalog_evidence?.[field], 'display_value')} />
               </dd>
-              {(item.warnings || []).map((warning) => (
+              {serverLabelList(item.warnings, item.warning_codes, item.warning_params).map((warning) => (
                 <small key={warning} className="w-full text-caption-1-regular text-status-yellow-text">
                   {warning}
                 </small>
@@ -82,7 +83,7 @@ function CandidateEvidence({ candidate, row }: { candidate: ReviewCandidate; row
 
 function candidateHeading(candidate: ReviewCandidate) {
   const id = candidate.content_id || candidate.provider_id;
-  return `${candidate.source || '未标注来源'}${candidate.official ? ' · 官方优先' : ''}${id ? ` · ID ${id}` : ''}`;
+  return `${candidate.source || t('manage:reviewQueue.unspecifiedSource')}${candidate.official ? ` · ${t('manage:reviewCandidate.officialFirst')}` : ''}${id ? ` · ID ${id}` : ''}`;
 }
 
 function CandidateValue({ candidate, reference }: { candidate: ReviewCandidate; reference?: string }) {
@@ -90,7 +91,7 @@ function CandidateValue({ candidate, reference }: { candidate: ReviewCandidate; 
     <span className="text-body-regular text-text-primary">
       <ComparisonText value={candidate.display_value || ''} reference={reference} />
     </span>
-    {(candidate.warnings || []).map(warning => (
+    {serverLabelList(candidate.warnings, candidate.warning_codes, candidate.warning_params).map(warning => (
       <span key={warning} className="text-body-2-regular text-status-yellow-text">{warning}</span>
     ))}
   </span>;
@@ -107,7 +108,6 @@ export function CandidateChoices(
     locked: boolean;
   },
 ) {
-  const uiText = useUiTranslation();
   const candidates = row.candidates || [];
   if (!candidates.length) return null;
   if (candidates.length === 1) {
@@ -122,7 +122,7 @@ export function CandidateChoices(
     );
   }
   return (
-    <RadioGroup aria-label={uiText('{field}的来源', { field: fieldName || uiText('资料') })} value={value} isDisabled={locked}
+    <RadioGroup aria-label={t('manage:reviewCandidate.sourceFor', { field: fieldName || t('manage:scanFetch.slowWhatMetadata') })} value={value} isDisabled={locked}
       onChange={onChange}>
       <div className="flex min-w-0 flex-col gap-3">
       {candidates.map((candidate) => (
@@ -145,34 +145,33 @@ function GenreRow(
     genre: string; tags: string[]; locked: boolean; toast(message: string): void;
   },
 ) {
-  const uiText = useUiTranslation();
   const [draft, setDraft] = useState('');
   const [problem, setProblem] = useState('');
   const record = useMutation({
     mutationFn: (tag: string) => recordGenre(genre, tag),
     onSuccess: async (result, tag) => {
-      if (!result.ok) { setProblem(result.error || '服务端拒绝了这次收录'); return }
-      toast(tag ? `已把「${genre}」收录为标签「${tag}」` : `已把「${genre}」判为非内容标签`);
+      if (!result.ok) { setProblem(result.error || t('manage:reviewCandidate.mapRejected')); return }
+      toast(tag ? t('manage:reviewCandidate.mapped', { genre, tag }) : t('manage:reviewCandidate.markedNonContent', { genre }));
       await reloadReview();
     },
     onError: (cause) => setProblem(errorMessage(cause)),
   });
   const accept = () => {
     const tag = draft.trim();
-    if (!tag) { setProblem('先给它一个中文标签'); return }
+    if (!tag) { setProblem(t('manage:reviewCandidate.tagRequired')); return }
     setProblem('');
     record.mutate(tag);
   };
   return (
     <div className="flex flex-wrap items-center gap-2">
       <b lang="ja" className="text-body-medium text-text-primary">{genre}</b>
-      <TextField aria-label={uiText("「{value0}」收录成的中文标签", { value0: String(genre) })} value={draft} onChange={setDraft}
+      <TextField aria-label={t('manage:reviewCandidate.tagFor', { genre })} value={draft} onChange={setDraft}
         maxLength={40} isDisabled={locked || record.isPending} className="min-w-40 flex-1">
         {/* 输入法还在组词时的那一下 Enter 是「选这个词」，不是「提交」。 */}
         <InputBase size="small" list={tags.length ? GENRE_TAGS_ID : undefined}
-          autoComplete="off" placeholder={uiText("中文标签")}
+          autoComplete="off" placeholder={t('manage:reviewCandidate.tagPlaceholder')}
           onKeyDown={(event) => {
-            if (event.key !== 'Enter' || event.nativeEvent.isComposing) return;
+            if (event.key !== 'Enter' || composingKey(event.nativeEvent)) return;
             event.preventDefault();
             accept();
           }} />
@@ -180,9 +179,9 @@ function GenreRow(
       {/* 两个结论都是次级键：这张卡上的主动作是「通过」，把词收进表里只是让那一步有得
           可选。收录挂上 primary 的话，同一张卡上会有两个蓝底键在抢「按这里」。 */}
       <Button variant="secondary" size="small" disabled={locked || record.isPending}
-        onClick={accept}>{uiText("收录")}</Button>
+        onClick={accept}>{t('manage:reviewCandidate.map')}</Button>
       <Button variant="secondary" size="small" disabled={locked || record.isPending}
-        onClick={() => { setProblem(''); record.mutate('') }}>{uiText("不是内容")}</Button>
+        onClick={() => { setProblem(''); record.mutate('') }}>{t('manage:reviewCandidate.notContent')}</Button>
       {problem
         ? <p role="status" className="w-full text-body-2-regular text-text-error-primary">{problem}</p>
         : null}
@@ -198,12 +197,11 @@ export function PendingGenres(
     row: ReviewRow; tags: string[]; locked: boolean; toast(message: string): void;
   },
 ) {
-  const uiText = useUiTranslation();
   const genres = pendingGenres(row);
   if (!genres.length) return null;
   return (
-    <div role="group" aria-label={uiText("未收录 genre")} className="flex flex-col gap-2 border-t border-separator-border pt-4">
-      <h5 className="text-body-2-medium text-text-secondary">{uiText("未收录 genre · {value0}", { value0: String(genres.length) })}</h5>
+    <div role="group" aria-label={t('manage:reviewCandidate.unmappedGenres')} className="flex flex-col gap-2 border-t border-separator-border pt-4">
+      <h5 className="text-body-2-medium text-text-secondary">{t('manage:reviewCandidate.unmappedGenresCount', { count: genres.length })}</h5>
       <div role="list" className="flex flex-col">
         {genres.map((genre, index) => (
           <div key={genre} role="listitem"

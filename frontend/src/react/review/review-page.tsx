@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 人工复核页：把带出处的候选摆到人面前，等一次明确的批准或否决。
  *
  * ADR-0018 的确定项在扫描与资料处理任务结束时已经落库；这一页只读取剩下的判断题，
@@ -13,17 +12,20 @@ import { useTranslation as useUiTranslation } from "../i18n";
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { RiCheckboxCircleLine } from '@remixicon/react';
-import { Tab, TabPanel, Tabs } from 'react-aria-components';
 
 import { Button } from '@/components/base/buttons/button';
 import type { ReviewProps } from '../bundle';
 import { errorMessage } from '../../api';
-import { DOTS, paginationRange } from '../../pagination';
+import type { BulkAction } from '../components/bulk-action';
+import { DataTableFooter } from '../components/table-controls';
+import { queryClient } from '../query';
+import { enterPageSelection, usePageSelection } from '../components/page-selection';
 import { EmptyState } from '../components/empty-state';
 import { Note } from '../components/note';
 import { Page } from '../components/page';
-import { PillAriaTabList } from '../components/pill-aria-tab-list';
+import { SortableBoardTabs, useNavigationOrder } from '../components/navigation-order';
 import { ExternalLink } from '../settings/section';
+import { AutoLandingsCard } from './auto-landings-card';
 import { BulkToolbar } from './bulk-toolbar';
 import { GenreTagList } from './candidate-form';
 import { ReviewCard } from './review-card';
@@ -32,42 +34,16 @@ import {
   canApprove, currentReviewRow, DEFAULT_CATEGORY, decisionPayload, decisionReceipt, defaultChoice,
   fetchReview, filterReviewRows, groupReviewRows, isReviewCategory, mirrorText,
   REVIEW_CATEGORIES, REVIEW_KEY, REVIEW_LABELS, reviewGroupingOptions,
-  REVIEW_QUEUES, REVIEW_QUEUE_LABELS, reviewQueueData, reviewQueueOf,
+  REVIEW_QUEUES, reviewQueueData, reviewQueueOf,
   reviewWindow, selectReviewRange, settleReviewRows, submitDecision,
 } from './review';
+import { t } from '../../i18n';
 
 // 与配置页共用 BoardUI gray PillTab 样式；保留 tabpanel 与复核队列计数。
 const TAB_CLASS = 'flex cursor-pointer items-center justify-between gap-2';
 
-/** 页码。上一页／下一页在两端，页码居中，页数多时两侧折成「…」。 */
-function Pagination(
-  { page, pages, onPage }: { page: number; pages: number; onPage(page: number): void },
-) {
-  const uiText = useUiTranslation();
-  if (pages <= 1) return null;
-  return (
-    <nav aria-label={uiText("复核分页")} data-pagination-layout="" className="inline-grid w-full min-w-0 items-center gap-2">
-      <Button variant="secondary" size="small" disabled={page <= 1}
-        onClick={() => onPage(page - 1)}>{uiText("上一页")}</Button>
-      <ul className="flex min-w-0 flex-wrap items-center justify-center gap-1">
-        {paginationRange(page, pages).map((item, at) => (
-          <li key={item === DOTS ? `dots-${at}` : item}>
-            {item === DOTS
-              ? <span aria-hidden className="px-1 text-body-2-regular text-text-tertiary">{DOTS}</span>
-              : <Button variant={item === page ? 'secondary' : 'ghost'} size="small"
-                  aria-label={uiText('第 {page} 页', { page: item })} aria-current={item === page ? 'page' : undefined}
-                  onClick={() => onPage(Number(item))}>{item}</Button>}
-          </li>
-        ))}
-      </ul>
-      <Button variant="secondary" size="small" disabled={page >= pages}
-        onClick={() => onPage(page + 1)}>{uiText("下一页")}</Button>
-    </nav>
-  );
-}
-
 export function ReviewPage(props: ReviewProps) {
-  const uiText = useUiTranslation();
+  const categoryOrder = useNavigationOrder('review').keys.filter(isReviewCategory);
   const [narrow, setNarrow] = useState(() => matchMedia('(max-width:900px)').matches);
   useEffect(() => {
     const query = matchMedia('(max-width:900px)');
@@ -86,9 +62,13 @@ export function ReviewPage(props: ReviewProps) {
   const [filter, setFilter] = useState('');
   const [fieldFilter, setFieldFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   /* 勾选、选中的来源值、勾上的作品样本、失败原因，身份都是 `item_key`：翻页、换分组
      之后手里还是同一批东西。它们不进地址栏——那是这一刻手里的一批，不是这一页的身份。 */
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set<string>());
+  usePageSelection(() => setSelected(new Set<string>()));
+  // 直接勾某一项等于进入多选（右上角开关同一份状态）。
+  useEffect(() => { if (selected.size) enterPageSelection() }, [selected]);
   const [choices, setChoices] = useState<ReadonlyMap<string, RowChoice>>(new Map());
   const [errors, setErrors] = useState<ReadonlyMap<string, string>>(new Map());
   const [feedback, setFeedback] = useState('');
@@ -136,8 +116,9 @@ export function ReviewPage(props: ReviewProps) {
     groupOptions.some(([key]) => key === groupBy) ? groupBy : 'candidates';
   const groups = useMemo(() => groupReviewRows(fieldQueue, activeGroupBy), [fieldQueue, activeGroupBy]);
   const activeFilter = groups.some((group) => group.key === filter) ? filter : '';
-  const win = useMemo(() => reviewWindow(filterReviewRows(fieldQueue, activeGroupBy, activeFilter), page),
-    [fieldQueue, activeGroupBy, activeFilter, page]);
+  const filteredRows = useMemo(() => filterReviewRows(fieldQueue, activeGroupBy, activeFilter),
+    [fieldQueue, activeGroupBy, activeFilter]);
+  const win = useMemo(() => reviewWindow(filteredRows, page, pageSize), [filteredRows, page, pageSize]);
   const pageKeys = win.rows.map((row) => row.item_key);
   const onPage = new Set(pageKeys);
   /* 这一页上一张都没有的组不画分组条：条子底下空着，读起来像加载坏了。 */
@@ -185,7 +166,7 @@ export function ReviewPage(props: ReviewProps) {
     mutationFn: ({ row, status, category: target }: { row: ReviewRow; status: DecisionStatus; category: ReviewCategory }) =>
       submitDecision(decisionPayload(target, currentReviewRow(target, row), status, choiceOf(row))),
     onSuccess: (result, { row, status, category: target }) => {
-      if (!result.ok) { fail(row.item_key, result.error || '服务端拒绝了这次判定'); return }
+      if (!result.ok) { fail(row.item_key, result.error || t('manage:reviewPage.decisionRejected')); return }
       settleReviewRows(target, [row.item_key], status);
       forget([row.item_key]);
       toast(decisionReceipt(status));
@@ -203,10 +184,10 @@ export function ReviewPage(props: ReviewProps) {
       const failures: [string, string][] = [];
       for (const [at, row] of rows.entries()) {
         if (!alive.current) break;
-        setFeedback(`正在处理 ${at} / ${rows.length}`);
+        setFeedback(t('manage:reviewPage.processingProgress', { current: at, total: rows.length }));
         try {
           const result = await submitDecision(decisionPayload(target, currentReviewRow(target, row), status, choiceOf(row)));
-          if (!result.ok) throw new Error(result.error || '服务端未采用该项');
+          if (!result.ok) throw new Error(result.error || t('manage:reviewPage.itemNotAccepted'));
           done.push(row.item_key);
         } catch (cause) {
           failures.push([row.item_key, errorMessage(cause)]);
@@ -219,23 +200,51 @@ export function ReviewPage(props: ReviewProps) {
       forget(done);
       failures.forEach(([key, message]) => fail(key, message));
       setFeedback('');
-      const message = { approved: '已通过 {count} 项', rejected: '已忽略 {count} 项', skipped: '已移至稍后处理 {count} 项', restore: '已恢复待处理 {count} 项' }[status];
-      toast(uiText(message,{count:done.length})
-        + (failures.length ? uiText('，{value0} 项未完成',{value0:failures.length}) : ''));
     },
     onError: (cause) => { setFeedback(errorMessage(cause)) },
   });
 
-  const runBulk = (status: DecisionStatus) => {
-    if (bulk.isPending || !selectedRows.length) return;
-    if (status === 'approved' && metadata
-      && selectedRows.some((row) => !choiceOf(row).candidateKey)) {
-      setFeedback('请先为所选资料选择要采用的来源。');
-      return;
-    }
-    setFeedback('');
-    bulk.mutate({ status, category, rows: selectedRows });
+  /* 判定键：忽略与稍后能放回待处理，放回待处理能按原来的队列改回去；通过会写进真相字段，撤不回。
+     撤销只动这一批里真的写成了的那几条。 */
+  const host = { receipt: toast, failure: (cause: unknown) => setFeedback(errorMessage(cause)) };
+  const back: Partial<Record<ReviewQueue, DecisionStatus>> = { ignored: 'rejected', later: 'skipped' };
+  const decideMany = (status: DecisionStatus, label: string): BulkAction<ReviewRow> => {
+    let outcome = { done: [] as string[], failures: [] as unknown[] };
+    return {
+    key: status, label, reversal: status === 'approved' ? 'irreversible' : 'undo', danger: false,
+    confirm: (rows) => {
+      if (status === 'approved' && metadata && rows.some((row) => !choiceOf(row).candidateKey)) {
+        throw new Error(t('manage:reviewPage.chooseSourceFirst'));
+      }
+      setFeedback('');
+      return { title: label, body: t(`manage:reviewPage.confirm.${status}`, { count: rows.length }) };
+    },
+    run: async (rows) => {
+      outcome = await bulk.mutateAsync({ status, category, rows: [...rows] });
+      const { done } = outcome;
+      if (status === 'approved') return;
+      const target = category;
+      const settled = rows.filter((row) => done.includes(row.item_key));
+      const previous = status === 'restore' ? back[queueView] : 'restore';
+      return async () => {
+        for (const row of settled) {
+          await submitDecision(decisionPayload(target, currentReviewRow(target, row), previous as DecisionStatus, choiceOf(row)));
+        }
+        await queryClient.invalidateQueries({ queryKey: REVIEW_KEY });
+      };
+    },
+    receipt: () => t({ approved: 'manage:reviewPage.approvedCount', rejected: 'manage:reviewPage.ignoredCount',
+      skipped: 'manage:reviewPage.laterCount', restore: 'manage:reviewPage.pendingCount' }[status], { count: outcome.done.length })
+      + (outcome.failures.length ? t('manage:reviewPage.notCompletedSuffix', { count: outcome.failures.length }) : ''),
+    };
   };
+  const approvable = selectedRows.every((row) => canApprove(category, row));
+  const bulkActions = [
+    ...(queueView !== 'ignored' ? [decideMany('rejected', t('manage:reviewToolbar.ignoreSelected'))] : []),
+    queueView === 'pending' ? decideMany('skipped', t('manage:reviewToolbar.laterSelected')) : decideMany('restore', t('manage:reviewToolbar.restoreSelected')),
+    ...(queueView !== 'ignored' ? [decideMany('approved', t('manage:reviewToolbar.approveSelected'))] : []),
+  ].map((action) => ({ action, items: selectedRows, host,
+    disabled: bulk.isPending || decide.isPending || (action.key === 'approved' && !approvable) }));
 
   /* 统一选择来源只动所选那几行的选中项，不替人按下「通过」：改的是要写什么，判断仍归人。 */
   const unifySource = (source: string) => {
@@ -247,7 +256,7 @@ export function ReviewPage(props: ReviewProps) {
       }
       return next;
     });
-    setFeedback(`已选择 ${source}，点击通过所选采用。`);
+    setFeedback(t('manage:reviewPage.sourceChosen', { source }));
   };
 
   const reveal = async (id: number) => {
@@ -270,10 +279,10 @@ export function ReviewPage(props: ReviewProps) {
     <Page>
       <div className="flex flex-col gap-5 pb-10">
       {locked ? (
-        <Note tone="warning" title={uiText("本机只能浏览")}
+        <Note tone="warning" title={t('manage:reviewPage.readOnly')}
           extra={writerUrl
             ? <p className="text-body-2-regular">
-                <ExternalLink href={writerUrl}>{uiText("前往写入端复核")}</ExternalLink>
+                <ExternalLink href={writerUrl}>{t('manage:reviewPage.goToPrimary')}</ExternalLink>
               </p>
             : undefined}>
           {mirror}
@@ -282,33 +291,24 @@ export function ReviewPage(props: ReviewProps) {
       <GenreTagList tags={genreTags} />
 
       {/* 分类目录位于正文左侧；窄屏使用正文上方的导航。 */}
-      <Tabs orientation={narrow ? 'horizontal' : 'vertical'} selectedKey={category} onSelectionChange={(key) => {
-        const next = String(key);
-        if (isReviewCategory(next)) goCategory(next);
-      }} className="flex flex-col gap-5 review-split:flex-row review-split:items-start review-split:gap-6">
+      <div className="flex flex-col gap-5 review-split:flex-row review-split:items-start review-split:gap-6">
         <div data-section-nav className="w-full min-w-0 review-split:sticky review-split:top-topbar review-split:w-review-tabs review-split:shrink-0">
-          <h2 id="reviewcategories">{uiText("复核分类")}</h2>
-          <PillAriaTabList scrollable={narrow} aria-labelledby="reviewcategories" data-section-items
-            className="flex review-split:flex-col review-split:items-stretch">
-            {REVIEW_CATEGORIES.map((key) => {
+          <h2 id="reviewcategories">{t('manage:reviewPage.categories')}</h2>
+          <SortableBoardTabs group="review" label={t('manage:reviewPage.categories')} value={category} onChange={goCategory}
+            orientation={narrow ? 'horizontal' : 'vertical'} panelPrefix="review" sectionItems
+            className="" itemClassName={TAB_CLASS} disabled={decide.isPending || bulk.isPending}
+            tabs={REVIEW_CATEGORIES.map((key) => {
               const count = Number(snapshot.counts[key] || 0);
-              return (
-                <Tab key={key} id={key} className={TAB_CLASS} isDisabled={decide.isPending || bulk.isPending}
-                  data-pill-selected={category === key ? '' : undefined} data-pill-variant="gray">
-                  {uiText(REVIEW_LABELS[key])}
-                  {/* 计数走独立徽标，为 0 时整枚去掉，不留一个「0」占位。 */}
-                  {count
+              return { value: key, label: REVIEW_LABELS[key], badge: count
                     ? <span className="tabular-nums text-caption-1-medium text-text-secondary">
                         {count.toLocaleString()}
                       </span>
-                    : null}
-                </Tab>
-              );
-            })}
-          </PillAriaTabList>
+                    : null };
+            })} />
         </div>
 
-        <TabPanel id={category} className="flex min-w-0 flex-1 flex-col gap-5">
+        <div role="tabpanel" id={`review-panel-${category}`} aria-labelledby={`review-tab-${category}`}
+          className="flex min-w-0 flex-1 flex-col gap-5">
             <BulkToolbar queueView={queueView} queueCounts={queueCounts} onQueueChange={goQueue} locked={locked}
               fields={fields} fieldFilter={activeField}
               onFieldFilter={(next) => { setFieldFilter(next); setFilter(''); setPage(1) }}
@@ -316,18 +316,17 @@ export function ReviewPage(props: ReviewProps) {
               onGroupBy={(next) => { setGroupBy(next); setFilter(''); setPage(1) }}
               groups={groups} filter={activeFilter}
               onFilter={(next) => { setFilter(next); setPage(1) }}
-              pageKeys={pageKeys} selected={selected} onSelected={setSelected}
+              pageKeys={pageKeys} allKeys={filteredRows.map((row) => row.item_key)} selected={selected} onSelected={setSelected}
               selectedRows={selectedRows} metadata={metadata}
-              approvable={selectedRows.every((row) => canApprove(category, row))}
               busy={bulk.isPending || decide.isPending} feedback={feedback}
-              onUnifySource={unifySource} onRun={runBulk} />
+              onUnifySource={unifySource} actions={bulkActions} />
 
           {win.rows.length ? pageGroups.map((group) => (
             <section key={group.key} className="flex flex-col gap-3">
               {pageGroups.length > 1 || activeGroupBy !== 'candidates' ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-body-medium text-text-primary">
-                    {`${uiText(group.title)} · ${group.rows.length}`}
+                    {`${group.title} · ${group.rows.length}`}
                   </h3>
                   {locked ? null : (
                     <Button variant="ghost" size="small" onClick={() => {
@@ -337,7 +336,7 @@ export function ReviewPage(props: ReviewProps) {
                       for (const key of keys) { if (all) next.delete(key); else next.add(key) }
                       setSelected(next);
                     }}>
-                      {group.rows.every((row) => selected.has(row.item_key)) ? uiText("清空本组") : uiText("全选本组")}
+                      {group.rows.every((row) => selected.has(row.item_key)) ? t('manage:reviewPage.clearGroup') : t('manage:reviewPage.selectGroup')}
                     </Button>
                   )}
                 </div>
@@ -369,25 +368,30 @@ export function ReviewPage(props: ReviewProps) {
             </section>
           )) : review.isError && !review.data ? (
             /* 读不到队列和队列是空的不是一回事：说清楚是读取失败，给一颗重试键。 */
-            <Note tone="error" title={uiText("复核队列读取失败")} action={
-              <Button variant="secondary" size="small" disabled={review.isFetching} onClick={() => void review.refetch()}>{uiText("立即重试")}</Button>
+            <Note tone="error" title={t('manage:reviewPage.queueLoadFailed')} action={
+              <Button variant="secondary" size="small" disabled={review.isFetching} onClick={() => void review.refetch()}>{t('manage:shared.retryNow')}</Button>
             }>
               {errorMessage(review.error)}
             </Note>
           ) : (
-            <EmptyState icon={RiCheckboxCircleLine} title={uiText("此分类没有{value0}项目", { value0: uiText(REVIEW_QUEUE_LABELS[queueView]) })}
+            <EmptyState icon={RiCheckboxCircleLine} title={t({ pending: 'manage:reviewPage.emptyPending', later: 'manage:reviewPage.emptyLater', ignored: 'manage:reviewPage.emptyIgnored' }[queueView])}
               actions={REVIEW_CATEGORIES.some(key => key !== category && Number(snapshot.counts[key] || 0) > 0)
                 ? <Button size="small" onClick={() => {
-                    const next = REVIEW_CATEGORIES.find(key => key !== category && Number(snapshot.counts[key] || 0) > 0);
+                    const next = categoryOrder.find(key => key !== category && Number(snapshot.counts[key] || 0) > 0);
                     if (next) goCategory(next);
-                  }}>{uiText("查看其他分类")}</Button> : undefined}>
-              {queueView === 'pending' ? uiText("可切换分类查看其他待确认资料。") : uiText("{value0}的资料会保留在这里，可恢复到待处理。", { value0: uiText(REVIEW_QUEUE_LABELS[queueView]) })}
+                  }}>{t('manage:reviewPage.viewOtherCategories')}</Button> : undefined}>
+              {queueView === 'pending' ? t('manage:reviewPage.switchCategoryHint') : t(queueView === 'later' ? 'manage:reviewPage.laterKeptHint' : 'manage:reviewPage.ignoredKeptHint')}
             </EmptyState>
           )}
 
-          <Pagination page={win.page} pages={win.pages} onPage={setPage} />
-        </TabPanel>
-      </Tabs>
+          {filteredRows.length ? <DataTableFooter label={t('manage:reviewPage.footerLabel')} total={filteredRows.length}
+            pagination={{ pageIndex: win.page - 1, pageSize }}
+            onChange={(next) => { setPage(next.pageIndex + 1); setPageSize(next.pageSize) }} /> : null}
+          {metadata && queueView === 'pending'
+            ? <AutoLandingsCard locked={locked} openItem={openItem} toast={toast} />
+            : null}
+        </div>
+      </div>
       </div>
     </Page>
   );

@@ -1,4 +1,3 @@
-import { useTranslation as useUiTranslation } from "../i18n";
 /* 详情浮窗右侧那一列队列（Mix、分卷、版本、播放列表、关注的合集与多媒体）。
  *
  * 队列、行与条目各挂一枚 `data-mix-*`，样式在
@@ -6,6 +5,7 @@ import { useTranslation as useUiTranslation } from "../i18n";
  * 拖动借壳的 `wireDrag`，由调用方经 `listRef` 接上。 */
 import { useCallback, useLayoutEffect, useRef, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
 import { icon } from '@peach/legacy/core';
+import { t } from '../../i18n';
 
 export function MixQueue({ kind, title, summary, onClose, actions, listRef, children, ...data }: {
   kind: string;
@@ -17,7 +17,6 @@ export function MixQueue({ kind, title, summary, onClose, actions, listRef, chil
   listRef?: Ref<HTMLDivElement>;
   children: ReactNode;
 } & Record<`data-${string}`, string>) {
-  const uiText = useUiTranslation();
   const list = useRef<HTMLDivElement | null>(null);
   const attach = useCallback((node: HTMLDivElement | null) => {
     list.current = node;
@@ -43,7 +42,7 @@ export function MixQueue({ kind, title, summary, onClose, actions, listRef, chil
         <div data-mix-queue-actions="">
           {actions}
           {/* 详情底部的队列头不放关闭键，关舞台用媒体框上那一枚（`stage.css`）。 */}
-          <button type="button" data-queue-close="" title={uiText("关闭")} aria-label={uiText("关闭")} onClick={onClose}
+          <button type="button" data-queue-close="" title={t('shell:shared.close')} aria-label={t('shell:shared.close')} onClick={onClose}
             dangerouslySetInnerHTML={{ __html: icon('x') }} />
         </div>
       </div>

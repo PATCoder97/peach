@@ -108,6 +108,25 @@ class HistoryFileTests(unittest.TestCase):
         self.assertEqual(kept, ['test_slow', 'test_red', 'test_off'])
         self.assertTrue(all(line['run'] == first['run'] for line in lines[1:4]))
 
+    def test_flaky_passes_are_recorded_and_ranked_by_how_often_they_recur(self):
+        history.append_flaky(runner.ROOT, ['frontend/e2e/search.test.ts', 'test_a'], folder=self.folder)
+        history.append_flaky(runner.ROOT, ['frontend/e2e/search.test.ts'], folder=self.folder)
+        history.append(runner.ROOT, scope='full:full', files=[], rows=[], folder=self.folder)
+        records = list(history.read_records([self.folder]))
+        flaky = [record for record in records if record['type'] == 'flaky']
+        self.assertEqual(len(flaky), 2)
+        for field in ('time', 'head', 'branch', 'ci', 'selectors'):
+            self.assertIn(field, flaky[0])
+        ranking = history.flaky_ranking(records)
+        self.assertEqual([(row['selector'], row['count']) for row in ranking],
+                         [('frontend/e2e/search.test.ts', 2), ('test_a', 1)])
+        self.assertEqual(history.flaky_ranking(records, since='9999'), [], '统计窗口之外的不算')
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(history.main(['flaky', '--folder', str(self.folder)]), 0)
+        self.assertIn('frontend/e2e/search.test.ts', output.getvalue())
+        with history.running():
+            self.assertIsNone(history.append_flaky(runner.ROOT, ['x']), '用例里调运行器不写真实历史')
+
     def test_a_history_that_cannot_be_written_only_warns(self):
         blocked = self.folder / 'not-a-directory'
         blocked.write_text('', encoding='utf-8')
@@ -115,7 +134,7 @@ class HistoryFileTests(unittest.TestCase):
         with contextlib.redirect_stderr(errors):
             self.assertIsNone(history.append(runner.ROOT, scope='full:full', files=[], rows=[],
                                              folder=blocked))
-        self.assertIn('không ảnh hưởng kết luận lượt này', errors.getvalue())
+        self.assertIn('不影响本次判定', errors.getvalue())
 
     def test_runs_started_by_a_test_do_not_write_the_real_history_or_take_outer_rows(self):
         saved = list(history._external)

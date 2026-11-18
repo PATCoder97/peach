@@ -1,0 +1,937 @@
+{
+  "holdToConfirm": {
+    "label": "Giữ tới {{action}}",
+    "instruction": "Giữ chuột, Space hoặc Enter trong 2 giây để xác nhận. Phát hành sớm để hủy bỏ."
+  },
+  "accessSetup": {
+    "enterWithoutPassword": "Tiếp tục mà không cần đăng nhập",
+    "lanPasswordHint": "Được khuyến nghị để truy cập mạng LAN. Nếu không có thì bất kỳ thiết bị nào trên cùng một mạng đều có thể truy cập được.",
+    "lede": "Chọn xem việc mở Peach có yêu cầu đăng nhập hay không.",
+    "passwordHelp": "Yêu cầu đăng nhập để truy cập Peach.",
+    "passwordLength": "Nhập từ 8 đến 256 ký tự.",
+    "saveFailed": "Không thể lưu cài đặt quyền truy cập. Hãy thử lại.",
+    "setPasswordAndEnter": "Đặt mật khẩu và tiếp tục",
+    "title": "Cài đặt truy cập",
+    "unreachable": "Không kết nối được Peach. Kiểm tra ứng dụng vẫn đang chạy rồi thử lại."
+  },
+  "artworkGap": {
+    "coverFileMissing": "Thiếu tệp bìa",
+    "coverNotFound": "Chưa có ảnh bìa",
+    "coverPending": "Chưa có bìa chính thức",
+    "fetchCover": "Lấy ảnh bìa",
+    "fetching": "Đang lấy dữ liệu",
+    "ffmpegMissing": "Không tìm thấy FFmpeg",
+    "fillInIncomplete": "Chưa bổ sung xong",
+    "fillInPreviews": "Bổ sung bản xem trước",
+    "fillingIn": "Điền vào",
+    "frameFilesMissing": "Thiếu tệp khung xem trước",
+    "framesPending": "Khung chưa được trích xuất",
+    "framesUpdating": "Khung xem trước đang cập nhật",
+    "isoSkipped": "Không trích xuất khung cho ISO",
+    "loadInterrupted": "Tải hình ảnh bị gián đoạn",
+    "meteredSkipped": "Tiết kiệm dữ liệu · Không trích xuất khung trong quá trình đồng bộ hóa",
+    "noCover": "Không có ảnh bìa",
+    "noOfficialCover": "Không tìm thấy bìa chính thức có thể sử dụng được",
+    "noPreview": "Không có bản xem trước",
+    "onlineSkipped": "Không trích xuất khung để lưu trữ trực tuyến",
+    "previewFailed": "Không thể tạo hình ảnh xem trước",
+    "previewNotFound": "Chưa có bản xem trước",
+    "previewsBusy": "Có thể điền vào sau khi nhiệm vụ hiện tại kết thúc",
+    "previewsOff": "Trước tiên bật tạo bản xem trước video trong cài đặt thư viện phương tiện",
+    "probeFailed": "Thăm dò không thành công, không trích xuất được khung hình",
+    "serverStatus": "Máy chủ trả về {{status}}",
+    "serviceUnreachable": "Không thể truy cập dịch vụ Peach",
+    "siteNoImage": "Trang nguồn không trả lại hình ảnh",
+    "strmSkipped": "Không trích xuất khung cho STRM"
+  },
+  "batchCatalog": {
+    "addToWatchLater": "Thêm vào xem sau",
+    "confirmDelete_one": "Xóa vĩnh viễn các tệp và bản ghi thư viện của mục đã chọn {{count, number}}.",
+    "confirmDelete_other": "Xóa vĩnh viễn các tệp và bản ghi thư viện của các mục đã chọn {{count, number}}.",
+    "confirmDispose_one": "Chuyển mục đã chọn {{count, number}} vào thùng rác. Tập tin vẫn ở nguyên vị trí của nó.",
+    "confirmDispose_other": "Chuyển các mục đã chọn {{count, number}} vào thùng rác. Các tệp vẫn ở vị trí cũ.",
+    "confirmLater_one": "Thêm mục đã chọn {{count, number}} để xem sau.",
+    "confirmLater_other": "Thêm các mục đã chọn {{count, number}} để xem sau.",
+    "confirmLike_one": "Thích {{count, number}} mục đã chọn. Những lý do như hiện tại được giữ lại.",
+    "confirmLike_other": "Thích các mục được chọn {{count, number}}. Những lý do như hiện tại được giữ lại.",
+    "confirmRestore_one": "Khôi phục {{count, number}} mục đã chọn từ thùng rác vào bộ sưu tập.",
+    "confirmRestore_other": "Khôi phục các mục đã chọn {{count, number}} từ thùng rác vào bộ sưu tập.",
+    "confirmSeen_one": "Đánh dấu mục đã chọn {{count, number}} là đã xem.",
+    "confirmSeen_other": "Đánh dấu các mục đã chọn {{count, number}} là đã xem.",
+    "deleteSelected": "Xóa vĩnh viễn các mục đã chọn",
+    "doneDelete_one": "Đã xóa vĩnh viễn {{count, number}} mục",
+    "doneDelete_other": "Đã xóa vĩnh viễn các {{count, number}} mục",
+    "doneDispose_one": "Đã chuyển {{count, number}} mục vào thùng rác",
+    "doneDispose_other": "Đã chuyển các {{count, number}} mục vào thùng rác",
+    "doneLater_one": "Đã thêm {{count, number}} mục để xem sau",
+    "doneLater_other": "Đã thêm {{count, number}} mục vào xem sau",
+    "doneLike_one": "Đã thích {{count, number}} mục",
+    "doneLike_other": "Đã thích {{count, number}} mục",
+    "doneRestore_one": "Đã khôi phục {{count, number}} mục",
+    "doneRestore_other": "Đã khôi phục {{count, number}} mục",
+    "doneSeen_one": "Đã đánh dấu {{count, number}} mục là đã xem",
+    "doneSeen_other": "Đã đánh dấu đã xem {{count, number}} mục",
+    "likeSelected": "Thích các mục đã chọn",
+    "markWatched": "Đánh dấu đã xem",
+    "restoreSelected": "Khôi phục mục đã chọn"
+  },
+  "batchFollow": {
+    "confirmIgnore_one": "Bỏ qua {{count, number}} video đã chọn từ Đang theo dõi. Nếu nó nằm trong mong muốn của bạn và chưa có trong bộ sưu tập, nó sẽ bị xóa khỏi mong muốn.",
+    "confirmIgnore_other": "Bỏ qua các {{count, number}} video đã chọn từ Đang theo dõi. Bất kỳ thứ gì bạn muốn mà chưa có trong bộ sưu tập đều bị xóa khỏi mong muốn.",
+    "confirmSave_one": "Lưu video đã chọn {{count, number}} từ Đang theo dõi vào cơ sở dữ liệu.",
+    "confirmSave_other": "Lưu các video đã chọn {{count, number}} từ Đang theo dõi vào cơ sở dữ liệu.",
+    "confirmSeen_one": "Đánh dấu video được chọn {{count, number}} từ Đang theo dõi là đã xem.",
+    "confirmSeen_other": "Đánh dấu các video được chọn {{count, number}} từ Đang theo dõi là đã xem.",
+    "doneIgnored_one": "Đã bỏ qua {{count, number}} mục",
+    "doneIgnored_other": "Đã bỏ qua {{count, number}} mục",
+    "doneSave_one": "Đã lưu {{count, number}} mục vào cơ sở dữ liệu",
+    "doneSave_other": "Đã lưu {{count, number}} mục vào cơ sở dữ liệu",
+    "doneSeen_one": "Đã đánh dấu {{count, number}} mục như đã thấy",
+    "doneSeen_other": "Đã đánh dấu các {{count, number}} mục như đã thấy",
+    "ignoreRecovery": " Bạn có thể hoàn tác việc này nhưng những mong muốn đã xóa sẽ không quay trở lại.",
+    "ignoreSelected": "Bỏ qua các tác phẩm đã chọn",
+    "saveSelected": "Lưu các tác phẩm đã chọn"
+  },
+  "batchJunk": {
+    "confirmDisposeAll_one": "Chuyển {{count, number}} tệp chưa được quyết định trong danh mục này vào thùng rác. Tập tin vẫn ở nguyên vị trí của nó.",
+    "confirmDisposeAll_other": "Chuyển tất cả các {{count, number}} tệp chưa được quyết định trong danh mục này vào thùng rác. Các tệp vẫn ở vị trí cũ.",
+    "confirmDispose_one": "Di chuyển tệp đã chọn {{count, number}} vào thùng rác. Tập tin vẫn ở nguyên vị trí của nó.",
+    "confirmDispose_other": "Chuyển các tệp đã chọn {{count, number}} vào thùng rác. Các tệp vẫn ở vị trí cũ.",
+    "confirmNotJunk_one": "Đánh dấu tệp đã chọn {{count, number}} là không phải rác và đưa nó ra khỏi hàng đợi.",
+    "confirmNotJunk_other": "Đánh dấu các tệp đã chọn {{count, number}} không phải là rác và đưa chúng ra khỏi hàng đợi.",
+    "confirmRecheck_one": "Gửi tệp đã chọn {{count, number}} trở lại hàng đợi rác.",
+    "confirmRecheck_other": "Gửi các tệp đã chọn {{count, number}} trở lại hàng đợi rác.",
+    "dismissed": "Đã đánh dấu không phải rác",
+    "disposeAll": "Chuyển tất cả vào thùng rác",
+    "doneDispose_one": "Đã chuyển {{count, number}} mục vào thùng rác",
+    "doneDispose_other": "Đã chuyển các {{count, number}} mục vào thùng rác",
+    "doneNotJunk_one": "Đã đánh dấu {{count, number}} mục là không phải rác",
+    "doneNotJunk_other": "Đã đánh dấu {{count, number}} mục không phải rác",
+    "doneRecheck_one": "Đã gửi lại {{count, number}} mục để kiểm tra rác",
+    "doneRecheck_other": "Đã gửi lại các {{count, number}} mục để kiểm tra rác",
+    "markNotJunk": "Đánh dấu không phải rác",
+    "queueChanged": "Các tệp chưa quyết định vừa thay đổi và được tải lại. Vui lòng xác nhận lại.",
+    "recheckFiles": "Kiểm tra lại tệp",
+    "reconsidered": "Đã đưa vào hàng chờ đánh giá lại tệp rác"
+  },
+  "batchRegion": {
+    "cleared_one": "Đã xóa vùng cho {{count, number}} mục",
+    "cleared_other": "Đã xóa vùng cho các {{count, number}} mục",
+    "hint_one": "Mục được chọn {{count, number}} sẽ có vùng này và việc thu thập dữ liệu và tự động phát hiện sẽ không thay đổi vùng đó sau đó.",
+    "hint_other": "Các mục được chọn {{count, number}} sẽ chia sẻ một vùng và việc thu thập dữ liệu và tự động phát hiện sẽ không thay đổi vùng đó sau đó.",
+    "pickFirst": "Hãy chọn xuất xứ trước",
+    "set_one": "Đặt thành {{region}}: {{count, number}} mục",
+    "set_other": "Đặt thành {{region}}: Các {{count, number}} mục",
+    "title": "Xác định xuất xứ"
+  },
+  "boardTabs": {
+    "defaultLabel": "Chế độ xem trang"
+  },
+  "cardLayout": {
+    "home": "Bố cục thẻ trang chủ",
+    "jav": "Bố cục thẻ JAV"
+  },
+  "catalogFilter": {
+    "credit": "Liên kết",
+    "uncreditedChip": "{{label}}: Chưa được công nhận",
+    "unknownYear": "Chưa rõ năm",
+    "yearChip": "Năm phát hành: {{years}}"
+  },
+  "catalogView": {
+    "flagged": "Đã đánh dấu",
+    "junkFiles": "Tệp rác",
+    "unwatched": "Chưa xem",
+    "watchLater": "Thêm vào xem sau"
+  },
+  "chrome": {
+    "densityToggle": "Đổi mật độ thẻ",
+    "exitSearch": "Thoát tìm kiếm",
+    "immersiveTitle": "Chế độ đắm chìm · phát ngẫu nhiên",
+    "navigationTitle": "Điều hướng và bộ lọc",
+    "openPreferences": "Mở cài đặt",
+    "openTutorial": "Mở hướng dẫn",
+    "openWall": "Mở tường video",
+    "searchLabel": "Tìm tác phẩm, diễn viên, hãng phim hoặc thẻ",
+    "selectMode": "Chế độ chọn nhiều",
+    "selectTitle": "Chọn nhiều (Ctrl: từng mục, Shift: liên tiếp)",
+    "skipToContent": "Chuyển đến nội dung"
+  },
+  "clientUpdate": {
+    "available": "Có bản cập nhật mới.",
+    "later": "Để sau",
+    "migrating": "Cập nhật cơ sở dữ liệu cục bộ.",
+    "migratingApply": "Cập nhật cơ sở dữ liệu cục bộ · Áp dụng di chuyển",
+    "migratingBackup": "Cập nhật cơ sở dữ liệu cục bộ · Sao lưu {{percent}}%",
+    "refreshPage": "Tải lại trang",
+    "refreshReady": "Peach đã được cập nhật. Tải lại trang để sử dụng.",
+    "restartReady": "Bản cập nhật đã sẵn sàng. Khởi động lại để cài đặt.",
+    "updating": "Đang cập nhật lên Peach {{version}} · {{step}} {{percent}}%",
+    "updatingUnversioned": "Đang cập nhật Peach · {{step}} {{percent}}%",
+    "updatingStep": "Đang cập nhật lên Peach {{version}} · {{step}}",
+    "updatingStepUnversioned": "Đang cập nhật Peach · {{step}}",
+    "viewProgress": "Xem tiến độ",
+    "viewUpdate": "Xem cập nhật"
+  },
+  "codeBlock": {
+    "copyAll": "Sao chép toàn bộ nội dung",
+    "copyCode": "Sao chép mã",
+    "copyFailed": "Không thể sao chép. Hãy chọn văn bản và sao chép thủ công."
+  },
+  "confirmModal": {
+    "actionFailed": "Thao tác chưa hoàn tất",
+    "selectedItems": "Bản ghi đã chọn"
+  },
+  "connectionStatus": {
+    "notChecked": "Chưa kiểm tra",
+    "offline": "Ngoại tuyến"
+  },
+  "coverQueue": {
+    "prioritizeAll": "Ưu tiên tất cả",
+    "progress_one": "Đang lấy bìa · {{done}} / {{count, number}}. Nếu bạn rời khỏi trang này, phần còn lại sẽ được xếp hàng đợi ở chế độ nền.",
+    "progress_other": "Đang lấy bìa · {{done}} / {{count, number}}. Nếu bạn rời khỏi trang này, phần còn lại sẽ được xếp hàng đợi ở chế độ nền.",
+    "waiting_one": "{{scope}}, {{count, number}} phiên bản mới vẫn đang chờ cover. Hãy lấy nó ngay bây giờ.",
+    "waiting_other": "{{scope}}, {{count, number}} phiên bản mới vẫn đang chờ cover. Hãy lấy tất cả chúng ngay bây giờ."
+  },
+  "dataTable": {
+    "bulkActions": "Thao tác hàng loạt {{label}}",
+    "clearSelection": "Bỏ chọn tất cả",
+    "empty": "Không có bản ghi",
+    "recordUnit": "bản ghi",
+    "selectAll": "Chọn tất cả {{label}}",
+    "selectColumn": "Chọn",
+    "selectRow": "Chọn {{name}}",
+    "selectedCount_one": "{{count, number}} {{unit}} đã chọn",
+    "selectedCount_other": "{{count, number}} {{unit}} đã chọn",
+    "spacerColumn": "Vùng trống của hàng",
+    "toolbar": "Thanh công cụ {{label}}"
+  },
+  "detailFailure": {
+    "title": "Không thể lấy được thông tin chi tiết"
+  },
+  "detailTags": {
+    "hideTag": "Ẩn thẻ này khỏi mục này",
+    "moreCount_one": "{{count, number}} thêm",
+    "moreCount_other": "{{count, number}} thêm",
+    "optionsLoadFailed": "Không thể tải thẻ đề xuất",
+    "removeTagNamed": "Xóa thẻ {{tag}}"
+  },
+  "documentTitle": {
+    "fallback": "Peach"
+  },
+  "downloadChannels": {
+    "notConfigured": "Chưa cấu hình dịch vụ tải xuống.",
+    "settingsLink": "Cài đặt tải xuống"
+  },
+  "duration": {
+    "daysHours_one": "{{days}} ngày {{count, number}} giờ",
+    "daysHours_other": "{{days}} ngày {{count, number}} giờ",
+    "days_one": "{{count, number}} ngày",
+    "days_other": "{{count, number}} ngày"
+  },
+  "entityAlias": {
+    "add": "Thêm tên khác",
+    "added": "Đã thêm bí danh {{alias}}",
+    "addedByYou": "Bạn đã thêm",
+    "exists": "{{alias}} đã là tên trong hồ sơ này",
+    "fieldLabel": "Tên khác",
+    "hint": "Bí danh giúp thư viện tìm thấy nhiều hình ảnh hơn và có thể đặt bí danh làm tên hiển thị.",
+    "placeholder": "Cách viết khác hoặc nghệ danh khác",
+    "removeAction": "Gỡ bí danh",
+    "removeNamed": "Xóa bí danh {{alias}}",
+    "removed": "Đã xóa bí danh {{alias}}"
+  },
+  "entityMerge": {
+    "title": "Hợp nhất hồ sơ trùng lặp",
+    "menu": "Hợp nhất hồ sơ trùng lặp…",
+    "bodyTaken": "“{{alias}}” đã là tên của một hồ sơ khác. Việc hợp nhất sẽ giữ “{{keep}}” (tiêu đề {{keepWorks}}) và di chuyển trong tiêu đề cũng như bí danh của “{{absorb}}” (tiêu đề {{absorbWorks}}). Việc này không thể hoàn tác được; cơ sở dữ liệu được sao lưu đầu tiên.",
+    "bodyShared": "Đã thêm bí danh “{{alias}}”, đây cũng là bí danh của “{{other}}”. Nếu chúng trùng lặp, việc hợp nhất sẽ giữ “{{keep}}” (tiêu đề {{keepWorks}}) và di chuyển trong “{{absorb}}” (tiêu đề {{absorbWorks}}). Việc này không thể hoàn tác được; cơ sở dữ liệu được sao lưu đầu tiên.",
+    "summary": "Việc hợp nhất sẽ giữ “{{keep}}” (tiêu đề {{keepWorks}}) và di chuyển trong tiêu đề cũng như bí danh của “{{absorb}}” (tiêu đề {{absorbWorks}}). Việc này không thể hoàn tác được; cơ sở dữ liệu được sao lưu đầu tiên.",
+    "pickLabel": "Hồ sơ khác",
+    "pickPlaceholder": "Tìm kiếm tên hoặc bí danh",
+    "pickFirst": "Chọn hồ sơ khác trước",
+    "confirm": "Gộp",
+    "done": "Đã hợp nhất “{{source}}” thành “{{target}}”"
+  },
+  "entityMissing": {
+    "agency": "Không thể tìm thấy đại lý này",
+    "backToList": "Quay lại {{title}}",
+    "hint": "Tên có thể bị viết sai hoặc đã gộp vào hồ sơ khác. Hãy quay lại danh sách để tìm.",
+    "item": "Không thể tìm thấy mục này",
+    "performer": "Không thể tìm thấy người biểu diễn này",
+    "seller": "Không thể tìm thấy người bán này",
+    "series": "Không thể tìm thấy loạt bài này",
+    "studio": "Không thể tìm thấy studio này",
+    "tag": "Không thể tìm thấy thẻ này"
+  },
+  "entitySort": {
+    "ariaLabel": "Sắp xếp theo {{label}} {{direction}}"
+  },
+  "errorPage": {
+    "conflict": "Chưa thể thực hiện thao tác này",
+    "forbidden": "Không thể truy cập",
+    "generic": "Đã xảy ra lỗi",
+    "goHome": "Về trang chủ",
+    "notFound": "Không tìm thấy trang"
+  },
+  "errorReport": {
+    "appUnmounted": "Đã gỡ ứng dụng",
+    "browserSnapshot": "Ảnh chụp môi trường trình duyệt",
+    "cleanupIncomplete": "Một số tài nguyên ứng dụng chưa được dọn sạch",
+    "hostMissing": "Phần tử máy chủ của chế độ xem chính bị thiếu",
+    "mediaPlaybackFailed": "Phát lại phương tiện không thành công ({{code}})",
+    "unhandledRejection": "Lỗi Promise chưa được xử lý"
+  },
+  "expandableRanking": {
+    "collapse": "Thu gọn xếp hạng",
+    "expand": "Hiện thêm xếp hạng"
+  },
+  "feedNew": {
+    "configureConnection": "Cấu hình kết nối",
+    "dmmUnreachable_one": "Vỏ cho bản phát hành mới {{count, number}} không thể tiếp cận máy chủ hình ảnh DMM. Đặt DMM / FANZA để sử dụng proxy Peach và nó sẽ được lấy lại vào vòng tiếp theo.",
+    "dmmUnreachable_other": "Vỏ cho các bản phát hành mới của {{count, number}} không thể tiếp cận máy chủ hình ảnh DMM. Đặt DMM / FANZA để sử dụng proxy Peach và chúng sẽ được lấy lại vào vòng tiếp theo.",
+    "ignore": "Không muốn xem",
+    "ignoreNamed": "Bỏ qua: {{name}}",
+    "markRead": "Đánh dấu đã xem",
+    "markReadNamed": "Đánh dấu đã xem: {{name}}",
+    "metadataPending": "Chưa có thông tin",
+    "openDetails": "Mở chi tiết tác phẩm: {{name}}",
+    "sectionLabel": "Tác phẩm mới chưa có trong thư viện",
+    "untitled": "Tác phẩm mới chưa có tên",
+    "viewAll": "Xem tất cả các bản phát hành mới",
+    "wantNamed": "Thêm vào muốn xem: {{name}}"
+  },
+  "fileSize": {
+    "unknown": "Chưa rõ dung lượng"
+  },
+  "firstAccess": {
+    "denied": "Mở Peach trên máy tính đang chạy nó hoặc từ cùng mạng LAN để hoàn tất thiết lập hoặc đặt PEACH_ACCESS_PASSWORD khi khởi động vùng chứa."
+  },
+  "followRange": {
+    "anyTime": "Mọi thời điểm",
+    "last30Days": "30 ngày gần đây",
+    "last7Days": "7 ngày qua",
+    "last90Days": "90 ngày qua"
+  },
+  "followSort": {
+    "duration": "Thời lượng",
+    "popular": "Độ phổ biến",
+    "updated": "Đã cập nhật"
+  },
+  "followTable": {
+    "lastChecked": "Lần kiểm tra gần nhất",
+    "site": "Trang web",
+    "source": "Nguồn",
+    "status": "Trạng thái"
+  },
+  "format": {
+    "clauseSeparator": ", ",
+    "labelPrefix": "{{label}}: ",
+    "labelValue": "{{label}}: {{value}}",
+    "listSeparator": ", ",
+    "period": ".",
+    "quoted": "“{{text}}”",
+    "semicolonSeparator": "; ",
+    "sentenceGap": " ",
+    "withNote": "{{text}} ({{note}})"
+  },
+  "glowPicker": {
+    "title": "Màu quầng sáng"
+  },
+  "ingestToast": {
+    "burst_one": "Đã nhập {{count, number}} video",
+    "burst_other": "Đã nhập {{count, number}} video",
+    "downloadDone": "“{{name}}” được nhập và tổ chức",
+    "fallbackName": "Một đoạn video",
+    "newFile": "Tệp mới được nhập: “{{name}}”"
+  },
+  "keyboardShortcut": {
+    "needsModifier": "Bao gồm ít nhất một phím bổ trợ; một chữ cái xung đột với các phím tắt của người chơi",
+    "reservedByBrowser": "Trình duyệt bảo lưu sự kết hợp này nên trang không thể nhận được",
+    "unsupportedKey": "Chỉ các chữ cái, số và F1–F12 mới có thể là khóa chính"
+  },
+  "libraryPicker": {
+    "allLibraries": "Tất cả thư viện",
+    "choose": "Chọn thư viện"
+  },
+  "loadingSkeleton": {
+    "content": "Đang tải nội dung",
+    "index": "Đang tải danh mục"
+  },
+  "login": {
+    "accessToken": "Mã thông báo truy cập",
+    "signIn": "Đăng nhập",
+    "staySignedIn": "Duy trì đăng nhập",
+    "tokenHintDocker": "Chạy {{command}} trên máy chủ để xem.",
+    "tokenHintLocal": "Chạy {{command}} nơi Peach đang chạy để xem nó.",
+    "wrongPassword": "Mật khẩu truy cập không đúng",
+    "wrongToken": "Mã thông báo truy cập không chính xác"
+  },
+  "managedPage": {
+    "readOnly": "Thiết bị này chỉ được xem"
+  },
+  "mediaCard": {
+    "checkingCause": "Kiểm tra nguyên nhân",
+    "disposalDuplicate": "Trùng lặp",
+    "disposalJunk": "Nội dung rác",
+    "disposalManual": "Thủ công",
+    "disposalMissing": "Thiếu tệp",
+    "disposalReason": "Lý do: {{reason}}",
+    "disposalUnknown": "Chưa ghi lý do",
+    "editionCount_one": "Phiên bản {{count, number}}",
+    "editionCount_other": "{{count, number}} phiên bản",
+    "flagLiked": "Yêu thích",
+    "flaggedBy": "Được gắn cờ: {{reasons}}",
+    "hasOCount": "Có ghi nhận cực khoái",
+    "movingToTrash": "Đang chuyển vào thùng rác",
+    "openActressNamed": "Mở diễn viên: {{name}}",
+    "openActressPage": "Mở trang nữ diễn viên",
+    "openDetails": "Mở chi tiết",
+    "openDetailsNamed": "Mở chi tiết {{name}}",
+    "openEditionsNamed": "Mở các phiên bản của {{name}}",
+    "openPartsNamed": "Mở các phần của {{name}}",
+    "openPerformerNamed": "Mở trang biểu diễn: {{name}}",
+    "openPerformerPage": "Mở trang biểu diễn",
+    "openPreview": "Mở bản xem trước",
+    "openProfile": "Mở hồ sơ",
+    "operationFailed": "Thao tác thất bại. Hãy thử lại.",
+    "partCount_one": "Phần {{count, number}}",
+    "partCount_other": "{{count, number}} phần",
+    "performerTotal_one": "{{count, number}} người",
+    "performerTotal_other": "{{count, number}} mọi người",
+    "resourceArchive": "Tệp nén",
+    "resourceAudio": "Âm thanh",
+    "resourceImage": "Ảnh",
+    "resourceOther": "Tệp khác",
+    "restoring": "Đang khôi phục",
+    "seekBack_one": "Quay lại {{count, number}} giây",
+    "seekBack_other": "Quay lại {{count, number}} giây",
+    "seekForward_one": "Chuyển tiếp {{count, number}} giây",
+    "seekForward_other": "Chuyển tiếp {{count, number}} giây",
+    "untitledResource": "Tài nguyên chưa có tên",
+    "untitledVideo": "Video chưa có tên",
+    "urlShortcut": "Lối tắt trang web",
+    "watchProgress": "Tiến độ xem"
+  },
+  "mediaCarousel": {
+    "imageCount_one": "Hình ảnh {{count, number}}",
+    "imageCount_other": "{{count, number}} ảnh",
+    "mediaCount_one": "Vật phẩm {{count, number}}",
+    "mediaCount_other": "{{count, number}} mục",
+    "next": "Tiếp theo",
+    "nextImage": "Ảnh tiếp theo",
+    "nextItem": "Mục phương tiện tiếp theo",
+    "position": "Mục {{index}}",
+    "positionOfTotal": "{{index}} của {{total}}",
+    "previous": "Ảnh trước",
+    "previousImage": "Ảnh trước",
+    "previousItem": "Mục phương tiện trước",
+    "switchToNamed": "Hiển thị {{name}}",
+    "switchToPosition": "Hiển thị mục {{index}}",
+    "thumbnails": "Ảnh thu nhỏ của nội dung"
+  },
+  "mixCard": {
+    "openProfile": "Mở hồ sơ: {{name}}",
+    "videoCount_one": "{{count, number}} video",
+    "videoCount_other": "{{count, number}} video"
+  },
+  "navigationOrder": {
+    "group": "Nhóm điều hướng",
+    "librarySyncFailed": "Không thể đồng bộ hóa thứ tự thư viện. {{error}}",
+    "manageMenu": "Quản lý thực đơn",
+    "menuLabel": "Cài đặt đơn hàng {{group}}",
+    "moveDown": "Di chuyển {{name}} xuống",
+    "moveUp": "Di chuyển {{name}} lên",
+    "resetDone": "Thứ tự của nhóm này đã được đặt lại",
+    "resetGroup": "Đặt lại thứ tự của nhóm này",
+    "syncFailed": "Đã lưu đơn đặt hàng trên thiết bị này nhưng đồng bộ hóa không thành công. {{error}}"
+  },
+  "networkBanner": {
+    "checkProxy": "Kiểm tra proxy Peach",
+    "dismiss": "Tắt",
+    "offline": "Peach không thể truy cập internet. Tìm nạp, theo dõi cập nhật và các nguồn trực tuyến không khả dụng; phương tiện truyền thông địa phương vẫn hoạt động."
+  },
+  "objectOrder": {
+    "save": "Lưu đơn hàng"
+  },
+  "orientation": {
+    "landscape": "Khung ngang",
+    "portrait": "Khung dọc"
+  },
+  "pathLine": {
+    "reveal": "Hiển thị vị trí tệp"
+  },
+  "pendingWork": {
+    "running": "Điền vào: {{tasks}}",
+    "waiting": "Đang chờ điền: {{tasks}}"
+  },
+  "playlistDialog": {
+    "addHint": "Chọn danh sách phát để thêm hoặc nhập tên để tạo danh sách mới.",
+    "addTitle": "Thêm vào danh sách phát",
+    "added_one": "Đã thêm vào danh sách phát {{count, number}}",
+    "added_other": "Đã thêm vào {{count, number}} danh sách phát",
+    "emptyHint": "Chưa có danh sách phát. Nhập tên để tạo danh sách mới.",
+    "existingLists": "Danh sách phát hiện có",
+    "nameLabel": "Tên",
+    "nameRequired": "Tên danh sách phát không được để trống",
+    "saveAsTitle": "Lưu thành danh sách phát",
+    "saveMixHint_one": "{{count, number}} video trong Danh sách kết hợp này sẽ được lưu dưới dạng danh sách phát mà bạn có thể tiếp tục phát.",
+    "saveMixHint_other": "Các {{count, number}} video trong Danh sách kết hợp này sẽ được lưu dưới dạng danh sách phát mà bạn có thể tiếp tục phát.",
+    "saved": "Đã lưu thành danh sách phát"
+  },
+  "rating": {
+    "clearCurrent_one": "Xếp hạng rõ ràng (hiện tại là sao {{count, number}})",
+    "clearCurrent_other": "Xếp hạng rõ ràng (hiện tại là {{count, number}} sao)",
+    "clearHint": "Bấm lần nữa để bỏ đánh giá",
+    "rateStars_one": "Xếp hạng {{count, number}} sao",
+    "rateStars_other": "Xếp hạng {{count, number}} sao",
+    "saving": "Đang lưu đánh giá",
+    "stars_one": "Ngôi sao {{count, number}}",
+    "stars_other": "{{count, number}} sao",
+    "unrated": "Chưa đánh giá"
+  },
+  "ratingAction": {
+    "cleared": "Đã bỏ đánh giá",
+    "label": "Đánh giá",
+    "rated_one": "Đã xếp hạng {{count, number}} sao",
+    "rated_other": "Đã xếp hạng {{count, number}} sao"
+  },
+  "receipt": {
+    "actionFailed": "{{action}} không thành công: {{message}}",
+    "genericAction": "Thao tác",
+    "tryAgain": "Hãy thử lại",
+    "undoFailed": "Không thể hoàn tác: {{message}}",
+    "undone": "Đã hoàn tác"
+  },
+  "recommendationReason": {
+    "sharedTags": "Thẻ chia sẻ: {{tags}}",
+    "title": "Lý do đề xuất",
+    "viewReason": "Xem lý do đề xuất: {{reason}}"
+  },
+  "region": {
+    "china": "Tiếng Trung",
+    "clear": "Gỡ quyết định",
+    "japan": "Nhật Bản",
+    "korea": "Hàn Quốc",
+    "other": "Khác",
+    "western": "Phương Tây"
+  },
+  "releaseNotice": {
+    "automatic": "Tự động chạy sau khi cập nhật",
+    "changelog": "Nhật ký thay đổi đầy đủ",
+    "close": "Đóng tính năng mới",
+    "dialogLabel": "Có gì mới",
+    "dismiss": "Hiểu rồi",
+    "goToSettings": "Đi tới cài đặt",
+    "itemCount_one": "Vật phẩm {{count, number}}",
+    "itemCount_other": "{{count, number}} mục",
+    "missed": "Bạn cũng đã bỏ lỡ {{versions}}",
+    "recentVersions": "Phiên bản gần đây",
+    "saveFailed": "Không thể lưu. Hãy thử lại sau.",
+    "viewItem": "Xem {{title}}"
+  },
+  "requestError": {
+    "badGateway": "Dịch vụ Peach không trả lại kết quả nào. Hãy thử lại sau; nếu nó vẫn bị lỗi, hãy kiểm tra nhật ký Peach.",
+    "badRequest": "Hãy kiểm tra thông tin đã nhập rồi thử lại.",
+    "clientTimeout": "Dịch vụ không phản hồi kịp thời. Hãy kiểm tra kết nối rồi thử lại.",
+    "conflict": "Không thể thực hiện thao tác ở trạng thái hiện tại. Hãy tải lại rồi thử lại.",
+    "fallback": "Hành động chưa kết thúc. Hãy thử lại; nếu nó vẫn bị lỗi, hãy kiểm tra nhật ký Peach.",
+    "forbidden": "Thiết bị này không được phép làm điều này. Sử dụng thiết bị chạy Peach.",
+    "gatewayTimeout": "Dịch vụ không phản hồi kịp thời. Hãy thử lại sau.",
+    "notFound": "Mục này không còn tồn tại. Hãy tải lại danh sách.",
+    "rateLimited": "Có quá nhiều yêu cầu. Hãy thử lại sau.",
+    "serverError": "Dịch vụ Peach không thể xử lý việc này. Hãy thử lại; nếu nó vẫn bị lỗi, hãy kiểm tra nhật ký Peach.",
+    "sessionExpired": "Phiên đăng nhập đã hết hạn. Hãy tải lại trang và đăng nhập lại.",
+    "timeout": "Yêu cầu đã hết thời gian chờ. Hãy thử lại sau.",
+    "tooLarge": "Yêu cầu quá lớn. Hãy giảm số lượng mục rồi thử lại.",
+    "unavailable": "Dịch vụ Peach tạm thời không khả dụng. Hãy thử lại sau.",
+    "unreachable": "Không thể kết nối với dịch vụ Peach. Kiểm tra kết nối mạng của bạn và đảm bảo Peach đang chạy."
+  },
+  "routeTitle": {
+    "agencies": "Công ty quản lý",
+    "duplicates": "Tệp trùng lặp",
+    "following": "Đang theo dõi",
+    "hdUpgrades": "Phiên bản HD",
+    "immersive": "Chế độ đắm chìm",
+    "javVideo": "Tác phẩm JAV",
+    "libraryTools": "Quản lý dữ liệu",
+    "mediaDetails": "Bản ghi nội dung",
+    "performers": "Diễn viên",
+    "playlists": "Danh sách phát",
+    "preferences": "Sở thích",
+    "profileFallback": "Hồ sơ",
+    "repair": "Sửa",
+    "review": "Duyệt dữ liệu",
+    "sellers": "Người bán",
+    "settings": "Cài đặt",
+    "sources": "Nguồn",
+    "stats": "Thống kê",
+    "subscriptions": "Quản lý theo dõi",
+    "tags": "Thẻ",
+    "tasks": "Tác vụ",
+    "taste": "Sở thích",
+    "videoWall": "Tường video"
+  },
+  "router": {
+    "chunkNotLoaded": "Mã trang chưa tải xong",
+    "unknownRoute": "Không có lộ trình cho trang này: {{path}}"
+  },
+  "scroller": {
+    "defaultLabel": "Nội dung có thể cuộn"
+  },
+  "searchTitle": {
+    "results": "Kết quả tìm kiếm: “{{query}}”"
+  },
+  "selectionPopover": {
+    "empty": "Chưa có tùy chọn"
+  },
+  "setupDone": {
+    "addMediaLater": "Thêm thư mục và bắt đầu quét trong Thư viện và nhập dữ liệu.",
+    "documentTitle": "Peach · Đã thiết lập xong",
+    "enter": "Mở Peach",
+    "eyebrow": "Đã thiết lập xong",
+    "importHistory": "Nhập lịch sử trình duyệt",
+    "installInSettings": "Cài đặt nó trong Cài đặt> Bảo trì.",
+    "ready": "Peach của bạn đã sẵn sàng.",
+    "restored": "Đã kết nối thư mục dữ liệu hiện có.",
+    "runtime": "Thông tin hoạt động",
+    "scanLater": "Bắt đầu quét thư viện sau trong trang cấu hình.",
+    "scanQueued": "Lần quét đầu tiên được xếp hàng đợi và chạy ở chế độ nền. Bạn có thể tiếp tục sử dụng Peach trong khi đó.",
+    "title": "Sẵn sàng sử dụng"
+  },
+  "setupErrors": {
+    "pickFolderFailed": "Không mở được hộp thoại chọn thư mục",
+    "questionsFailed": "Không tải được câu hỏi thiết lập",
+    "requestFailed": "Yêu cầu thất bại. Hãy thử lại.",
+    "restoreFailed": "Không dùng được thư mục dữ liệu này",
+    "submitFailed": "Không hoàn tất được thiết lập"
+  },
+  "setupForm": {
+    "accessLede": "Chọn phạm vi truy cập và đặt mật khẩu nếu cần.",
+    "accessLedeDocker": "Đặt mật khẩu truy cập và chọn cách Peach kết nối để lấy metadata.",
+    "accessScope": "Phạm vi truy cập",
+    "accessTitle": "Bạn sẽ dùng Peach ở đâu?",
+    "accessTitleDocker": "Truy cập và mạng",
+    "addDirectoryTo": "Thêm thư mục vào {{name}}",
+    "addFolder": "Thêm thư mục",
+    "addLater": "Thêm sau",
+    "addLibrariesLater": "Thêm thư viện sau",
+    "addLibrariesLaterHint": "Sau khi thiết lập, thêm thư mục trong Thư viện và nhập dữ liệu.",
+    "addLibrary": "Thêm thư viện",
+    "address": "Địa chỉ: {{address}}",
+    "advanced": "Cài đặt nâng cao",
+    "confirmLede": "Kiểm tra lựa chọn rồi để Peach xử lý phần còn lại.",
+    "confirmTitle": "Sẵn sàng bắt đầu",
+    "connectionMode": "Cách kết nối",
+    "continue": "Tiếp tục",
+    "dataDirectory": "Thư mục dữ liệu",
+    "dataSaverHint": "Các thư mục bật Trình tiết kiệm dữ liệu sẽ không tự động đọc video hoặc thực hiện xem trước; video chỉ được đọc khi phát.",
+    "defaultLibraryName": "Thư viện của tôi",
+    "diagnostics": "Chẩn đoán hệ thống",
+    "directoryCount_one": "Thư {{count, number}} mục",
+    "directoryCount_other": "Thư {{count, number}} mục",
+    "directoryLibrary": "Thư viện cho thư mục {{index}}",
+    "eyebrow": "Thiết lập ban đầu",
+    "finish": "Hoàn tất thiết lập",
+    "firstScan": "Quét lần đầu",
+    "firstScanSkipped": "Thêm thư mục nội dung, chọn cách xử lý rồi bắt đầu quét.",
+    "libraryCount_one": "Thư viện {{count, number}}",
+    "libraryCount_other": "Thư viện {{count, number}}",
+    "libraryDirectoriesNamed": "Các thư mục trong {{name}}",
+    "libraryIconNamed": "Biểu tượng {{name}}",
+    "libraryName": "Tên thư viện",
+    "libraryNameNamed": "Tên {{name}}",
+    "libraryNumbered": "Thư viện {{number}}",
+    "localOnlyHint": "Chỉ có máy tính chạy Peach mới có thể truy cập được. Với mật khẩu, mở Peach vẫn yêu cầu đăng nhập.",
+    "loopbackProxyBody": "Địa chỉ loopback trỏ đến chính container. Để dùng proxy trên máy chủ, hãy nhập địa chỉ máy chủ mà container truy cập được.",
+    "loopbackProxyTitle": "Nhập địa chỉ proxy mà container có thể truy cập.",
+    "mediaDirectories": "Thư mục nội dung",
+    "mediaLede": "Kết nối thư mục hiện có hoặc khám phá ứng dụng trước.",
+    "mediaTitle": "Nội dung của bạn nằm ở đâu?",
+    "moveToLibrary": "Chuyển vào thư viện",
+    "notFilled": "Chưa nhập",
+    "peachProxy": "Proxy Peach",
+    "pickDataDirectory": "Chọn thư mục dữ liệu",
+    "presetPassword": "Mật khẩu truy cập được đặt từ PEACH_ACCESS_PASSWORD. Thay đổi nó trong Cài đặt > Mạng.",
+    "progress": "Thiết lập ban đầu, bước {{step}} trên 4",
+    "proxyHelp": "Dùng để thu thập thông tin, tải bìa và công cụ. Có thể đổi trong cấu hình.",
+    "proxySelectionBody": "Các nguồn hiện dùng proxy khác nhau. Hãy chọn cách kết nối chung.",
+    "proxySelectionTitle": "Cần chọn cách kết nối",
+    "readPolicyRequired": "Chọn cách đọc nội dung",
+    "reportingHint": "Tải lên chi tiết thư viện và sở thích mặc định được tắt. Bạn có thể xem và chọn trong Ứng dụng và bảo trì.",
+    "reportingOn": "Đã bật; có thể chỉnh ở trên",
+    "reportingTitle": "Thống kê phiên bản và chẩn đoán lỗi",
+    "scanAfterFinish": "Bắt đầu sau khi thiết lập",
+    "scanAfterSetup": "Quét thư mục sau khi thiết lập",
+    "scanFoldersAfterSetup_one": "Quét thư {{count, number}} mục sau khi thiết lập",
+    "scanFoldersAfterSetup_other": "Quét thư {{count, number}} mục sau khi thiết lập",
+    "scanLaterHint": "Lưu cách xử lý và bắt đầu quét sau trong Thư viện và nhập dữ liệu.",
+    "scanManually": "Bắt đầu thủ công sau",
+    "scanNowHint": "Quá trình quét chạy nền. Bạn có thể dùng Peach trong lúc chờ.",
+    "scopeCompose": "Ánh xạ cổng trên mỗi Compose",
+    "scopeLan": "Thiết bị cùng mạng nội bộ",
+    "scopeLocal": "Chỉ máy tính này",
+    "scopePasswordOff": "Chưa đặt mật khẩu truy cập",
+    "scopePasswordOn": "Có mật khẩu truy cập",
+    "scopePresetPassword": "Mật khẩu truy cập được đặt từ PEACH_ACCESS_PASSWORD",
+    "start": "Bắt đầu thiết lập",
+    "summaryTitle": "Xác nhận thiết lập",
+    "useExistingData": "Dùng dữ liệu hiện có",
+    "welcomeFind": "Tìm nội dung muốn xem nhanh hơn",
+    "welcomeFindBody": "Duyệt thư viện qua tìm kiếm, thẻ và mục đã đánh dấu.",
+    "welcomeLede": "Dành ít phút để thiết lập Peach theo ý bạn.",
+    "welcomeLibraries": "Kết nối thư viện của bạn",
+    "welcomeLibrariesBody": "Sắp xếp thư mục cục bộ và ổ đĩa đám mây đã gắn kết.",
+    "welcomePlay": "Phát theo cách của bạn",
+    "welcomePlayBody": "Bạn có thể thay đổi cách phát và giao diện trong cài đặt bất cứ lúc nào.",
+    "welcomeTitle": "Chào mừng đến với Peach"
+  },
+  "setupPage": {
+    "loading": "Đang tải cài đặt",
+    "openOnServer": "Mở thiết lập trên máy tính đang chạy Peach."
+  },
+  "setupProcessing": {
+    "auto": "Tự động bổ sung",
+    "custom": "Tùy chỉnh: {{stages}}",
+    "customLocalOnly": "Tùy chỉnh: chỉ đọc NFO và ảnh cục bộ",
+    "localOnly": "Chỉ dùng thông tin cục bộ"
+  },
+  "setupRestore": {
+    "backToSetup": "Về thiết lập ban đầu",
+    "connecting": "Đang kết nối thư mục dữ liệu…",
+    "dataDirectory": "Thư mục dữ liệu hiện có",
+    "dataDirectoryHint": "Chọn thư mục dữ liệu chứa config.toml và thư mục database.",
+    "eyebrow": "Kết nối dữ liệu hiện có",
+    "lede": "Kết nối thư mục dữ liệu Peach để tiếp tục dùng cấu hình và thư viện cũ.",
+    "useDirectory": "Dùng thư mục này"
+  },
+  "setupScene": {
+    "accessBody": "Kết nối máy tính và điện thoại với cùng một Peach.",
+    "accessTitle": "Từ bàn làm việc đến thiết bị trong tay.",
+    "confirmBody": "Kiểm tra rồi lưu. Quét dữ liệu theo lựa chọn của bạn.",
+    "confirmTitle": "Mọi thứ đã sẵn sàng.",
+    "doneBody": "Mở Peach và khám phá bộ sưu tập của bạn.",
+    "doneTitle": "Thư viện đã sẵn sàng.",
+    "libraryBadge": "Thư viện của bạn",
+    "mediaBody": "Sắp xếp theo thư viện, giữ nguyên vị trí các tệp.",
+    "mediaTitle": "Biến các tệp thành thư viện.",
+    "restoreBody": "Giữ lại cấu hình và lịch sử để tiếp tục sử dụng.",
+    "restoreTitle": "Tiếp tục từ nơi quen thuộc.",
+    "welcomeBody": "Sắp xếp nội dung yêu thích thành bộ sưu tập của bạn.",
+    "welcomeTitle": "Không gian giải trí của riêng bạn."
+  },
+  "shared": {
+    "accessPassword": "Mật khẩu truy cập",
+    "all": "Tất cả",
+    "back": "Quay lại",
+    "cancel": "Hủy",
+    "close": "Đóng",
+    "collapse": "Thu gọn",
+    "completed": "Đã hoàn tất",
+    "copied": "Đã sao chép",
+    "creators": "Nhà sáng tạo",
+    "home": "Trang chủ",
+    "library": "Thư viện",
+    "moveToTrash": "Chuyển vào thùng rác",
+    "notFound": "Chưa lấy được",
+    "off": "Tắt",
+    "open": "Mở",
+    "processing": "Đang xử lý",
+    "restore": "Khôi phục",
+    "retry": "Thử lại",
+    "retryNow": "Thử lại ngay",
+    "save": "Lưu",
+    "series": "Loạt tác phẩm",
+    "sort": "Sắp xếp",
+    "studios": "Hãng phim",
+    "trash": "Thùng rác",
+    "undo": "Hoàn tác",
+    "untitledLibrary": "Thư viện chưa đặt tên",
+    "view": "Xem"
+  },
+  "sidebar": {
+    "collapse": "Thu gọn thanh bên",
+    "expand": "Mở rộng thanh bên"
+  },
+  "skeleton": {
+    "loadingCollection": "Đang tải thư viện",
+    "loadingFollowing": "Đang tải nội dung theo dõi",
+    "loadingJunkFiles": "Đang tải tệp rác",
+    "loadingRecommendations": "Đang tải đề xuất",
+    "loadingSettings": "Đang tải cài đặt",
+    "loadingVideos": "Đang tải tác phẩm"
+  },
+  "sourceLink": {
+    "blog": "Blog",
+    "catalogList": "Danh sách tiêu đề {{name}}",
+    "catalogPage": "Trang tiêu đề {{name}}",
+    "fanCommunity": "Cộng đồng người hâm mộ {{name}}",
+    "labelPage": "Trang nhãn {{name}}",
+    "linkHub": "Trung tâm liên kết ({{name}})",
+    "namedBlog": "Blog: {{name}}",
+    "officialArchive": "Lưu trữ trang web chính thức ({{name}})",
+    "officialBlog": "Blog chính thức",
+    "officialChannel": "Kênh chính thức",
+    "officialShop": "Cửa hàng chính thức",
+    "officialSite": "Trang web chính thức",
+    "recruiting": "{{name}} (tuyển dụng)",
+    "seriesPage": "Trang loạt bài {{name}}"
+  },
+  "sourcePicture": {
+    "coverAlt": "Vỏ {{code}}",
+    "imageNotFound": "Chưa có ảnh",
+    "loadingImage": "Đang tải ảnh",
+    "loadingPreview": "Đang tải bản xem trước",
+    "previewAlt": "Xem trước {{code}} {{index}}"
+  },
+  "sourceTools": {
+    "allPresent_one": "{{count, number}} mục vẫn còn trong thư mục. Không có gì để thay đổi.",
+    "allPresent_other": "Tất cả các {{count, number}} mục vẫn còn trong thư mục. Không có gì để thay đổi.",
+    "checkAction": "Kiểm tra thư mục",
+    "checkedSummaryUnreadable_one": "{{summary}} Đã kiểm tra {{count, number}} mục; {{unreadable, number}} không thể đọc được.",
+    "checkedSummaryUnreadable_other": "{{summary}} Đã kiểm tra các {{count, number}} mục; {{unreadable, number}} không thể đọc được.",
+    "checkedSummary_one": "{{summary}} Đã kiểm tra {{count, number}} mục.",
+    "checkedSummary_other": "{{summary}} Đã kiểm tra các {{count, number}} mục.",
+    "checking": "Đang kiểm tra thư mục…",
+    "fileMissing": "Không tìm thấy tệp nguồn. Nhấp vào nút quét ở bên phải để kiểm tra lại thư mục.",
+    "libraryOffline": "Không truy cập được thư viện. Hãy kết nối lại rồi thử kiểm tra tệp.",
+    "noChanges": "Đã kiểm tra thư mục; không cần thay đổi",
+    "notMapped": "Bộ lưu trữ này không được gắn trên thiết bị chạy Peach.",
+    "reattached_one": "Đã chuyển hoạt động của {{count, number}} mục sang phiên bản khác trong thư viện.",
+    "reattached_other": "Đã chuyển hoạt động của các {{count, number}} mục sang phiên bản khác trong thư viện.",
+    "resultSeparator": " ",
+    "revealFailed": "Không mở được trình quản lý tệp. Hãy thử lại.",
+    "revealed": "Hiển thị trong trình quản lý tệp",
+    "trashed_one": "Đã chuyển {{count, number}} mục vào thùng rác.",
+    "trashed_other": "Đã chuyển các {{count, number}} mục vào thùng rác.",
+    "unreadable_one": "Hiện không thể đọc {{count, number}} mục trong thư mục. Không có gì được thay đổi.",
+    "unreadable_other": "Hiện không thể đọc được các {{count, number}} mục trong thư mục. Không có gì được thay đổi.",
+    "unsupportedPlatform": "Hệ điều hành máy chủ không hỗ trợ định vị tệp trực tiếp",
+    "vanished_one": "Giữ lại hoạt động của bạn và đánh dấu {{count, number}} mục là bị thiếu.",
+    "vanished_other": "Giữ lại hoạt động của bạn và đánh dấu các {{count, number}} mục là bị thiếu."
+  },
+  "spinner": {
+    "loading": "Đang tải",
+    "loadingMore": "Đang tải"
+  },
+  "storageLabel": {
+    "metered": "{{label}} · Đã đo",
+    "online": "Trực tuyến",
+    "localLabel": "Cục bộ"
+  },
+  "storageOffline": {
+    "drive115": "Không đọc được thư mục nội dung 115. Kiểm tra quyền truy cập và công cụ gắn ổ đĩa đám mây.",
+    "hint": "Không truy cập được thư mục nội dung. Kiểm tra thư mục, quyền đọc và trạng thái gắn ổ đĩa đám mây.",
+    "other": "Không đọc được thư mục của nguồn này. Kiểm tra quyền truy cập và trạng thái gắn kết.",
+    "pikpak": "Không đọc được thư mục nội dung PikPak. Kiểm tra quyền truy cập và công cụ gắn ổ đĩa đám mây.",
+    "localLabel": "Không đọc được thư mục nội dung. Kiểm tra thư mục có tồn tại và có quyền đọc."
+  },
+  "tableColumns": {
+    "columns": "Cột hiển thị",
+    "defaultLabel": "Bảng",
+    "reset": "Đặt lại",
+    "resetWidths": "Đặt lại độ rộng cột",
+    "resize": "Thay đổi kích thước cột {{column}}",
+    "settings": "Cài đặt cột {{table}}",
+    "showAll": "Hiện tất cả cột",
+    "visibleColumns": "Cột hiển thị {{table}}"
+  },
+  "tablePagination": {
+    "followingDefault": "Phân trang danh sách theo dõi",
+    "label": "Phân trang {{table}}",
+    "next": "Tiếp theo",
+    "page": "Trang {{page}}",
+    "pageSize": "Số mục mỗi trang",
+    "pageUnit": "mục",
+    "perPage_one": "{{count, number}} {{unit}} mỗi trang",
+    "perPage_other": "{{count, number}} {{unit}} mỗi trang",
+    "previous": "Trang trước"
+  },
+  "tableSort": {
+    "defaultOrder": "Thứ tự mặc định",
+    "label": "Sắp xếp {{table}}",
+    "toAscending": "Sắp xếp {{table}} tăng dần",
+    "toDescending": "Sắp xếp {{table}} giảm dần"
+  },
+  "tagPicker": {
+    "addTag": "Thêm thẻ",
+    "allTags": "Tất cả thẻ",
+    "createNamed": "Tạo “{{tag}}”",
+    "loading": "Đang tải thẻ",
+    "recent": "Dùng gần đây",
+    "results": "Kết quả tìm kiếm",
+    "searchPlaceholder": "Tìm hoặc nhập thẻ mới"
+  },
+  "themeToggle": {
+    "dark": "Giao diện tối",
+    "group": "Giao diện sáng tối",
+    "light": "Giao diện sáng"
+  },
+  "toaster": {
+    "backgroundTasks": "Tác vụ nền",
+    "closeTaskToast": "Đóng thông báo tác vụ",
+    "closeToast": "Đóng thông báo",
+    "notifications": "Thông báo"
+  },
+  "trash": {
+    "blockedItem": "{{path}} ({{reason}})",
+    "empty": "Dọn sạch thùng rác",
+    "emptyConfirm_one": "Tệp và bản ghi thu thập {{count, number}} mục vào thùng rác sẽ bị xóa vĩnh viễn.",
+    "emptyConfirm_other": "Các tệp và bản ghi thu thập các {{count, number}} mục trong thùng rác sẽ bị xóa vĩnh viễn.",
+    "emptyHint": "Các mục đã xóa vẫn ở đây cho đến khi bạn dọn sạch thùng rác.",
+    "emptyTitle": "Thùng rác trống",
+    "movedToTrash": "Đã chuyển vào thùng rác",
+    "partlyPurged_one": "Đã xóa vĩnh viễn: {{purged, number}}. Không thể xóa {{count, number}} mục và vẫn còn trong thùng rác:",
+    "partlyPurged_other": "Đã xóa vĩnh viễn: {{purged, number}}. Không thể xóa các {{count, number}} mục và vẫn còn trong thùng rác:",
+    "purged_one": "Đã xóa vĩnh viễn {{count, number}} mục",
+    "purged_other": "Đã xóa vĩnh viễn các {{count, number}} mục",
+    "restored": "Đã khôi phục"
+  },
+  "uiSounds": {
+    "unknownSound": "Âm thanh giao diện người dùng không xác định \"{{name}}\""
+  },
+  "upNext": {
+    "backToFollowing": "Quay lại nội dung theo dõi",
+    "browseCollection": "Duyệt thư viện",
+    "emptyHint": "Bạn có thể quay lại danh sách để chọn tác phẩm khác.",
+    "emptyTitle": "Chưa có nội dung để xem tiếp",
+    "title": "Xem tiếp"
+  },
+  "watchLater": {
+    "added": "Đã thêm vào xem sau",
+    "removed": "Đã gỡ khỏi xem sau",
+    "updateAction": "Cập nhật xem sau"
+  },
+  "serverPath": {
+    "dataTitle": "Thư mục dữ liệu",
+    "dataField": "Thư mục dữ liệu trên máy chủ",
+    "dataContainer": "Vị trí dữ liệu của vùng chứa được đặt theo khối lượng dữ liệu của máy chủ. Định cấu hình nó trong trình quản lý bộ chứa NAS.",
+    "dataManual": "Nhập thư mục dữ liệu trên máy chủ chạy Peach. Nó được kiểm tra khi bạn lưu.",
+    "useFolder": "Dùng thư mục này",
+    "close": "Đóng",
+    "cancel": "Hủy",
+    "readFailed": "Không thể đọc thư mục. Hãy thử lại.",
+    "pickTitle": "Chọn một thư mục trên máy chủ",
+    "pickHelp": "Đường dẫn ở đây nằm trên NAS hoặc bên trong vùng chứa. Nhập một đường dẫn và nhấn Enter để đọc nó. Một thư mục mới được gắn cũng có thể được nhập thẳng vào trường thư mục phương tiện.",
+    "pathField": "Đường dẫn thư mục trên máy chủ",
+    "roots": "Thư mục được gắn kết",
+    "parent": "Lên một cấp",
+    "reading": "Đọc thư mục",
+    "noSubfoldersYet": "Không có thư mục con trong lô này. Bạn có thể đọc thêm.",
+    "noSubfolders": "Thư mục này không có thư mục con để lựa chọn.",
+    "readMore": "Đọc thêm",
+    "noRoots": "Chưa có thư mục phương tiện nào được gắn kết. Nhập đường dẫn bên trong container trước.",
+    "choose": "Chọn thư mục này",
+    "locationTitle": "Vị trí tệp",
+    "locationContainer": "Trong trình quản lý tệp NAS, hãy mở phần chia sẻ được gắn cho Peach, sau đó tìm tệp theo vị trí của nó trong thư mục. Đường dẫn vùng chứa có thể khác với đường dẫn chia sẻ NAS.",
+    "locationServer": "Tệp nằm trên máy chủ chạy Peach. Sao chép đường dẫn và tìm thấy nó ở đó.",
+    "containerPath": "Đường dẫn trong container",
+    "serverPath": "Đường dẫn trên máy chủ",
+    "locationField": "Vị trí tệp trên máy chủ",
+    "mediaRoot": "Thư mục nội dung",
+    "relativePath": "Vị trí trong thư mục"
+  },
+  "bulkAction": {
+    "canUndo": " Bạn có thể hoàn tác việc này từ biên nhận.",
+    "cannotUndo": " Không thể hoàn tác việc này."
+  }
+}
