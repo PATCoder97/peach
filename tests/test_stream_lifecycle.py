@@ -53,7 +53,7 @@ class SegmentGenerationLifecycleTests(unittest.IsolatedAsyncioTestCase):
                 registered = {name: asyncio.Event() for name in ('waiting', 'new', 'last')}
                 register_consumer = self.registry.register
 
-                def register(session, task):
+                def register(session, task, *, register_consumer=register_consumer, registered=registered):
                     accepted = register_consumer(session, task)
                     if accepted and session in registered:
                         registered[session].set()
@@ -62,7 +62,7 @@ class SegmentGenerationLifecycleTests(unittest.IsolatedAsyncioTestCase):
                 calls = active = peak = 0
 
                 async def generate(source, start, duration, target, *, first_started=first_started,
-                                   release_first=release_first, finish=finish, **kwargs):
+                                   release_first=release_first, finish=finish, second_started=second_started, **kwargs):
                     nonlocal calls, active, peak
                     calls += 1
                     active += 1
