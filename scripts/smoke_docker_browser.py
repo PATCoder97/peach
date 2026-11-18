@@ -8,7 +8,7 @@ import tempfile
 import time
 import uuid
 
-from .smoke_docker import docker, process_identity, ready, request
+from smoke_docker import docker, process_identity, ready, request
 
 
 PROBE_FILE = Path(__file__).resolve().parents[1] / 'tests/support/docker_browser_probe.py'

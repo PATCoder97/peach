@@ -214,8 +214,7 @@ def main() -> None:
     parser.add_argument("--browser", action="store_true", help="check the optional Chromium/noVNC image")
     args = parser.parse_args()
     if args.browser:
-        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-        from scripts.smoke_docker_browser import main as browser_main
+        from smoke_docker_browser import main as browser_main
         browser_main(args.image)
         return
     # 用待验收镜像生成配置，再交 Docker Compose 解析；不启动生成的服务。
