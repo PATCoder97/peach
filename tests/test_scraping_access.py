@@ -471,7 +471,8 @@ class ScrapingAccessTests(unittest.TestCase):
         """`cf_clearance` 绑着解题那台浏览器的 UA：整站 UA 与用户的 Chrome 一致，Cookie 由用户贴，卡上不另收 UA。"""
         from peach.user_agent import USER_AGENT
         shown = save(self.root, "fc2ppvdb", {"cookie": "cf_clearance=abc"})
-        self.assertEqual(set(shown), {"source", "label", "login", "accepts_cookie", "network", "cookie_saved", "browser", "cooldown_until"})
+        self.assertEqual(set(shown), {"source", "label", "login", "accepts_cookie", "network", "cookie_saved", "browser", "browser_in_container", "cooldown_until"})
+        self.assertFalse(shown["browser_in_container"])
         self.assertTrue(shown["cookie_saved"])
         self.assertFalse(shown["browser"], "没有浏览器的机器上这张卡照旧收 Cookie")
         for name in ("fc2ppvdb", "javten"):
@@ -846,6 +847,14 @@ class ScrapingAccessTests(unittest.TestCase):
                              for request in sent), "没有固定图片主机的来源图片那一跳不发请求")
 
 class ContainerBrowserTests(unittest.TestCase):
+    def test_status_reports_the_container_browser(self):
+        with tempfile.TemporaryDirectory() as folder:
+            with patch.dict('os.environ', {'PEACH_BROWSER_CONTAINER': '1'}), \
+                    patch('peach.browser_transport.find_browser', return_value='/usr/bin/chromium'):
+                shown = describe(Path(folder).resolve(), 'fc2ppvdb')
+            self.assertTrue(shown['browser'])
+            self.assertTrue(shown['browser_in_container'])
+
     def test_an_unavailable_container_browser_does_not_silently_use_http(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder).resolve()

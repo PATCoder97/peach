@@ -49,6 +49,16 @@ class SegmentGenerationLifecycleTests(unittest.IsolatedAsyncioTestCase):
             with self.subTest(cancelled=cancelled):
                 first_started, release_first = asyncio.Event(), asyncio.Event()
                 finish = asyncio.Event()
+                second_started = asyncio.Event()
+                registered = {name: asyncio.Event() for name in ('waiting', 'new', 'last')}
+                register_consumer = self.registry.register
+
+                def register(session, task):
+                    accepted = register_consumer(session, task)
+                    if accepted and session in registered:
+                        registered[session].set()
+                    return accepted
+
                 calls = active = peak = 0
 
                 async def generate(source, start, duration, target, *, first_started=first_started,
@@ -62,6 +72,7 @@ class SegmentGenerationLifecycleTests(unittest.IsolatedAsyncioTestCase):
                             first_started.set()
                             await release_first.wait()
                             raise SegmentUnavailable("controlled failure")
+                        second_started.set()
                         await finish.wait()
                         target.parent.mkdir(parents=True, exist_ok=True)
                         target.write_bytes(b"segment")
@@ -70,12 +81,13 @@ class SegmentGenerationLifecycleTests(unittest.IsolatedAsyncioTestCase):
                         active -= 1
 
                 tasks = []
-                with mock.patch.object(self.service, "_generate_uncached", generate):
+                with (mock.patch.object(self.service, "_generate_uncached", generate),
+                      mock.patch.object(self.registry, 'register', register)):
                     try:
                         tasks.append(asyncio.create_task(self.generate("first")))
                         await asyncio.wait_for(first_started.wait(), 1)
                         tasks.append(asyncio.create_task(self.generate("waiting")))
-                        await asyncio.sleep(0)
+                        await asyncio.wait_for(registered['waiting'].wait(), 5)
                         if cancelled:
                             tasks[0].cancel()
                         else:
@@ -83,8 +95,10 @@ class SegmentGenerationLifecycleTests(unittest.IsolatedAsyncioTestCase):
                         await asyncio.gather(tasks[0], return_exceptions=True)
                         tasks.append(asyncio.create_task(self.generate("new")))
                         tasks.append(asyncio.create_task(self.generate("last")))
-                        for _ in range(5):
-                            await asyncio.sleep(0)
+                        arrivals = [registered[name].wait() for name in ('new', 'last')]
+                        if not cancelled:
+                            arrivals.append(second_started.wait())
+                        await asyncio.wait_for(asyncio.gather(*arrivals), 5)
                         self.assertEqual(peak, 1)
                         self.assertTrue(self.service._generation_locks)
                     finally:
@@ -92,6 +106,7 @@ class SegmentGenerationLifecycleTests(unittest.IsolatedAsyncioTestCase):
                         finish.set()
                         await asyncio.gather(*tasks, return_exceptions=True)
                         self.service.cached_path(self.source, 1, 0).unlink(missing_ok=True)
+                self.assertEqual(peak, 1)
                 self.assertEqual(self.service._generation_locks, {})
 
     async def test_arrivals_share_the_target_while_its_cancelled_generator_is_reaped(self):

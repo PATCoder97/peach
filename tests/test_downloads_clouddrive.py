@@ -7,9 +7,11 @@
 """
 from __future__ import annotations
 
+import os
 import socket
 import unittest
 from concurrent import futures
+from unittest.mock import patch
 
 import grpc
 
@@ -159,6 +161,10 @@ class _Server(unittest.TestCase):
         self.provider = cd.CloudDriveProvider(self.address, TOKEN)
 
     def serve(self, fake: FakeCloudDrive) -> tuple[grpc.Server, str]:
+        # 本机假服务始终直连，测试结束恢复调用方的代理环境。
+        local = patch.dict(os.environ, {'no_grpc_proxy': '127.0.0.1,localhost'})
+        local.start()
+        self.addCleanup(local.stop)
         handlers = {
             name: grpc.unary_unary_rpc_method_handler(
                 getattr(fake, name), request_deserializer=request.FromString,
