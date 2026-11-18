@@ -40,7 +40,7 @@ EXAMPLE = "Co-Authored-By: Claude Code (Opus 5) <noreply@anthropic.com>"
 
 def values(repo: Path, head: str = "HEAD") -> list[str]:
     """交付提交末尾那一块里的 Co-Authored-By，原样取值。"""
-    message = git(repo, "show", "-s", "--format=%B", head)
+    message = git(repo, "log", "-1", "--format=%B", head)
     return trailers(repo, message).get("co-authored-by", [])
 
 

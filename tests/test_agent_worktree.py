@@ -1218,6 +1218,19 @@ class CoAuthorTests(unittest.TestCase):
     def test_an_unsigned_commit_cannot_be_traced_back_to_a_model(self):
         self.assertTrue(self.signed())
 
+    def test_coauthor_metadata_does_not_need_file_contents(self):
+        """部分克隆未取文件内容时，署名核验仍只读提交信息。"""
+        (self.repo / 'payload.txt').write_text('temporary content', encoding='utf-8')
+        git(self.repo, 'add', '--', 'payload.txt')
+        signature = 'Codex (GPT-6) <noreply@openai.com>'
+        git(self.repo, 'commit', '-m', 'test: metadata', '-m', 'Co-Authored-By: ' + signature)
+        blob = git(self.repo, 'rev-parse', 'HEAD:payload.txt').strip()
+        object_file = self.repo / '.git' / 'objects' / blob[:2] / blob[2:]
+        object_file.chmod(0o644)
+        object_file.unlink()
+        self.assertEqual(co_author.values(self.repo), [signature])
+        self.assertEqual(co_author.check(self.repo, 'master'), [])
+
     def test_the_tool_alone_does_not_say_which_model_wrote_it(self):
         self.assertTrue(self.signed("Co-Authored-By: Claude Code <noreply@anthropic.com>"))
 
