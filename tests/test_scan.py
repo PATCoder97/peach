@@ -446,7 +446,9 @@ class CaseOnlyRenameTests(_ScanCase):
         self.scan()
         self.assertEqual([row[:2] for row in self.video()], [(asset_id, r'R:\media\创作者\SUB\a.mp4')])
 
-    def test_both_spellings_present_on_a_case_sensitive_disk_are_left_alone(self):
+    def test_an_existing_spelling_is_not_renamed_when_both_files_exist(self):
+        self.scan()
+        before = self.video()
         sub = self.media / '创作者' / 'sub'
         (sub / 'A.mp4').write_bytes(b'1' * 10)
         if not (sub / 'a.mp4').exists() or (sub / 'A.mp4').samefile(sub / 'a.mp4'):
@@ -454,6 +456,7 @@ class CaseOnlyRenameTests(_ScanCase):
         self.scan()
         paths = sorted(row[1] for row in self.video())
         self.assertIn(r'R:\media\创作者\sub\a.mp4', paths)
+        self.assertEqual(self.video(), before)
 
 
 class SidecarTests(_ScanCase):

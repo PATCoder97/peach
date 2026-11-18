@@ -935,7 +935,8 @@ class BatchScriptTests(unittest.TestCase):
         self.before = self.cover.read_bytes()
 
     def run_script(self, *argv):
-        return self.script.main([*argv, "--covers", str(self.root)])
+        with patch('peach.spine_label.default_reader', return_value=None):
+            return self.script.main([*argv, "--covers", str(self.root)])
 
     def test_a_dry_run_writes_nothing(self):
         self.assertEqual(self.run_script(), 0)
