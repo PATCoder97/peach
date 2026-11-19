@@ -19,6 +19,8 @@
     "siteCount_other": "Trang web {{count, number}}"
   },
   "autoLandings": {
+    "columnRule": "Quy tắc",
+    "columnTime": "Thời điểm ghi",
     "backupDone": "Cơ sở dữ liệu đã được sao lưu vào {{path}} trước khi hoàn nguyên.",
     "columnRuleTime": "Quy tắc và thời gian",
     "columnWritten": "bằng văn bản",
@@ -331,6 +333,7 @@
     "viewEditions": "Xem các phiên bản"
   },
   "healthList": {
+    "copyRow": "Sao chép bản ghi này",
     "copied": "Đã sao chép danh sách",
     "copyList": "Sao chép danh sách hiện tại",
     "copySelected": "Sao chép mục đã chọn",

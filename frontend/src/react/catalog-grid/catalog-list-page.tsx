@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties, type
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   createColumnHelper, flexRender, rowPaginationFeature, rowSelectionFeature, rowSortingFeature,
-  columnVisibilityFeature, tableFeatures, useTable, type RowSelectionState, type SortingState,
+  columnVisibilityFeature, tableFeatures, useTable, type RowSelectionState,
 } from '@tanstack/react-table';
 import { cardArtwork, relayoutCovers } from '@peach/card-art';
 import { fmtDur, fmtSize, requestErrorMessage } from '@peach/legacy/core';
@@ -23,16 +23,20 @@ import { DataTableFooter, DataTableSort } from '../components/table-controls';
 import { RetryNote } from '../components/grid-reveal';
 import { LibraryCompletionPrompt, meteredPreviewIds, missingPreviewIds } from '../library-processing/library-completion';
 import { completionRowRemembered, rememberCompletionRow } from '../library-processing/completion-row';
-import { catalogParams } from './catalog-grid';
+import { catalogListScope, catalogParams } from './catalog-grid';
+import type { CatalogListPosition } from './catalog-list-position';
+import type { Dispatch, SetStateAction } from 'react';
 import type { CatalogGridProps, MediaItem, MediaPage } from './types';
 import { useCatalogTablePreferences } from './catalog-column-widths';
 import { catalogColumns } from './catalog-table-columns';
 import { CatalogRating, catalogTableDate } from './catalog-table-controls';
-import { CatalogColumnFilter } from './catalog-column-filter';
+import { CatalogColumnFilter, CatalogColumnRangeFilter } from './catalog-column-filter';
+import { isColumnRangeKey } from '../../column-filters';
 import { TableColumnControls, TableColumnResizer } from '../components/table-column-controls';
 import { TableSelectionHeader } from '../components/table-selection-header';
 import { joinList, t } from '../../i18n';
 import { codedText } from '../../core/server-text';
+import { MediaRowActions, useMediaContextMenu } from '../components/media-actions';
 import './catalog-list.css';
 
 const features = tableFeatures({ rowSortingFeature, rowSelectionFeature, rowPaginationFeature, columnVisibilityFeature });
@@ -43,26 +47,23 @@ const sortOptions = [
   { id: 'rating', label: t('catalog:shared.rating') }, { id: 'o', label: t('catalog:catalogList.climaxCount') },
   { id: 'plays', label: t('catalog:catalogList.plays') }, { id: 'played', label: t('catalog:catalogList.lastWatched') },
 ];
-interface ListState { sorting: SortingState; pagination: { pageIndex: number; pageSize: number }; filters: Record<string, string> }
-// 详情返回保留同一筛选范围内的页码与列排序。
-const positions = new Map<string, ListState>();
-
 /** 服务端对完整筛选结果排序、分页；选择集及批量栏归现有馆藏控制器。 */
-export function CatalogListPage(props: CatalogGridProps) {
+export function CatalogListPage(props: CatalogGridProps & {
+  position: CatalogListPosition;
+  setPosition: Dispatch<SetStateAction<CatalogListPosition>>;
+}) {
+  const context = useMediaContextMenu();
+  const contextProps = (item: MediaItem) => ({ item, actions: props.actions, selected: props.selected.has(item.id),
+    onOpen: props.filters?.state === 'trash' ? props.actions.openResource : props.actions.open });
   const preferences = useCatalogTablePreferences();
   const tints = useLibraryTints();
   const params = catalogParams(props.filters || {}, false);
-  const [scope] = useState(() => {
-    const position = new URLSearchParams(params);
-    if (!new URLSearchParams(location.search).has('seed')) position.delete('seed');
-    return `${props.mode}:${props.listScope || props.entityKey || ''}:${position}`;
-  });
-  const [state, setState] = useState<ListState>(() => positions.get(scope) || {
-    sorting: [], pagination: { pageIndex: 0, pageSize: 20 }, filters: {},
-  });
+  const scope = catalogListScope(props);
+  const { position: state, setPosition: setState } = props;
   const { sorting, pagination, filters } = state;
+  const changeFilters = (next: CatalogListPosition['filters']) =>
+    setState(now => ({ ...now, filters: next, pagination: { ...now.pagination, pageIndex: 0 } }));
   const filterScope = { ...props.filters, ...props.facetScope };
-  useEffect(() => { positions.set(scope, state) }, [scope, state]);
   const offset = pagination.pageIndex * pagination.pageSize;
   const sort = sorting[0];
   const result = useQuery({
@@ -118,6 +119,8 @@ export function CatalogListPage(props: CatalogGridProps) {
       helper.accessor(item => item.name || '', { id: 'name', header: t('catalog:shared.video'), enableSorting: true,
         cell: ({ row }) => <ListIdentity item={row.original} props={props} disabled={result.isPlaceholderData} /> }),
       helper.display({ id: 'library', header: t('catalog:shared.library'), cell: ({ row }) => <ListLibrary item={row.original} /> }),
+      helper.display({ id: 'actions', header: t('catalog:mediaActions.label'), cell: ({ row }) =>
+        <MediaRowActions {...contextProps(row.original)} disabled={result.isPlaceholderData} /> }),
       helper.display({ id: 'people', header: t('catalog:shared.performers'), cell: ({ row }) => <ListPeople item={row.original} props={props} /> }),
       /* 标签与卡片同一套：关注条目的标签不可点，其余点一下按这个标签筛选。 */
       helper.display({ id: 'tags', header: t('catalog:shared.tags'), cell: ({ row }) => {
@@ -155,7 +158,7 @@ export function CatalogListPage(props: CatalogGridProps) {
       helper.accessor(item => item.release_date, { id: 'release', header: t('catalog:catalogList.releaseDate'), enableSorting: true,
         cell: ({ row }) => row.original.release_date || '—' }),
     ]).sort((a, b) => COLUMN_ORDER.indexOf(a.id!) - COLUMN_ORDER.indexOf(b.id!));
-  }, [props.helpers, props.actions, props.layout, props.selectMode, result.isPlaceholderData]);
+  }, [props.helpers, props.actions, props.layout, props.selectMode, props.filters?.state, props.selected, result.isPlaceholderData]);
   const table = useTable({
     features, columns, data: items, getRowId: item => String(item.id),
     manualSorting: true, manualPagination: true, rowCount: total,
@@ -183,7 +186,13 @@ export function CatalogListPage(props: CatalogGridProps) {
       libraryEmpty: !!(result.data as { libraryEmpty?: boolean }).libraryEmpty }) || '';
     return <div data-catalog-view-mode="list" data-media-empty="" dangerouslySetInnerHTML={{ __html: html }} />;
   }
-  return <div data-catalog-view-mode="list" data-catalog-table="" aria-busy={result.isFetching || undefined} className="flex min-w-0 flex-col gap-4">
+  return <div data-catalog-view-mode="list" data-catalog-table="" aria-busy={result.isFetching || undefined} className="flex min-w-0 flex-col gap-4"
+    onKeyDown={event => {
+      const row = (event.target as HTMLElement).closest<HTMLElement>('[data-catalog-row]');
+      const item = row && items.find(item => item.id === Number(row.dataset.id));
+      if (item && !result.isPlaceholderData) context.onKeyDown(event, contextProps(item), row);
+    }}>
+    {context.menu}
     <div className="flex flex-wrap justify-end gap-2" role="toolbar" aria-label={t('catalog:catalogList.toolbar')}>
       <div data-toolbar-actions="">
       <TableColumnControls preferences={preferences} />
@@ -204,10 +213,13 @@ export function CatalogListPage(props: CatalogGridProps) {
             {...preferences.columnProps(header.id)}>
             {({ sortDirection }) => <>
             <span className="flex items-center gap-0.5">
-              {['people', 'library', 'tags', 'rating', 'resolution'].includes(header.id)
+              {isColumnRangeKey(header.id)
+                ? <CatalogColumnRangeFilter column={header.id} label={String(header.column.columnDef.header)}
+                    filters={filters} scope={filterScope} revision={props.revision} onChange={changeFilters} />
+                : ['people', 'library', 'tags', 'rating', 'resolution'].includes(header.id)
                 ? <CatalogColumnFilter column={header.id as 'people' | 'library' | 'tags' | 'rating' | 'resolution'} label={String(header.column.columnDef.header)}
                     filters={filters} scope={filterScope} revision={props.revision} tagLabel={props.helpers.tagLabel}
-                    onChange={next => setState(now => ({ ...now, filters: next, pagination: { ...now.pagination, pageIndex: 0 } }))} />
+                    onChange={changeFilters} />
                 : flexRender(header.column.columnDef.header, header.getContext())}
               {header.column.getCanSort() ? <span data-sort-indicator data-direction={sortDirection || undefined}><ChevronSortDown /></span> : null}
             </span>
@@ -227,7 +239,8 @@ export function CatalogListPage(props: CatalogGridProps) {
           </TableRow>) : table.getRowModel().rows.map(row => <TableRow key={row.id} id={row.id} data-catalog-row="" data-id={row.original.id}
             data-guide-video={(!row.original.medium || row.original.medium === 'video') && row.original.location !== 'online' && !String(row.original.name || '').toLowerCase().endsWith('.iso') ? '' : undefined}
             data-library={tints.get(row.original.library_id || '')?.color ? row.original.library_id : undefined}
-            data-board-selected={row.getIsSelected() || undefined}>
+            data-board-selected={row.getIsSelected() || undefined}
+            onContextMenu={event => { if (!result.isPlaceholderData) context.onContextMenu(event, contextProps(row.original)) }}>
             {row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}
             <TableCell data-table-space="" />
           </TableRow>)}

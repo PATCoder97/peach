@@ -41,6 +41,8 @@ ICON_MEANINGS = {
     "resize": "video dimensions and orientation",
     "server": "server, NAS and system files",
     "person": "performers and people",
+    "filter": "filtering lists and tables",
+    "edit": "editing work details and covers",
     "shield": "access, sign-in and security",
     "stack": "Docker images and packaging",
     "switch": "switching between sources or hosts",
@@ -55,6 +57,13 @@ ICON_MEANINGS = {
 GENERIC_ICONS = frozenset({"sparkle"})
 
 NOTICES: dict[str, dict] = {
+    "0.60.0": {
+        "level": "notice",
+        "features": [
+            {"id": "work-actions", "refs": ["peach-mitao/peach#773"], "icon": "edit"},
+            {"id": "range-filters", "refs": ["peach-mitao/peach#782"], "icon": "filter", "route": "/"},
+        ],
+    },
     "0.59.0": {
         "level": "notice",
         "features": [
