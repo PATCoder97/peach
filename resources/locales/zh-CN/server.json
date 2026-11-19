@@ -259,13 +259,11 @@
         }
       }
     },
-    "v0-59-0": {
-      "headline": "越南文、资料编辑与浏览器 Docker",
+    "v0-60-0": {
+      "headline": "作品快捷操作与列范围筛选",
       "items": {
-        "vietnamese-interface": {"title": "英文与越南文", "body": "可在界面语言中选择英文或越南文，保留旧版浏览器已选的越南文。"},
-        "edit-details": {"title": "就地编辑影片资料", "body": "在详情页修改资料和更换封面，采集保留你改过的值。"},
-        "table-filters": {"title": "筛选并跨页选择", "body": "馆藏和复核表格支持列头搜索筛选，也可跨页选择匹配项目。"},
-        "docker-browser": {"title": "可选浏览器 Docker 镜像", "body": "browser 镜像保留 Chromium 与 noVNC，浏览器资料随数据卷保存，并使用当前应用。"}
+        "work-actions": {"title": "卡片与表格行快捷操作", "body": "右键卡片或表格行即可打开作品操作，也可使用馆藏列表的操作栏。"},
+        "range-filters": {"title": "按日期与数值范围筛选", "body": "列头筛选支持日期与数值范围，切换卡片与列表时保留筛选条件。"}
       }
     },
     "v0-58-0": {
@@ -286,6 +284,31 @@
         "english-interface": {
           "body": "页面、提示和任务进度都能显示英文",
           "title": "完整英文界面"
+        }
+      }
+    },
+    "v0-59-0": {
+      "headline": "越南文、资料编辑与浏览器 Docker",
+      "items": {
+        "vietnamese-interface": {"title": "英文与越南文", "body": "可在界面语言中选择英文或越南文，保留旧版浏览器已选的越南文。"},
+        "edit-details": {"title": "就地编辑影片资料", "body": "在详情页修改资料和更换封面，采集保留你改过的值。"},
+        "table-filters": {"title": "筛选并跨页选择", "body": "馆藏和复核表格支持列头搜索筛选，也可跨页选择匹配项目。"},
+        "docker-browser": {"title": "可选浏览器 Docker 镜像", "body": "browser 镜像保留 Chromium 与 noVNC，浏览器资料随数据卷保存，并使用当前应用。"},
+        "contribute-performer-names": {
+          "body": "可提交女优中文名供复核，也可在自愿分享公开元信息前预览内容",
+          "title": "贡献女优中文名"
+        },
+        "edit-work-details": {
+          "body": "在作品标题旁编辑资料，封面可上传图片、取播放器当前画面或选样张",
+          "title": "编辑作品资料与封面"
+        },
+        "library-filters": {
+          "body": "在列表列头搜索和多选筛选值，也可按评分与分辨率筛选馆藏",
+          "title": "馆藏筛选"
+        },
+        "select-duplicates": {
+          "body": "勾选要回收的副本，确认前查看会保留几份，移入回收站后可撤销",
+          "title": "逐份处理重复文件"
         }
       }
     }

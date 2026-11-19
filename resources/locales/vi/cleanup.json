@@ -117,6 +117,7 @@
     "hideCopies": "Ẩn bản sao"
   },
   "links": {
+    "copyLink": "Sao chép liên kết",
     "allReachable": "Tất cả liên kết đều truy cập được.",
     "checkAgain": "Kiểm tra lại",
     "checkFailed": "Kiểm tra thất bại",
@@ -328,6 +329,7 @@
     "upgradesPending_other": "{{count, number}} để nâng cấp"
   },
   "performerDelete": {
+    "deleteVideosForRow": "Xóa tất cả video của người biểu diễn này",
     "bodyExamples": "Bao gồm: {{examples}}.",
     "bodyScope_one": "Xóa vĩnh viễn {{count, number}} tệp video được liên kết với {{names}} (kích thước đã ghi {{size}}).",
     "bodyScope_other": "Xóa vĩnh viễn các {{count, number}} tệp video được liên kết với {{names}} (kích thước đã ghi {{size}}).",

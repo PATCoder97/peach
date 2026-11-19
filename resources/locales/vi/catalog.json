@@ -1,4 +1,40 @@
 {
+  "mediaActions": {
+    "label": "Thao tác với tác phẩm",
+    "open": "Mở chi tiết",
+    "select": "Chọn tác phẩm",
+    "deselect": "Bỏ chọn tác phẩm",
+    "removeLater": "Xóa khỏi Xem sau",
+    "delete": "Xóa",
+    "restore": "Khôi phục tác phẩm",
+    "failed": "Không thể thực hiện thao tác"
+  },
+  "rangeFilter": {
+    "apply": "Áp dụng khoảng",
+    "atLeast": "Từ {{value}}",
+    "atMost": "Đến {{value}}",
+    "chooseDate": "Chọn",
+    "clear": "Xóa khoảng",
+    "clearDate": "Xóa {{label}}",
+    "date": "Ngày",
+    "end": "Ngày kết thúc",
+    "invalid": "Nhập khoảng hợp lệ theo thứ tự tăng dần.",
+    "lastDays": "{{count, number}} ngày qua",
+    "max": "Tối đa",
+    "maxWithUnit": "Tối đa ({{unit}})",
+    "min": "Tối thiểu",
+    "minWithUnit": "Tối thiểu ({{unit}})",
+    "minutes": "{{count, number}} phút",
+    "minutesUnit": "phút",
+    "minuteSpan": "{{min, number}}–{{max, number}} phút",
+    "noLimit": "Không giới hạn",
+    "presets": "Khoảng nhanh",
+    "sizeUnit": "Đơn vị dung lượng",
+    "start": "Ngày bắt đầu",
+    "thisYear": "Năm nay",
+    "year": "Năm",
+    "yearOption": "{{year}}"
+  },
   "seedName": {
     "title": "Đóng góp tên tiếng Trung",
     "save": "Gửi đề xuất",
@@ -105,6 +141,10 @@
     "viewConflicts": "Xem xung đột liên kết"
   },
   "columnFilter": {
+    "applied": "Bộ lọc cột đang áp dụng",
+    "emptySelection": "Không có",
+    "excludedValues": "Loại trừ {{values}}",
+    "removeApplied": "Xóa bộ lọc {{filter}}",
     "label": "Lọc {{column}}",
     "search": "Tìm kiếm {{column}}",
     "noOptions": "Không có tùy chọn bộ lọc phù hợp"

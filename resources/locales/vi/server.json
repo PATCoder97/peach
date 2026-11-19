@@ -259,9 +259,20 @@
         }
       }
     },
+    "v0-60-0": {
+      "headline": "Thao tác nhanh và lọc cột theo khoảng",
+      "items": {
+        "work-actions": {"title": "Thao tác ngay trên thẻ và hàng", "body": "Nhấp chuột phải vào thẻ hoặc hàng để mở menu thao tác, hoặc dùng cột thao tác trong thư viện."},
+        "range-filters": {"title": "Lọc theo khoảng ngày và giá trị", "body": "Đặt khoảng ngày hoặc giá trị trong bộ lọc cột; chuyển giữa dạng thẻ và danh sách vẫn giữ bộ lọc."}
+      }
+    },
     "v0-59-0": {
       "headline": "Tiếng Việt, chỉnh sửa thông tin và browser Docker",
       "items": {
+        "contribute-performer-names": {"title": "Đóng góp tên người biểu diễn", "body": "Gửi tên tiếng Trung để xét duyệt hoặc xem trước thông tin công khai bạn có thể chọn chia sẻ."},
+        "edit-work-details": {"title": "Sửa thông tin và ảnh bìa tác phẩm", "body": "Sửa thông tin cạnh tiêu đề và chọn ảnh tải lên, khung hình video hoặc ảnh mẫu làm ảnh bìa."},
+        "library-filters": {"title": "Bộ lọc thư viện", "body": "Tìm và chọn giá trị trong bộ lọc ở tiêu đề cột, gồm điểm đánh giá và độ phân giải trong thư viện."},
+        "select-duplicates": {"title": "Chọn bản trùng để đưa vào thùng rác", "body": "Chọn từng bản sao, xem số bản còn lại và hoàn tác việc chuyển vào thùng rác."},
         "vietnamese-interface": {"title": "Tiếng Anh và tiếng Việt", "body": "Chọn tiếng Anh hoặc tiếng Việt trong phần Ngôn ngữ giao diện. Lựa chọn tiếng Việt trước đây được giữ lại."},
         "edit-details": {"title": "Sửa thông tin phim ngay tại trang chi tiết", "body": "Chỉnh sửa thông tin và thay ảnh bìa tại trang chi tiết; quá trình thu thập giữ nguyên các giá trị bạn đã sửa."},
         "table-filters": {"title": "Lọc và chọn qua nhiều trang", "body": "Tìm trong bộ lọc ở tiêu đề cột và chọn các mục khớp qua nhiều trang trong thư viện và bảng rà soát."},

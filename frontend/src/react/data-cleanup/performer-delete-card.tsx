@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { RiDeleteBinLine } from '@remixicon/react';
 import { useQuery } from '@tanstack/react-query';
 import { entityFaceImg } from '@peach/card-art';
 import { entityPath, esc, firstGrapheme, fmtSize } from '@peach/legacy/core';
@@ -67,10 +68,13 @@ export function PerformerDeleteCard({ toast }: { toast(message: string): void })
         leading: person && <ColumnFilterAvatar person={{ ...person, id: person.entity_id, name }} /> }) },
       render: person => <PerformerName person={person} /> },
     { id: 'works', label: t('cleanup:shared.videos'), width: 104, min: 80, value: person => person.n,
+      filter: { range: 'count', value: person => person.n },
       render: person => t('cleanup:performerDelete.videoCount', { count: person.n }) },
     { id: 'files', label: t('cleanup:shared.files'), width: 104, min: 80, value: person => person.file_count,
+      filter: { range: 'count', value: person => person.file_count },
       render: person => t('cleanup:performerDelete.fileCount', { count: person.file_count }) },
     { id: 'bytes', label: t('cleanup:performerDelete.columnSize'), width: 136, min: 104, value: person => person.bytes,
+      filter: { range: 'size', value: person => person.bytes },
       render: person => fmtSize(person.bytes) },
   ], []);
   const needle = search.toLocaleLowerCase();
@@ -124,7 +128,8 @@ export function PerformerDeleteCard({ toast }: { toast(message: string): void })
       rowId={person => String(person.entity_id)} rowLabel={person => entityDisplayName('performer', person.k, person.entity_id)}
       selected={selected} onSelected={setSelected}
       toolbarActions={<IndexSearch label={t('cleanup:performerDelete.search')} value={search} onQuery={value => { setSearch(value); setSelected([]) }} />}
-      actions={(chosen, clear) => [{ action: deleteVideos(), items: chosen, host, done: clear }]} />}
+      actions={(chosen, clear) => [{ action: deleteVideos(), items: chosen, host, done: clear,
+        rowAction: { label: t('cleanup:performerDelete.deleteVideosForRow'), icon: RiDeleteBinLine } }]} />}
     {error ? <Note tone="error" title={t('cleanup:performerDelete.planFailed')}>{error}</Note> : null}
     {result ? <Note tone={failures.length ? 'warning' : 'info'} title={t('cleanup:performerDelete.purged', { count: result.purged })}
       extra={failures.length ? <div className="flex flex-col gap-2 text-body-2-regular wrap-anywhere">

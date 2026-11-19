@@ -193,6 +193,7 @@
     "waiting_other": "{{scope}}, {{count, number}} phiên bản mới vẫn đang chờ cover. Hãy lấy tất cả chúng ngay bây giờ."
   },
   "dataTable": {
+    "contextActions": "Thao tác trong menu ngữ cảnh",
     "bulkActions": "Thao tác hàng loạt {{label}}",
     "clearSelection": "Bỏ chọn tất cả",
     "empty": "Không có bản ghi",

@@ -79,6 +79,8 @@
     "updated_other": "Cập nhật {{count, number}} mục"
   },
   "creatorAliases": {
+    "removeRowAliases_one": "Xóa bí danh trong nhóm này ({{count, number}})",
+    "removeRowAliases_other": "Xóa bí danh trong nhóm này ({{count, number}})",
     "addAlias": "Thêm tên khác",
     "addManually": "Thêm tên khác thủ công",
     "aliasesSelected_one": "Đã chọn bí danh {{count, number}}",

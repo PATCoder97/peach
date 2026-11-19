@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { RiFileListLine } from '@remixicon/react';
+import { RiFileCopyLine, RiFileListLine, RiPlayLine } from '@remixicon/react';
 import { Button } from '@/components/base/buttons/button';
 import { LinkButton } from '@/components/base/buttons/link-button';
 import { fmtDur, fmtSize, LOC } from '@peach/legacy/core';
@@ -60,8 +60,10 @@ export function HealthList({ group: original, groupKey, openItem, receipt }: {
       render: item => <span data-middle-truncate title={item.path}
         className="block min-w-0 w-full text-body-2-regular text-text-secondary">{item.path || t('manage:shared.notFound')}</span> },
     { id: 'duration', label: t('manage:shared.duration'), width: 112, value: item => item.duration ?? 0,
+      filter: { range: 'duration', value: item => item.duration || null },
       render: item => item.duration && item.duration > 0 ? fmtDur(item.duration) : t('manage:shared.notFound') },
     { id: 'size', label: t('manage:shared.size'), width: 112, value: item => item.size ?? 0,
+      filter: { range: 'size', value: item => item.size },
       render: item => item.size !== null ? fmtSize(item.size) : t('manage:shared.notFound') },
   ];
   return <Disclosure summary={group.count === null ? `${label} · ${t('manage:shared.notFound')}` : t('manage:healthList.groupSummary', { label, count: group.count })}>
@@ -82,6 +84,11 @@ export function HealthList({ group: original, groupKey, openItem, receipt }: {
           filters={{ values: filters, facets: group.column_facets ?? {}, onChange: setFilters }}
           items={group.items} columns={columns} rowId={item => String(item.id)} rowLabel={identity}
           selected={selected} onSelected={setSelected}
+          contextOperations={item => [
+            { id: 'open', label: t('catalog:mediaActions.open'), icon: RiPlayLine, run: () => openItem(item.id) },
+            { id: 'copy', label: t('manage:healthList.copyRow'), icon: RiFileCopyLine,
+              disabled: action.busy === 'copy', run: () => copy([item]) },
+          ]}
           actions={() => []} controls={items => <Button size="small" variant="secondary" {...busyProps(action.busy === 'copy')}
             onClick={() => copy(items)}>{t('manage:healthList.copySelected')}</Button>} />
       </Stack>}

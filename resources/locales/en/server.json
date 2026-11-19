@@ -259,13 +259,11 @@
         }
       }
     },
-    "v0-59-0": {
-      "headline": "Vietnamese, library editing and browser Docker",
+    "v0-60-0": {
+      "headline": "Quick item actions and column range filters",
       "items": {
-        "vietnamese-interface": {"title": "English and Vietnamese", "body": "Choose English or Vietnamese in Interface language. Your previous Vietnamese choice is preserved."},
-        "edit-details": {"title": "Edit a video's details", "body": "Edit metadata and replace covers from the detail page; collection preserves your changes."},
-        "table-filters": {"title": "Filter and select across pages", "body": "Search column filters and select matching items across pages in library and review tables."},
-        "docker-browser": {"title": "Optional browser Docker image", "body": "The browser image keeps Chromium and noVNC alongside the current app, with its browser profile stored in the data volume."}
+        "work-actions": {"title": "Actions from cards and rows", "body": "Right-click a card or table row to open item actions, or use the Library action column."},
+        "range-filters": {"title": "Filter columns by range", "body": "Set date and numeric ranges in column filters; switching between cards and lists keeps your filters."}
       }
     },
     "v0-58-0": {
@@ -286,6 +284,31 @@
         "english-interface": {
           "body": "Pages, messages and task progress can all show in English",
           "title": "Full English interface"
+        }
+      }
+    },
+    "v0-59-0": {
+      "headline": "Vietnamese, library editing and browser Docker",
+      "items": {
+        "vietnamese-interface": {"title": "English and Vietnamese", "body": "Choose English or Vietnamese in Interface language. Your previous Vietnamese choice is preserved."},
+        "edit-details": {"title": "Edit a video's details", "body": "Edit metadata and replace covers from the detail page; collection preserves your changes."},
+        "table-filters": {"title": "Filter and select across pages", "body": "Search column filters and select matching items across pages in library and review tables."},
+        "docker-browser": {"title": "Optional browser Docker image", "body": "The browser image keeps Chromium and noVNC alongside the current app, with its browser profile stored in the data volume."},
+        "contribute-performer-names": {
+          "body": "Submit Chinese performer names for review or preview the public metadata you can choose to share",
+          "title": "Contribute performer names"
+        },
+        "edit-work-details": {
+          "body": "Edit metadata beside the title and choose an upload, a video frame or a sample image for the cover",
+          "title": "Edit work details and covers"
+        },
+        "library-filters": {
+          "body": "Search and select filter values in table headers, including ratings and resolutions in Library",
+          "title": "Library filters"
+        },
+        "select-duplicates": {
+          "body": "Select individual copies, see how many will remain, and undo the move to Trash",
+          "title": "Choose which duplicates to trash"
         }
       }
     }
