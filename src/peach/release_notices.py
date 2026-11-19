@@ -43,6 +43,7 @@ ICON_MEANINGS = {
     "person": "performers and people",
     "filter": "filtering lists and tables",
     "edit": "editing work details and covers",
+    "actions": "item action menus",
     "shield": "access, sign-in and security",
     "stack": "Docker images and packaging",
     "switch": "switching between sources or hosts",
@@ -60,7 +61,7 @@ NOTICES: dict[str, dict] = {
     "0.60.0": {
         "level": "notice",
         "features": [
-            {"id": "work-actions", "refs": ["peach-mitao/peach#773"], "icon": "edit"},
+            {"id": "work-actions", "refs": ["peach-mitao/peach#773"], "icon": "actions"},
             {"id": "range-filters", "refs": ["peach-mitao/peach#782"], "icon": "filter", "route": "/"},
         ],
     },

@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom';
 import {
   RiArrowLeftRightLine, RiAspectRatioLine, RiCheckboxMultipleLine, RiDatabase2Line, RiDownloadCloud2Line, RiDraggable,
   RiEditLine, RiFilter3Line, RiFolderLine, RiHardDrive3Line, RiRefreshLine, RiServerLine, RiShieldCheckLine, RiSparklingLine, RiSpeedUpLine,
-  RiStackLine, RiTranslate2, RiUserLine, type RemixiconComponentType,
+  RiMenuLine, RiStackLine, RiTranslate2, RiUserLine, type RemixiconComponentType,
 } from '@remixicon/react';
 import { Button } from '@/components/base/buttons/button';
 import { apiGet, apiSend } from '../api';
@@ -58,7 +58,7 @@ const ICONS: Record<string, RemixiconComponentType> = {
   resize: RiAspectRatioLine, server: RiServerLine, person: RiUserLine, shield: RiShieldCheckLine,
   stack: RiStackLine, switch: RiArrowLeftRightLine, speed: RiSpeedUpLine, refresh: RiRefreshLine,
   database: RiDatabase2Line, sparkle: RiSparklingLine, translate: RiTranslate2, download: RiDownloadCloud2Line,
-  filter: RiFilter3Line, edit: RiEditLine,
+  filter: RiFilter3Line, edit: RiEditLine, actions: RiMenuLine,
 };
 
 function progressLabel(progress: NoticeItem['progress']) {
