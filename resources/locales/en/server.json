@@ -266,15 +266,6 @@
         "range-filters": {"title": "Filter columns by range", "body": "Set date and numeric ranges in column filters; switching between cards and lists keeps your filters."}
       }
     },
-    "v0-59-0": {
-      "headline": "Vietnamese, library editing and browser Docker",
-      "items": {
-        "vietnamese-interface": {"title": "English and Vietnamese", "body": "Choose English or Vietnamese in Interface language. Your previous Vietnamese choice is preserved."},
-        "edit-details": {"title": "Edit a video's details", "body": "Edit metadata and replace covers from the detail page; collection preserves your changes."},
-        "table-filters": {"title": "Filter and select across pages", "body": "Search column filters and select matching items across pages in library and review tables."},
-        "docker-browser": {"title": "Optional browser Docker image", "body": "The browser image keeps Chromium and noVNC alongside the current app, with its browser profile stored in the data volume."}
-      }
-    },
     "v0-58-0": {
       "headline": "Full English interface, easier NAS setup",
       "items": {
@@ -297,8 +288,12 @@
       }
     },
     "v0-59-0": {
-      "headline": "Filter your library and edit work details",
+      "headline": "Vietnamese, library editing and browser Docker",
       "items": {
+        "vietnamese-interface": {"title": "English and Vietnamese", "body": "Choose English or Vietnamese in Interface language. Your previous Vietnamese choice is preserved."},
+        "edit-details": {"title": "Edit a video's details", "body": "Edit metadata and replace covers from the detail page; collection preserves your changes."},
+        "table-filters": {"title": "Filter and select across pages", "body": "Search column filters and select matching items across pages in library and review tables."},
+        "docker-browser": {"title": "Optional browser Docker image", "body": "The browser image keeps Chromium and noVNC alongside the current app, with its browser profile stored in the data volume."},
         "contribute-performer-names": {
           "body": "Submit Chinese performer names for review or preview the public metadata you can choose to share",
           "title": "Contribute performer names"

@@ -22,7 +22,6 @@
     "columnRule": "Quy tắc",
     "columnTime": "Thời điểm ghi",
     "backupDone": "Cơ sở dữ liệu đã được sao lưu vào {{path}} trước khi hoàn nguyên.",
-    "columnRuleTime": "Quy tắc và thời gian",
     "columnWritten": "bằng văn bản",
     "deletedAsset": "#{{id}} (đã xóa)",
     "description": "Tiêu đề, ngày phát hành và thẻ được viết tự động theo các quy tắc dứt khoát. Hoàn nguyên khôi phục các giá trị trước đó; video được chỉnh sửa vì vẫn giữ nguyên giá trị hiện tại của chúng.",

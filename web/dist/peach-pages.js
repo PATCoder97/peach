@@ -2,7 +2,7 @@
 (function() {
 	try {
 		var e = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {}, t = new e.Error().stack;
-		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "59420237-5ccc-4380-8942-b28665ec57ce", e._sentryDebugIdIdentifier = "sentry-dbid-59420237-5ccc-4380-8942-b28665ec57ce");
+		t && (e._sentryDebugIds = e._sentryDebugIds || {}, e._sentryDebugIds[t] = "9ddc74b3-25f6-473b-a84b-ce1800aba865", e._sentryDebugIdIdentifier = "sentry-dbid-9ddc74b3-25f6-473b-a84b-ce1800aba865");
 	} catch {}
 })();
 var e = Object.create, t = Object.defineProperty, n = Object.getOwnPropertyDescriptor, r = Object.getOwnPropertyNames, i = Object.getPrototypeOf, a = Object.prototype.hasOwnProperty, o = (e, t) => () => (t || (e((t = { exports: {} }).exports, t, t.exports), e = null), t.exports), s = (e, i, o, s) => {
@@ -7620,27 +7620,6 @@ var We = "peach.settings.v1", Ge = {
 				}
 			}
 		},
-		"v0-59-0": {
-			headline: "Filter your library and edit work details",
-			items: {
-				"contribute-performer-names": {
-					body: "Submit Chinese performer names for review or preview the public metadata you can choose to share",
-					title: "Contribute performer names"
-				},
-				"edit-work-details": {
-					body: "Edit metadata beside the title and choose an upload, a video frame or a sample image for the cover",
-					title: "Edit work details and covers"
-				},
-				"library-filters": {
-					body: "Search and select filter values in table headers, including ratings and resolutions in Library",
-					title: "Library filters"
-				},
-				"select-duplicates": {
-					body: "Select individual copies, see how many will remain, and undo the move to Trash",
-					title: "Choose which duplicates to trash"
-				}
-			}
-		},
 		"v0-58-0": {
 			headline: "Full English interface, easier NAS setup",
 			items: {
@@ -7659,6 +7638,43 @@ var We = "peach.settings.v1", Ge = {
 				"english-interface": {
 					body: "Pages, messages and task progress can all show in English",
 					title: "Full English interface"
+				}
+			}
+		},
+		"v0-59-0": {
+			headline: "Vietnamese, library editing and browser Docker",
+			items: {
+				"vietnamese-interface": {
+					title: "English and Vietnamese",
+					body: "Choose English or Vietnamese in Interface language. Your previous Vietnamese choice is preserved."
+				},
+				"edit-details": {
+					title: "Edit a video's details",
+					body: "Edit metadata and replace covers from the detail page; collection preserves your changes."
+				},
+				"table-filters": {
+					title: "Filter and select across pages",
+					body: "Search column filters and select matching items across pages in library and review tables."
+				},
+				"docker-browser": {
+					title: "Optional browser Docker image",
+					body: "The browser image keeps Chromium and noVNC alongside the current app, with its browser profile stored in the data volume."
+				},
+				"contribute-performer-names": {
+					body: "Submit Chinese performer names for review or preview the public metadata you can choose to share",
+					title: "Contribute performer names"
+				},
+				"edit-work-details": {
+					body: "Edit metadata beside the title and choose an upload, a video frame or a sample image for the cover",
+					title: "Edit work details and covers"
+				},
+				"library-filters": {
+					body: "Search and select filter values in table headers, including ratings and resolutions in Library",
+					title: "Library filters"
+				},
+				"select-duplicates": {
+					body: "Select individual copies, see how many will remain, and undo the move to Trash",
+					title: "Choose which duplicates to trash"
 				}
 			}
 		}
@@ -11724,7 +11740,6 @@ var We = "peach.settings.v1", Ge = {
 		columnRule: "Quy tắc",
 		columnTime: "Thời điểm ghi",
 		backupDone: "Cơ sở dữ liệu đã được sao lưu vào {{path}} trước khi hoàn nguyên.",
-		columnRuleTime: "Quy tắc và thời gian",
 		columnWritten: "bằng văn bản",
 		deletedAsset: "#{{id}} (đã xóa)",
 		description: "Tiêu đề, ngày phát hành và thẻ được viết tự động theo các quy tắc dứt khoát. Hoàn nguyên khôi phục các giá trị trước đó; video được chỉnh sửa vì vẫn giữ nguyên giá trị hiện tại của chúng.",
@@ -22899,27 +22914,6 @@ var We = "peach.settings.v1", Ge = {
 				}
 			}
 		},
-		"v0-59-0": {
-			headline: "筛选馆藏、编辑作品资料",
-			items: {
-				"contribute-performer-names": {
-					body: "可提交女优中文名供复核，也可在自愿分享公开元信息前预览内容",
-					title: "贡献女优中文名"
-				},
-				"edit-work-details": {
-					body: "在作品标题旁编辑资料，封面可上传图片、取播放器当前画面或选样张",
-					title: "编辑作品资料与封面"
-				},
-				"library-filters": {
-					body: "在列表列头搜索和多选筛选值，也可按评分与分辨率筛选馆藏",
-					title: "馆藏筛选"
-				},
-				"select-duplicates": {
-					body: "勾选要回收的副本，确认前查看会保留几份，移入回收站后可撤销",
-					title: "逐份处理重复文件"
-				}
-			}
-		},
 		"v0-58-0": {
 			headline: "完整英文界面，NAS 更好装",
 			items: {
@@ -22938,6 +22932,43 @@ var We = "peach.settings.v1", Ge = {
 				"english-interface": {
 					body: "页面、提示和任务进度都能显示英文",
 					title: "完整英文界面"
+				}
+			}
+		},
+		"v0-59-0": {
+			headline: "越南文、资料编辑与浏览器 Docker",
+			items: {
+				"vietnamese-interface": {
+					title: "英文与越南文",
+					body: "可在界面语言中选择英文或越南文，保留旧版浏览器已选的越南文。"
+				},
+				"edit-details": {
+					title: "就地编辑影片资料",
+					body: "在详情页修改资料和更换封面，采集保留你改过的值。"
+				},
+				"table-filters": {
+					title: "筛选并跨页选择",
+					body: "馆藏和复核表格支持列头搜索筛选，也可跨页选择匹配项目。"
+				},
+				"docker-browser": {
+					title: "可选浏览器 Docker 镜像",
+					body: "browser 镜像保留 Chromium 与 noVNC，浏览器资料随数据卷保存，并使用当前应用。"
+				},
+				"contribute-performer-names": {
+					body: "可提交女优中文名供复核，也可在自愿分享公开元信息前预览内容",
+					title: "贡献女优中文名"
+				},
+				"edit-work-details": {
+					body: "在作品标题旁编辑资料，封面可上传图片、取播放器当前画面或选样张",
+					title: "编辑作品资料与封面"
+				},
+				"library-filters": {
+					body: "在列表列头搜索和多选筛选值，也可按评分与分辨率筛选馆藏",
+					title: "馆藏筛选"
+				},
+				"select-duplicates": {
+					body: "勾选要回收的副本，确认前查看会保留几份，移入回收站后可撤销",
+					title: "逐份处理重复文件"
 				}
 			}
 		}
@@ -47874,4 +47905,4 @@ Wt();
 var ax = document.getElementById("peach-page"), ox = ax ? ix[ax.dataset.page ?? ""] : void 0;
 ax && ox && (0, $t.createRoot)(ax).render(/* @__PURE__ */ (0, V.jsx)(rx, { children: /* @__PURE__ */ (0, V.jsx)(ox, { data: { ...ax.dataset } }) }));
 
-//# debugId=59420237-5ccc-4380-8942-b28665ec57ce
+//# debugId=9ddc74b3-25f6-473b-a84b-ce1800aba865
